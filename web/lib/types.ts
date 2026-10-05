@@ -136,3 +136,11 @@ export interface SettingsData {
   family: FamilySettings;
   elders: ElderSettings[];
 }
+
+export interface FamilyAdmin {
+  name: string;
+  hasTelegramGroup: boolean;
+  members: { id: string; name: string; role: "admin" | "alerts" | "reports"; hasTelegram: boolean; phone: string | null; isMe: boolean }[];
+  invites: { id: string; code: string; role: string; expiresAt: string }[];
+  elders: { id: string; name: string; birthYear: number | null; conditions: string[]; hasTelegram: boolean; command: string | null }[];
+}

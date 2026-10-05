@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { IconBell, IconChart, IconGear, IconHome, IconPlus } from "./icons";
+import { IconBell, IconChart, IconHome, IconPlus, IconUsers } from "./icons";
 
 const isActive = (path: string, href: string) => (href === "/" ? path === "/" : path.startsWith(href));
 
@@ -12,6 +12,7 @@ export function TopNav() {
     { href: "/", label: "Tổng quan" },
     { href: "/nguoi-than", label: "Sức khoẻ" },
     { href: "/canh-bao", label: "Cảnh báo" },
+    { href: "/gia-dinh", label: "Gia đình" },
     { href: "/ket-noi-dong-ho", label: "Kết nối đồng hồ" },
     { href: "/cai-dat", label: "Cài đặt" },
   ];
@@ -34,7 +35,7 @@ export function BottomNav() {
       <Link href="/nguoi-than" aria-current={cur("/nguoi-than")}><IconChart size={22} />Sức khoẻ</Link>
       <Link href="/ket-noi-dong-ho" className="fab" aria-label="Kết nối đồng hồ"><IconPlus size={26} /></Link>
       <Link href="/canh-bao" aria-current={cur("/canh-bao")}><IconBell size={22} />Cảnh báo</Link>
-      <Link href="/cai-dat" aria-current={cur("/cai-dat")}><IconGear size={22} />Cài đặt</Link>
+      <Link href="/gia-dinh" aria-current={cur("/gia-dinh")}><IconUsers size={22} />Gia đình</Link>
     </nav>
   );
 }

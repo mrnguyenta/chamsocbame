@@ -285,3 +285,37 @@ def test_pairing_with_six_digit_code(conn, family, monkeypatch):
     conn.execute("update watch_pairings set expires_at = now() - interval '1 minute' where code = %s", (r2["code"],))
     assert client.get("/api/watch/pair/status", headers={"Authorization": f"Bearer {r2['key']}"}).status_code == 410
     assert client.get("/api/watch/pair/status", headers={"Authorization": "Bearer la"}).status_code == 404
+
+
+def test_link_group_and_parent_telegram_with_codes(conn, family):
+    tg, now = FakeTg(), datetime.now(timezone.utc)
+    fid, me = family["family"]["id"], family["me"]
+    conn.execute("insert into link_codes (code, family_id, kind) values ('111111', %s, 'group')", (fid,))
+    conn.execute("insert into link_codes (code, family_id, kind, elder_id) values ('222222', %s, 'elder', %s)",
+                 (fid, me["id"]))
+    msg = lambda text, chat, typ, user: {"message": {"text": text, "chat": {"id": chat, "type": typ}, "from": {"id": user}}}
+
+    # Mã nhóm gõ trong tin riêng thì không nhận
+    jobs.handle_update(conn, tg, NoopCallProvider(), msg("/ketnoi 111111", 77, "private", 77), now)
+    assert "Mã không đúng" in tg.sent[-1][1]
+    jobs.handle_update(conn, tg, NoopCallProvider(), msg("/start@ChamSocBot 111111", -555, "supergroup", NGUYEN), now)
+    assert conn.execute("select telegram_chat_id from families where id = %s", (fid,)).fetchone()["telegram_chat_id"] == -555
+    assert "Đã nối nhóm" in tg.sent[-1][1]
+    jobs.handle_update(conn, tg, NoopCallProvider(), msg("/ketnoi 111111", -555, "group", NGUYEN), now)
+    assert "Mã không đúng" in tg.sent[-1][1]  # mã chỉ dùng một lần
+
+    jobs.handle_update(conn, tg, NoopCallProvider(), msg("/start 222222", 66, "private", 66), now)
+    assert conn.execute("select telegram_user_id from elders where id = %s", (me["id"],)).fetchone()["telegram_user_id"] == 66
+    assert "Mẹ Lan" in tg.sent[-1][1]
+
+
+def test_sql_default_rules_match_python(conn, family):
+    e = conn.execute("insert into elders (family_id, display_name) values (%s, 'Ông') returning id",
+                     (family["family"]["id"],)).fetchone()["id"]
+    n = conn.execute("select chamsoc_ensure_default_rules(%s, %s) as n", (e, ["tieu_duong"])).fetchone()["n"]
+    py = rules.default_rules(str(e), ["tieu_duong"])
+    assert n == len(py)
+    assert conn.execute("select chamsoc_ensure_default_rules(%s, %s) as n", (e, ["tieu_duong"])).fetchone()["n"] == 0
+    # Thêm bệnh tăng huyết áp: chỉ thêm 3 ngưỡng huyết áp còn thiếu
+    assert conn.execute("select chamsoc_ensure_default_rules(%s, %s) as n",
+                        (e, ["tieu_duong", "tang_huyet_ap"])).fetchone()["n"] == 3

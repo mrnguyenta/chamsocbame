@@ -248,9 +248,17 @@ def handle_update(conn, tg: telegram.TelegramClient, calls: CallProvider, update
         return
 
     if text.startswith("/"):
-        cmd = text.split()[0][1:].split("@")[0].lower()
+        parts = text.split()
+        cmd = parts[0][1:].split("@")[0].lower()
+        arg = parts[1] if len(parts) > 1 else ""
+        chat_type = (msg.get("chat") or {}).get("type", "private")
+        if cmd in ("start", "ketnoi", "toi") and arg:
+            _link_with_code(conn, tg, arg, chat_id, chat_type, user_id)
+            return
         if cmd in ("id", "start"):
-            tg.send(chat_id, f"chat_id: <code>{chat_id}</code>\nuser_id: <code>{user_id}</code>")
+            tg.send(chat_id, f"chat_id: <code>{chat_id}</code>\nuser_id: <code>{user_id}</code>\n\n"
+                             "Để nối với gia đình, lấy mã 6 số trên website (trang Gia đình) rồi gõ "
+                             "<code>/ketnoi 123456</code> trong nhóm, hoặc ba mẹ nhắn <code>/toi 123456</code>.")
             return
         family = db.family_by_chat(conn, chat_id)
         if family is None:
@@ -284,6 +292,25 @@ def handle_update(conn, tg: telegram.TelegramClient, calls: CallProvider, update
         snap.systolic, snap.diastolic = reading.systolic, reading.diastolic
     evaluate_elder(conn, tg, snap, local)
     process_alerts(conn, tg, calls, now_utc)
+
+
+def _link_with_code(conn, tg: telegram.TelegramClient, code: str, chat_id: int, chat_type: str,
+                    user_id: int | None) -> None:
+    """Nối nhóm Telegram với gia đình, hoặc tài khoản Telegram của ba mẹ với hồ sơ của họ."""
+    is_group = chat_type in ("group", "supergroup")
+    link = db.consume_link_code(conn, code.strip(), "group" if is_group else "elder")
+    if link is None:
+        tg.send(chat_id, "Mã không đúng hoặc đã hết hạn. Lấy mã mới trên website, trang Gia đình."
+                + ("" if is_group else " (Mã nối nhóm phải gõ trong nhóm gia đình.)"))
+        return
+    if is_group:
+        db.set_family_chat(conn, str(link["family_id"]), chat_id)
+        tg.send(chat_id, f"Đã nối nhóm này với <b>{escape(link['family_name'])}</b>. "
+                         "Báo cáo và cảnh báo sẽ gửi vào đây. Gõ /tongquan để xem tình hình.")
+    elif user_id:
+        db.set_elder_telegram(conn, str(link["elder_id"]), user_id)
+        tg.send(chat_id, f"Chào <b>{escape(link['elder_name'])}</b>! Từ giờ bot sẽ nhắc uống thuốc ở đây. "
+                         "Đo huyết áp xong cứ nhắn số, ví dụ <code>130/85</code>, hoặc <code>đường 7.2</code>.")
 
 
 def _handle_callback(conn, tg: telegram.TelegramClient, cq: dict) -> None:

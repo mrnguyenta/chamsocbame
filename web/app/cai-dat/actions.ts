@@ -91,6 +91,8 @@ export async function saveConditions(_: ActionState, form: FormData): Promise<Ac
     await assertElder(s.familyId, elderId);
     const picked = Object.keys(CONDITIONS).filter((c) => form.get(`c_${c}`) === "on");
     await sql()`update elders set conditions = ${picked} where id = ${elderId}`;
+    // Thêm ngưỡng huyết áp / đường huyết còn thiếu khi vừa chọn bệnh nền mới.
+    await sql()`select chamsoc_ensure_default_rules(${elderId}, ${picked})`;
     revalidatePath("/cai-dat");
     return { ok: true, message: "Đã lưu bệnh nền" };
   } catch (e) {

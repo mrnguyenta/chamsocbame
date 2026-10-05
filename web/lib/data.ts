@@ -2,7 +2,7 @@ import "server-only";
 import { isDemo, sql } from "./db";
 import { demoDetail, demoOverview, demoSettings } from "./demo";
 import type {
-  AlertRow, Carer, ElderDetail, ElderSummary, Overview, Reading, RuleRow, SettingsData, Status,
+  AlertRow, FamilyAdmin, Carer, ElderDetail, ElderSummary, Overview, Reading, RuleRow, SettingsData, Status,
 } from "./types";
 
 const iso = (d: Date | string | null | undefined) => (d ? new Date(d).toISOString() : null);
@@ -221,4 +221,44 @@ export async function getAlerts(familyId: string): Promise<AlertRow[]> {
     where e.family_id = ${familyId} and a.opened_at > now() - interval '30 days'
     order by (a.resolved_at is null) desc, a.opened_at desc limit 100`;
   return rows.map(toAlert);
+}
+
+export async function getFamilyAdmin(familyId: string, caregiverId: string): Promise<FamilyAdmin> {
+  if (isDemo) {
+    const o = demoOverview();
+    return {
+      name: o.familyName, hasTelegramGroup: true,
+      members: o.carers.map((c, i) => ({ id: c.id, name: c.name, role: c.role, hasTelegram: c.hasTelegram, phone: c.phone, isMe: i === 0 })),
+      invites: [{ id: "i1", code: "demo123abc", role: "alerts", expiresAt: new Date(Date.now() + 5 * 864e5).toISOString() }],
+      elders: o.elders.map((e) => ({ id: e.id, name: e.name, birthYear: e.birthYear, conditions: e.conditions, hasTelegram: e.id !== "demo-ba-ngoai", command: null })),
+    };
+  }
+  const db = sql();
+  const [[f], members, invites, elders] = await Promise.all([
+    db`select name, telegram_chat_id from families where id = ${familyId}`,
+    db`select id, display_name, role, telegram_user_id, phone from caregivers where family_id = ${familyId}
+       order by (role = 'admin') desc, created_at`,
+    db`select id, code, role, expires_at from invites where family_id = ${familyId} and revoked_at is null
+       and expires_at > now() order by created_at desc`,
+    db`select id, display_name, birth_year, conditions, telegram_user_id, command from elders
+       where family_id = ${familyId} order by created_at`,
+  ]);
+  return {
+    name: f?.name ?? "Gia đình",
+    hasTelegramGroup: f?.telegram_chat_id != null,
+    members: members.map((m) => ({ id: m.id, name: m.display_name, role: m.role, hasTelegram: m.telegram_user_id != null,
+      phone: m.phone, isMe: m.id === caregiverId })),
+    invites: invites.map((i) => ({ id: i.id, code: i.code, role: i.role, expiresAt: iso(i.expires_at)! })),
+    elders: elders.map((e) => ({ id: e.id, name: e.display_name, birthYear: e.birth_year, conditions: e.conditions ?? [],
+      hasTelegram: e.telegram_user_id != null, command: e.command })),
+  };
+}
+
+export async function getInvite(code: string): Promise<{ familyName: string; role: string; inviter: string | null } | null> {
+  if (isDemo) return { familyName: "Gia đình (dữ liệu mẫu)", role: "alerts", inviter: "Nguyên" };
+  const [r] = await sql()`
+    select f.name, i.role, c.display_name as inviter from invites i
+    join families f on f.id = i.family_id left join caregivers c on c.id = i.created_by
+    where i.code = ${code} and i.revoked_at is null and i.expires_at > now()`;
+  return r ? { familyName: r.name, role: r.role, inviter: r.inviter } : null;
 }

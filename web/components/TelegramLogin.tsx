@@ -3,7 +3,7 @@
 import { useEffect, useRef } from "react";
 
 /** Nút "Log in with Telegram". Widget chèn iframe ngay sau thẻ script, nên phải gắn vào một div. */
-export default function TelegramLogin({ bot }: { bot: string }) {
+export default function TelegramLogin({ bot, next }: { bot: string; next?: string }) {
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const el = ref.current;
@@ -14,9 +14,9 @@ export default function TelegramLogin({ bot }: { bot: string }) {
     s.dataset.telegramLogin = bot;
     s.dataset.size = "large";
     s.dataset.radius = "10";
-    s.dataset.authUrl = "/api/auth/telegram";
+    s.dataset.authUrl = next ? `/api/auth/telegram?next=${encodeURIComponent(next)}` : "/api/auth/telegram";
     s.dataset.requestAccess = "write";
     el.appendChild(s);
-  }, [bot]);
+  }, [bot, next]);
   return <div ref={ref} style={{ minHeight: 44 }} />;
 }

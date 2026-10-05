@@ -342,6 +342,32 @@ def family_admins(conn, family_id: str) -> list[dict]:
     ).fetchall()
 
 
+def consume_link_code(conn, code: str, kind: str) -> dict | None:
+    """Dùng mã nối Telegram (một lần). Trả về None nếu sai, hết hạn hoặc sai loại."""
+    return conn.execute(
+        """
+        update link_codes l set used_at = now()
+        from families f
+        where l.code = %s and l.kind = %s and l.used_at is null and l.expires_at > now()
+          and f.id = l.family_id
+        returning l.family_id, l.elder_id, f.name as family_name,
+                  (select display_name from elders where id = l.elder_id) as elder_name
+        """,
+        (code, kind),
+    ).fetchone()
+
+
+def set_family_chat(conn, family_id: str, chat_id: int) -> None:
+    # Một nhóm chỉ thuộc một gia đình: gỡ khỏi gia đình cũ nếu có.
+    conn.execute("update families set telegram_chat_id = null where telegram_chat_id = %s and id <> %s",
+                 (chat_id, family_id))
+    conn.execute("update families set telegram_chat_id = %s where id = %s", (chat_id, family_id))
+
+
+def set_elder_telegram(conn, elder_id: str, telegram_user_id: int) -> None:
+    conn.execute("update elders set telegram_user_id = %s where id = %s", (telegram_user_id, elder_id))
+
+
 # ---------- Cảnh báo ----------
 
 def rules_for(conn, elder_id: str) -> list[Rule]:

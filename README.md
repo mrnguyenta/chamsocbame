@@ -59,6 +59,18 @@ Giới hạn:
 - Đăng nhập lần đầu cần mã MFA, nên chạy script `link_garmin` trên máy tính cá nhân. Sau đó token được mã hoá lưu trong Supabase và tự làm mới.
 - Hệ thống không phải thiết bị y tế; mọi cảnh báo chỉ để tham khảo.
 
+## Cổng cho người chăm sóc (tự phục vụ)
+
+Ai cũng dùng được, không cần quản trị viên tạo sẵn:
+1. Vào website → **Đăng nhập bằng Telegram**.
+2. Lần đầu: **Tạo gia đình** (bạn là quản trị) hoặc mở **link mời** anh chị em gửi.
+3. Trang **Gia đình**: thêm ba mẹ (ngưỡng cảnh báo tự tạo theo bệnh nền), tạo **link mời** cho người khác
+   (quyền: quản trị / nhận cảnh báo / chỉ nhận báo cáo), lấy **mã 6 số** để nối nhóm Telegram (`/ketnoi 123456`)
+   và Telegram của ba mẹ (`/toi 123456`).
+4. Một người có thể ở nhiều gia đình (bên nội, bên ngoại) và chuyển qua lại. Mỗi gia đình chỉ thấy dữ liệu của mình.
+
+Đang chạy: website https://chamsocbame.vercel.app · máy chủ https://chamsocbame-api.vercel.app · cơ sở dữ liệu Supabase `chamsocbame` (Singapore).
+
 ## Hai đường lấy dữ liệu
 
 | Đường | Nhanh | Dữ liệu | Cần cài |
