@@ -1,5 +1,7 @@
 "use client";
 
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 import { IconTelegram } from "@/components/icons";
 import { useFormAction } from "@/components/useFormAction";
 import { type AdminState, claimSystemAdmin, resetPassword, saveBot, saveGeneral } from "./actions";
@@ -14,6 +16,9 @@ function Msg({ s }: { s: AdminState }) {
 
 export function ClaimForm() {
   const f = useFormAction(claimSystemAdmin, INIT);
+  const router = useRouter();
+  // Nhận quyền xong: tải lại trang để hiện bảng quản trị.
+  useEffect(() => { if (f.state.ok) router.refresh(); }, [f.state, router]);
   return (
     <form ref={f.ref} onSubmit={f.onSubmit} style={COL}>
       <label className="field" htmlFor="setup_key">Mã khởi tạo (Claude đã gửi)

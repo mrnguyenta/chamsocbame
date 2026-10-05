@@ -23,6 +23,7 @@ export async function claimSystemAdmin(_: AdminState, form: FormData): Promise<A
   if (isDemo) return NO_DB;
   const id = await getIdentity();
   if (!id) return { ok: false, message: "Hãy đăng nhập trước." };
+  if (id.isSystemAdmin) return { ok: true, message: "Bạn đã là quản trị hệ thống." };
   const expected = process.env.ADMIN_SETUP_KEY;
   if (!expected) return { ok: false, message: "Chưa đặt mã ADMIN_SETUP_KEY trên Vercel." };
   if (!safeEqual(txt(form, "setup_key"), expected)) {
