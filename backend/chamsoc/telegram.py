@@ -47,6 +47,16 @@ class TelegramClient:
             }
         return self._call("sendMessage", payload)
 
+    def set_webhook(self, url: str, secret_token: str) -> dict:
+        """Đăng ký địa chỉ nhận tin nhắn của bot (gọi lại nhiều lần cũng không sao)."""
+        return self._call("setWebhook", {
+            "url": url, "secret_token": secret_token,
+            "allowed_updates": ["message", "callback_query"], "drop_pending_updates": True,
+        })
+
+    def get_me(self) -> dict:
+        return self._call("getMe", {})
+
     def answer_callback(self, callback_id: str, text: str = "") -> None:
         self._call("answerCallbackQuery", {"callback_query_id": callback_id, "text": text})
 

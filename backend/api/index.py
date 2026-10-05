@@ -3,6 +3,7 @@
 - POST /api/cron/sync        mỗi 15 phút: đọc Garmin, đánh giá cảnh báo
 - POST /api/cron/tick        mỗi 5 phút: gửi/leo thang cảnh báo, nhắc thuốc, báo cáo
 - POST /api/telegram/webhook tin nhắn và nút bấm từ Telegram
+- POST /api/telegram/setup   (Bearer CRON_SECRET) đăng ký webhook cho bot sau khi đặt TELEGRAM_BOT_TOKEN
 - POST /api/watch/push       ứng dụng Connect IQ trên đồng hồ gửi dữ liệu mỗi 5 phút
 - POST /api/watch/pair/start đồng hồ xin mã ghép 6 số; GET /api/watch/pair/status hỏi đã ghép chưa
 Supabase pg_cron gọi hai địa chỉ cron (xem supabase/cron.sql).
@@ -64,6 +65,20 @@ def cron_tick(authorization: str | None = Header(default=None)) -> dict:
         jobs.tick(conn, TelegramClient(s.telegram_bot_token), get_provider(s.call_provider),
                   datetime.now(timezone.utc))
     return {"ok": True}
+
+
+@app.post("/api/telegram/setup")
+def telegram_setup(request: Request, authorization: str | None = Header(default=None)) -> dict:
+    """Đăng ký webhook bằng token trong biến môi trường, để không ai phải chép token đi đâu."""
+    s = _settings()
+    _check(authorization, f"Bearer {s.cron_secret}")
+    tg = TelegramClient(s.telegram_bot_token)
+    url = str(request.url_for("telegram_webhook"))
+    if url.startswith("http://"):
+        url = "https://" + url[len("http://"):]
+    tg.set_webhook(url, s.telegram_webhook_secret)
+    me = tg.get_me()
+    return {"ok": True, "bot": me.get("username"), "webhook": url}
 
 
 @app.post("/api/telegram/webhook")
