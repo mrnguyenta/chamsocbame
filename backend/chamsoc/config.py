@@ -13,6 +13,8 @@ class Settings:
     token_encryption_key: str
     call_provider: str = "none"
     web_url: str = ""
+    # Website gọi máy chủ (ví dụ liên kết Garmin Connect) bằng chuỗi bí mật này.
+    internal_api_secret: str = ""
 
     @classmethod
     def from_env(cls) -> "Settings":
@@ -31,4 +33,5 @@ class Settings:
             token_encryption_key=need("TOKEN_ENCRYPTION_KEY"),
             call_provider=os.environ.get("CALL_PROVIDER", "none"),
             web_url=os.environ.get("WEB_URL", ""),
+            internal_api_secret=os.environ.get("INTERNAL_API_SECRET", ""),
         )

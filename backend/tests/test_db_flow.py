@@ -384,3 +384,56 @@ def test_missing_group_titles_are_filled_from_telegram(conn, family):
 
     jobs.fill_chat_titles(conn, Tg())
     assert conn.execute("select title from family_chats where chat_id = -888").fetchone()["title"] == "Nhóm cũ"
+
+
+def test_garmin_link_waits_for_mfa_code_from_website(conn, family):
+    from garminconnect import GarminConnectAuthenticationError
+    from chamsoc import crypto, garmin_link
+
+    key = crypto.generate_key()
+    elder = str(family["ba"]["id"])
+    req = conn.execute("insert into garmin_link_requests (elder_id) values (%s) returning id", (elder,)).fetchone()["id"]
+
+    class Inner:
+        def dumps(self):
+            return '{"token": "t"}'
+
+    class FakeGarmin:
+        def __init__(self, email, password, return_on_mfa):
+            assert return_on_mfa and email == "ba@example.com"
+            self.client = Inner()
+
+        def login(self):
+            return "needs_mfa", None
+
+        def resume_login(self, _state, code):
+            if code != "123456":
+                raise GarminConnectAuthenticationError("bad code")
+            return None, None
+
+        def get_full_name(self):
+            return "Ba Hùng"
+
+    codes = iter([None, "000000", None, "123456"])
+    t = [0.0]
+
+    def fake_sleep(s):
+        t[0] += s
+        c = next(codes, None)
+        if c:
+            conn.execute("update garmin_link_requests set mfa_code = %s where id = %s", (c, req))
+
+    status = garmin_link.link(conn, key, str(req), elder, "ba@example.com", "pw", wait_s=60,
+                              make_client=FakeGarmin, sleep=fake_sleep, clock=lambda: t[0])
+    assert status == "done"
+    row = conn.execute("select status, message, mfa_code from garmin_link_requests where id = %s", (req,)).fetchone()
+    assert row["status"] == "done" and "Ba Hùng" in row["message"] and row["mfa_code"] is None
+    saved = conn.execute("select token_ciphertext, status from garmin_accounts where elder_id = %s", (elder,)).fetchone()
+    assert crypto.decrypt(key, saved["token_ciphertext"]) == '{"token": "t"}'
+
+    # Không ai nhập mã: hết giờ
+    req2 = conn.execute("insert into garmin_link_requests (elder_id) values (%s) returning id", (elder,)).fetchone()["id"]
+    t2 = [0.0]
+    status = garmin_link.link(conn, key, str(req2), elder, "ba@example.com", "pw", wait_s=10, make_client=FakeGarmin,
+                              sleep=lambda s: t2.__setitem__(0, t2[0] + s), clock=lambda: t2[0])
+    assert status == "expired"

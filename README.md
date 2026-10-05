@@ -73,6 +73,11 @@ qua Zalo/Messenger/Telegram. Đưa app lên Connect IQ Store: xem `watch/STORE.m
 webhook cho máy chủ; biến `TELEGRAM_BOT_TOKEN` chỉ còn là dự phòng), link Store của app đồng hồ, email liên hệ,
 xem danh sách tài khoản, đặt lại mật khẩu khi ai đó quên, cấp quyền quản trị.
 
+**Garmin Connect** (giấc ngủ chi tiết, HRV, SpO2 ban đêm): trang người thân → khối "Đồng hồ & thiết bị" →
+**Liên kết Garmin Connect**. Website gửi email/mật khẩu qua máy chủ (`/api/garmin/link`, bảo vệ bằng
+`INTERNAL_API_SECRET` đặt ở cả hai dự án Vercel) để đăng nhập; Garmin gửi mã xác thực về email thì nhập ngay trên
+trang (máy chủ chờ tối đa 4 phút). Chỉ lưu token đã mã hoá, không lưu mật khẩu. `link_garmin.py` vẫn dùng được.
+
 Người chăm sóc:
 1. Vào website → **Đăng ký** bằng email (hoặc được quản trị gia đình thêm sẵn).
 2. Lần đầu: **Tạo gia đình** (bạn là quản trị) hoặc mở **link mời** anh chị em gửi.

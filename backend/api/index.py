@@ -3,6 +3,7 @@
 - POST /api/cron/sync        mỗi 15 phút: đọc Garmin, đánh giá cảnh báo
 - POST /api/cron/tick        mỗi 5 phút: gửi/leo thang cảnh báo, nhắc thuốc, báo cáo
 - POST /api/telegram/webhook tin nhắn và nút bấm từ Telegram
+- POST /api/garmin/link      (Bearer INTERNAL_API_SECRET) website liên kết Garmin Connect cho một người thân
 - POST /api/telegram/setup   (Bearer CRON_SECRET) đăng ký webhook cho bot sau khi đặt TELEGRAM_BOT_TOKEN
 - POST /api/watch/push       ứng dụng Connect IQ trên đồng hồ gửi dữ liệu mỗi 5 phút
 - POST /api/watch/pair/start đồng hồ xin mã ghép 6 số; GET /api/watch/pair/status hỏi đã ghép chưa
@@ -103,6 +104,33 @@ async def telegram_webhook(
         # Luôn trả 200 để Telegram không gửi lại mãi một tin lỗi.
         logging.exception("Xử lý tin Telegram lỗi")
     return {"ok": True}
+
+
+class GarminLink(BaseModel):
+    request_id: str
+    elder_id: str
+    email: str = Field(max_length=200)
+    password: str = Field(max_length=200)
+
+
+@app.post("/api/garmin/link")
+def garmin_link_endpoint(body: GarminLink, authorization: str | None = Header(default=None)) -> dict:
+    """Đăng nhập Garmin và lưu token đã mã hoá. Có thể chờ tới ~4 phút nếu Garmin hỏi mã xác thực."""
+    from chamsoc import garmin_link
+
+    s = _settings()
+    if not s.internal_api_secret:
+        raise HTTPException(status_code=503)
+    _check(authorization, f"Bearer {s.internal_api_secret}")
+    with db.connect(s.database_url) as conn:
+        status = garmin_link.link(conn, s.token_encryption_key, body.request_id, body.elder_id,
+                                  body.email.strip(), body.password)
+        if status == "done":
+            try:  # lấy dữ liệu ngay, không đợi lượt đồng bộ 15 phút
+                jobs.sync_all(conn, s, _tg(conn, s), datetime.now(timezone.utc))
+            except Exception:
+                logging.exception("Đồng bộ Garmin ngay sau khi liên kết lỗi")
+    return {"status": status}
 
 
 class WatchPush(BaseModel):

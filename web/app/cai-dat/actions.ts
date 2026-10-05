@@ -170,6 +170,15 @@ export async function deleteDevice(form: FormData): Promise<void> {
   revalidatePath("/", "layout");
 }
 
+/** Gỡ liên kết Garmin Connect của một người thân (xoá token đã lưu). */
+export async function deleteGarmin(form: FormData): Promise<void> {
+  if (isDemo) return;
+  const s = await admin();
+  await sql()`delete from garmin_accounts g using elders e
+              where g.elder_id = ${String(form.get("elder_id"))} and e.id = g.elder_id and e.family_id = ${s.familyId}`;
+  revalidatePath("/", "layout");
+}
+
 /** Ghép đồng hồ: con cháu nhập mã 6 số đang hiện trên đồng hồ. */
 export async function claimWatch(_: ActionState, form: FormData): Promise<ActionState> {
   if (isDemo) return { ok: true, message: "Chế độ demo: giả lập đã kết nối đồng hồ." };

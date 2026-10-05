@@ -17,7 +17,8 @@ import { getBot } from "@/lib/bot";
 import { getElderDetail, getFamilyAdmin, getSettings } from "@/lib/data";
 import { age, fmtAgo, fmtDateTime, fmtDuration, fmtNum, fmtTime } from "@/lib/format";
 import { CONDITIONS, RULE_GROUPS } from "@/lib/metrics";
-import { deleteDevice, deleteMed } from "../../cai-dat/actions";
+import GarminLinkForm from "@/components/GarminLinkForm";
+import { deleteDevice, deleteGarmin, deleteMed } from "../../cai-dat/actions";
 import { AddMedForm, AddRuleForm, RuleForm, WatchKeyForm } from "../../cai-dat/forms";
 import { EditElderForm, LinkCodeForm } from "../../gia-dinh/forms";
 
@@ -319,6 +320,18 @@ export default async function ElderPage({ params }: { params: Promise<{ id: stri
                 {GARMIN_STATUS[es.garmin.status]?.label ?? es.garmin.status}</span>}
             </li>
           </ul>
+          {canEdit && (
+            <details className="more" open={!es?.garmin || es.garmin.status === "needs_relogin"}>
+              <summary className="btn small">{es?.garmin ? "Liên kết lại Garmin Connect" : "Liên kết Garmin Connect"}</summary>
+              <div style={{ marginTop: 10 }}><GarminLinkForm elderId={e.id} relink={!!es?.garmin} /></div>
+            </details>
+          )}
+          {canEdit && es?.garmin && (
+            <form action={deleteGarmin}>
+              <input type="hidden" name="elder_id" value={e.id} />
+              <button className="btn ghost small" type="submit" style={{ color: "var(--coral-ink)" }}>Gỡ liên kết Garmin Connect</button>
+            </form>
+          )}
           <Link className="btn primary small" href={`/ket-noi-dong-ho?nguoi=${e.id}`} style={{ alignSelf: "flex-start" }}>
             Kết nối đồng hồ bằng mã 6 số <span className="arrow"><IconChevron size={16} /></span>
           </Link>
