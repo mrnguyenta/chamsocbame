@@ -384,3 +384,5 @@ details.block > .block-body { padding: 0 18px 18px; display: flex; flex-directio
 .blocks-grid > details.block > summary h2 { font-size: 16px; }
 .blocks-grid > details.block > summary .muted { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .blocks-grid > details.block > .block-body { padding: 0 14px 14px; }
+/* Danh sách dài trong thẻ (cảnh báo 30 ngày): cao tối đa bằng thẻ vận động, cuộn bên trong */
+.scroll-list { max-height: 400px; overflow-y: auto; overscroll-behavior: contain; padding-right: 4px; }

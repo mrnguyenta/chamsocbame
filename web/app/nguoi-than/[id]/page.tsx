@@ -256,12 +256,12 @@ export default async function ElderPage({ params }: { params: Promise<{ id: stri
 
           <h2 className="section-title" style={{ margin: "4px 0 -10px" }}>{t("Lịch sử & cài đặt", "History & settings")}</h2>
           <div className="blocks-grid">
-            <Block id="canh-bao" icon={<IconBell size={20} />} tile="tile-coral" title={t("Cảnh báo", "Alerts")}
+            <Block id="canh-bao" group="khoi" icon={<IconBell size={20} />} tile="tile-coral" title={t("Cảnh báo", "Alerts")}
               sub={openAlerts.length ? t(`${openAlerts.length} đang mở · 30 ngày qua`, `${openAlerts.length} open · last 30 days`)
                 : t("Không có cảnh báo đang mở · 30 ngày qua", "No open alerts · last 30 days")}
               >
                 {d.alerts.length === 0 ? <div className="muted">{t("Không có cảnh báo.", "No alerts.")}</div> : (
-                <ul className="list">
+                <ul className="list scroll-list">
                   {d.alerts.map((a) => (
                     <li key={a.id} className="list-row">
                       <span className={`icon-tile ${a.resolvedAt ? "tile-teal" : "tile-coral"}`}><IconFile size={20} /></span>
@@ -281,7 +281,7 @@ export default async function ElderPage({ params }: { params: Promise<{ id: stri
               )}
             </Block>
 
-            <Block id="nguong" icon={<IconAlert size={20} />} tile="tile-amber" title={t("Ngưỡng cảnh báo", "Alert thresholds")}
+            <Block id="nguong" group="khoi" icon={<IconAlert size={20} />} tile="tile-amber" title={t("Ngưỡng cảnh báo", "Alert thresholds")}
               sub={t(`${rules.filter((r) => r.enabled).length}/${rules.length} ngưỡng đang bật`,
                 `${rules.filter((r) => r.enabled).length}/${rules.length} thresholds on`)}>
               {!canEdit && <div className="banner info">{t("Bạn đang xem. Chỉ quản trị gia đình mới sửa được.", "View only. Only family admins can make changes.")}</div>}
@@ -308,7 +308,7 @@ export default async function ElderPage({ params }: { params: Promise<{ id: stri
               {canEdit && <AddRuleForm elderId={e.id} />}
             </Block>
 
-            <Block id="thuoc" icon={<IconPill size={20} />} tile="tile-violet" title={t("Thuốc", "Medications")}
+            <Block id="thuoc" group="khoi" icon={<IconPill size={20} />} tile="tile-violet" title={t("Thuốc", "Medications")}
               sub={t(`${es?.meds.length ?? 0} loại thuốc · bot nhắc đúng giờ`, `${es?.meds.length ?? 0} medicines · reminders on time`)}>
               <div className="muted" style={{ fontSize: 13 }}>{t("Quá 60 phút chưa bấm “Đã uống” thì bot báo cả nhà.",
                 "If “Taken” isn't tapped within 60 minutes, the bot tells the whole family.")}</div>
@@ -336,7 +336,7 @@ export default async function ElderPage({ params }: { params: Promise<{ id: stri
               {canEdit && <AddMedForm elderId={e.id} />}
             </Block>
 
-            <Block id="dong-ho" icon={<IconWatch size={20} />} tile="tile-blue" title={t("Đồng hồ & thiết bị", "Watch & devices")}
+            <Block id="dong-ho" group="khoi" icon={<IconWatch size={20} />} tile="tile-blue" title={t("Đồng hồ & thiết bị", "Watch & devices")}
               sub={e.watchLabel
                 ? `${e.watchLabel}${e.watchBattery != null ? ` · ${t("pin", "battery")} ${e.watchBattery}%` : ""} · ${t("gửi", "sent")} ${fmtAgo(e.lastDataAt, undefined, lang)}`
                 : t("Chưa gắn đồng hồ", "No watch set up")}>
@@ -393,7 +393,7 @@ export default async function ElderPage({ params }: { params: Promise<{ id: stri
               )}
             </Block>
 
-            <Block id="thong-tin" icon={<IconUser size={20} />} tile="tile-teal" title={t("Thông tin & Telegram", "Info & Telegram")}
+            <Block id="thong-tin" group="khoi" icon={<IconUser size={20} />} tile="tile-teal" title={t("Thông tin & Telegram", "Info & Telegram")}
               sub={[age(e.birthYear, lang), e.conditions.map((c) => CONDITIONS[c] ?? c).join(", ") || t("chưa có bệnh nền", "no health conditions"),
                 info?.hasTelegram ? t("đã nối Telegram", "Telegram linked") : t("chưa nối Telegram", "Telegram not linked")].filter(Boolean).join(" · ")}>
               {info && canEdit && <EditElderForm elder={info} />}
