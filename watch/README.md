@@ -92,7 +92,7 @@ Giao diện: tiếng Việt (`resources-vie/`) khi đồng hồ để ngôn ng�
 ## Cài lên đồng hồ
 
 **Cách 1 — Connect IQ Store (khuyên dùng, gọn nhất cho người dùng):**
-1. Một lần, người phát triển: đăng ký tài khoản miễn phí ở https://apps.developer.garmin.com,
+1. Một lần, người phát triển: đăng ký tài khoản miễn phí ở https://apps-developer.garmin.com,
    tải `chamsoc.iq` lên, điền mô tả và ảnh, gửi duyệt. Ứng dụng **Beta** chỉ cài được lên đồng hồ
    của chính tài khoản phát triển, nên để cài cho ba mẹ (tài khoản Garmin khác) cần **phát hành**.
 2. Người dùng (con cháu làm giúp, khoảng 3 phút), theo trang **Kết nối đồng hồ** trên website:

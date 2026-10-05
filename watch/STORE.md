@@ -26,18 +26,19 @@ cần bản chính thức (mục 2).
 1. Tải `chamsoc-beta.iq`:
    https://github.com/mrnguyenta/chamsocbame/releases/download/watch-latest/chamsoc-beta.iq
    (Safari → Tải về → nằm trong app Tệp, thư mục Tải về).
-2. Mở https://apps.developer.garmin.com, đăng nhập tài khoản Garmin (cùng tài khoản đang dùng Garmin Connect).
+2. Mở https://apps-developer.garmin.com, đăng nhập tài khoản Garmin (cùng tài khoản đang dùng Garmin Connect).
    Lần đầu: đồng ý điều khoản nhà phát triển.
 3. **Upload an App** → chọn file `chamsoc-beta.iq` → **đánh dấu "Beta App"** → điền tên
    "Chăm Sóc Ba Mẹ", mô tả (mục 3), danh mục Health & Fitness → gửi.
-4. Trên iPhone: **Garmin Connect** → biểu tượng thiết bị → chọn đồng hồ → **Ứng dụng Connect IQ**
-   (hoặc app **Connect IQ Store**) → tìm "Chăm Sóc Ba Mẹ" (hoặc mục Ứng dụng của tôi) → **Cài đặt**.
-5. Bản mới: tải `chamsoc-beta.iq` mới về, vào trang ứng dụng trên apps.developer.garmin.com →
+4. Cài xuống đồng hồ: trên trang quản lý (apps-developer.garmin.com) mở app Beta vừa tải lên → nút
+   **Download** → chọn đồng hồ. App được cài ở lần đồng bộ kế tiếp của Garmin Connect trên điện thoại
+   (mở Garmin Connect, kéo xuống để đồng bộ).
+5. Bản mới: tải `chamsoc-beta.iq` mới về, vào trang ứng dụng trên apps-developer.garmin.com →
    **Upload a new version**. Đồng hồ tự cập nhật qua Garmin Connect.
 
 ## 2. Tải lên bản chính thức (cho mọi người)
 
-1. Đăng nhập https://apps.developer.garmin.com bằng tài khoản Garmin (miễn phí).
+1. Đăng nhập https://apps-developer.garmin.com bằng tài khoản Garmin (miễn phí).
 2. **Upload an App** → chọn `chamsoc.iq` (không đánh dấu Beta).
 3. Điền thông tin theo mục 3, thêm ảnh chụp màn hình đồng hồ (chụp từ chính Fenix 7 hoặc trình giả lập).
 4. Gửi duyệt. Garmin thường duyệt trong vài ngày làm việc.

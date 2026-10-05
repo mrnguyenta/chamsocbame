@@ -20,6 +20,29 @@ function Title({ icon, tile, title, sub }: { icon: React.ReactNode; tile: string
   );
 }
 
+const RELEASE = "https://github.com/mrnguyenta/chamsocbame/releases/download/watch-latest";
+// Khớp danh sách <iq:product> trong watch/manifest.xml.
+const DEVICES: [string, string][] = [
+  ["fenix7", "Fenix 7"], ["fenix7s", "Fenix 7S"], ["fenix7x", "Fenix 7X"], ["fenix7pro", "Fenix 7 Pro"],
+  ["fenix7spro", "Fenix 7S Pro"], ["fenix7xpro", "Fenix 7X Pro"], ["venu3", "Venu 3"], ["venu3s", "Venu 3S"],
+  ["venu441mm", "Venu 4 (41 mm)"], ["venu445mm", "Venu 4 (45 mm)"], ["vivoactive5", "vívoactive 5"], ["vivoactive6", "vívoactive 6"],
+];
+
+/** Thời điểm build file .iq mới nhất trên GitHub Release (cache 10 phút; lỗi mạng thì bỏ qua). */
+async function latestRelease(): Promise<{ builtAt: string } | null> {
+  try {
+    const r = await fetch("https://api.github.com/repos/mrnguyenta/chamsocbame/releases/tags/watch-latest", {
+      next: { revalidate: 600 }, signal: AbortSignal.timeout(5000),
+    });
+    if (!r.ok) return null;
+    const j = await r.json() as { assets?: { name: string; updated_at: string }[] };
+    const a = j.assets?.find((x) => x.name === "chamsoc-beta.iq");
+    return a ? { builtAt: a.updated_at } : null;
+  } catch {
+    return null;
+  }
+}
+
 const when = (iso: string | null) => (iso ? new Date(iso).toLocaleString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh" }) : "chưa có");
 
 /** Quản trị hệ thống: bot Telegram, link Store, tài khoản. Chỉ tài khoản is_system_admin. */
@@ -43,8 +66,8 @@ export default async function AdminPage() {
     );
   }
 
-  const [bot, stats, settings, accounts] = await Promise.all([
-    getBot(), getSystemStats(), readSettings(["watch_app_url", "contact_email"]), getSystemAdmins(),
+  const [bot, stats, settings, accounts, release] = await Promise.all([
+    getBot(), getSystemStats(), readSettings(["watch_app_url", "contact_email"]), getSystemAdmins(), latestRelease(),
   ]);
   const tiles: [string, number | string][] = [
     ["Gia đình", stats.families], ["Ba mẹ được theo dõi", stats.elders], ["Người chăm sóc", stats.caregivers],
@@ -105,9 +128,28 @@ export default async function AdminPage() {
           <section className="card">
             <Title icon={<IconWatch size={20} />} tile="tile-teal" title="Ứng dụng đồng hồ" />
             <GeneralForm watchAppUrl={settings.watch_app_url ?? ""} contactEmail={settings.contact_email ?? ""} />
-            <p className="muted" style={{ fontSize: 13, marginBottom: 0 }}>
-              File cài đặt mới nhất: <a href="https://github.com/mrnguyenta/chamsocbame/releases/tag/watch-latest" target="_blank" rel="noreferrer">GitHub Release</a>
-            </p>
+          </section>
+
+          <section className="card">
+            <Title icon={<IconWatch size={20} />} tile="tile-violet" title="Tải file cài đặt"
+              sub={release ? `Bản build lúc ${when(release.builtAt)}` : "Bản build mới nhất"} />
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              <a className="btn primary" href={`${RELEASE}/chamsoc-beta.iq`}>Tải bản Beta (chamsoc-beta.iq)</a>
+              <div className="muted" style={{ fontSize: 13 }}>Tải lên Garmin, đánh dấu “Beta App”. Sau đó trong trang Garmin bấm Download, chọn đồng hồ; app cài ở lần đồng bộ kế tiếp (chỉ đồng hồ trong tài khoản Garmin của bạn).</div>
+              <a className="btn" href={`${RELEASE}/chamsoc.iq`}>Tải bản chính thức (chamsoc.iq)</a>
+              <div className="muted" style={{ fontSize: 13 }}>Tải lên Garmin, không đánh dấu Beta, để Garmin duyệt cho mọi người cài.</div>
+              <a className="btn small" href="https://apps-developer.garmin.com" target="_blank" rel="noreferrer" style={{ alignSelf: "flex-start" }}>
+                Mở trang tải lên của Garmin ↗
+              </a>
+              <details className="more">
+                <summary className="muted" style={{ fontSize: 14 }}>File chép qua cáp USB (.prg) cho từng đồng hồ</summary>
+                <ul style={{ margin: "8px 0 0", paddingLeft: 18, display: "flex", flexDirection: "column", gap: 4, fontSize: 14 }}>
+                  {DEVICES.map(([id, label]) => (
+                    <li key={id}><a href={`${RELEASE}/chamsoc-${id}.prg`}>{label}</a></li>
+                  ))}
+                </ul>
+              </details>
+            </div>
           </section>
         </aside>
       </div>
