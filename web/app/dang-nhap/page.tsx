@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { HeartArt, IconBell, IconTelegram, IconUsers, IconWatch } from "@/components/icons";
 import TelegramLogin from "@/components/TelegramLogin";
 import { getIdentity, getSession } from "@/lib/auth";
+import { getBot } from "@/lib/bot";
 
 export const dynamic = "force-dynamic";
 
@@ -14,7 +15,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
   const safeNext = next && next.startsWith("/") && !next.startsWith("//") ? next : undefined;
   if (await getSession()) redirect(safeNext ?? "/");
   if (await getIdentity()) redirect(safeNext ?? "/bat-dau");
-  const bot = process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME;
+  const bot = (await getBot()).username;
   const points = [
     { icon: <IconWatch size={20} />, tile: "tile-teal", text: "Xem nhịp tim, giấc ngủ, bước chân của ba mẹ từ đồng hồ Garmin" },
     { icon: <IconBell size={20} />, tile: "tile-coral", text: "Cảnh báo ngay vào nhóm Telegram khi có chỉ số bất thường" },

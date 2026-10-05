@@ -320,3 +320,14 @@ def test_sql_default_rules_match_python(conn, family):
     # Thêm bệnh tăng huyết áp: chỉ thêm 3 ngưỡng huyết áp còn thiếu
     assert conn.execute("select chamsoc_ensure_default_rules(%s, %s) as n",
                         (e, ["tieu_duong", "tang_huyet_ap"])).fetchone()["n"] == 3
+
+
+def test_bot_token_from_admin_page_overrides_env(conn, monkeypatch):
+    import api.index as api
+    from chamsoc.config import Settings
+
+    s = Settings(database_url=URL, telegram_bot_token="env-token", telegram_webhook_secret="h",
+                 cron_secret="c", token_encryption_key="k")
+    assert api._tg(conn, s)._base.endswith("/botenv-token")
+    conn.execute("insert into app_settings (key, value) values ('telegram_bot_token', '123:abc')")
+    assert api._tg(conn, s)._base.endswith("/bot123:abc")

@@ -8,7 +8,6 @@ import {
 } from "./actions";
 
 const INIT: FormState = { ok: false, message: "" };
-const BOT = process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME;
 
 function Msg({ s }: { s: FormState }) {
   if (!s.message) return null;
@@ -132,7 +131,8 @@ export function AddElderForm() {
 }
 
 /** Mã 6 số nối nhóm Telegram gia đình (kind=group) hoặc Telegram của ba mẹ (kind=elder). */
-export function LinkCodeForm({ kind, elderId, label }: { kind: "group" | "elder"; elderId?: string; label: string }) {
+export function LinkCodeForm({ kind, elderId, label, bot }: { kind: "group" | "elder"; elderId?: string; label: string; bot?: string | null }) {
+  const BOT = bot ?? null;
   const [state, action, pending] = useActionState(createLinkCode, INIT);
   const code = state.value;
   const deep = code && BOT ? (kind === "group" ? `https://t.me/${BOT}?startgroup=${code}` : `https://t.me/${BOT}?start=${code}`) : null;

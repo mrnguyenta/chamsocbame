@@ -24,7 +24,8 @@ class Settings:
 
         return cls(
             database_url=need("DATABASE_URL"),
-            telegram_bot_token=need("TELEGRAM_BOT_TOKEN"),
+            # Có thể để trống: token nhập ở trang /quan-tri được lưu trong bảng app_settings.
+            telegram_bot_token=os.environ.get("TELEGRAM_BOT_TOKEN", ""),
             telegram_webhook_secret=need("TELEGRAM_WEBHOOK_SECRET"),
             cron_secret=need("CRON_SECRET"),
             token_encryption_key=need("TOKEN_ENCRYPTION_KEY"),

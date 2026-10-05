@@ -598,3 +598,8 @@ def record_missed_med(conn, log_id: str, message: str) -> None:
         """,
         (message, log_id),
     )
+
+
+def get_setting(conn, key: str) -> str | None:
+    row = conn.execute("select value from app_settings where key = %s", (key,)).fetchone()
+    return row["value"] if row else None

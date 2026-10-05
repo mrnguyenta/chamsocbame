@@ -38,6 +38,11 @@ def _settings() -> Settings:
     return Settings.from_env()
 
 
+def _tg(conn, s: Settings) -> TelegramClient:
+    """Token bot: ưu tiên token nhập ở trang /quan-tri (bảng app_settings), không có thì lấy biến môi trường."""
+    return TelegramClient(db.get_setting(conn, "telegram_bot_token") or s.telegram_bot_token)
+
+
 def _check(given: str | None, expected: str) -> None:
     if not given or not hmac.compare_digest(given, expected):
         raise HTTPException(status_code=401)
@@ -53,7 +58,7 @@ def cron_sync(authorization: str | None = Header(default=None)) -> dict:
     s = _settings()
     _check(authorization, f"Bearer {s.cron_secret}")
     with db.connect(s.database_url) as conn:
-        n = jobs.sync_all(conn, s, TelegramClient(s.telegram_bot_token), datetime.now(timezone.utc))
+        n = jobs.sync_all(conn, s, _tg(conn, s), datetime.now(timezone.utc))
     return {"synced": n}
 
 
@@ -62,17 +67,18 @@ def cron_tick(authorization: str | None = Header(default=None)) -> dict:
     s = _settings()
     _check(authorization, f"Bearer {s.cron_secret}")
     with db.connect(s.database_url) as conn:
-        jobs.tick(conn, TelegramClient(s.telegram_bot_token), get_provider(s.call_provider),
+        jobs.tick(conn, _tg(conn, s), get_provider(s.call_provider),
                   datetime.now(timezone.utc))
     return {"ok": True}
 
 
 @app.post("/api/telegram/setup")
 def telegram_setup(request: Request, authorization: str | None = Header(default=None)) -> dict:
-    """Đăng ký webhook bằng token trong biến môi trường, để không ai phải chép token đi đâu."""
+    """Đăng ký lại webhook cho bot (token lấy từ trang /quan-tri hoặc biến môi trường)."""
     s = _settings()
     _check(authorization, f"Bearer {s.cron_secret}")
-    tg = TelegramClient(s.telegram_bot_token)
+    with db.connect(s.database_url) as conn:
+        tg = _tg(conn, s)
     url = str(request.url_for("telegram_webhook"))
     if url.startswith("http://"):
         url = "https://" + url[len("http://"):]
@@ -91,7 +97,7 @@ async def telegram_webhook(
     update = await request.json()
     try:
         with db.connect(s.database_url) as conn:
-            jobs.handle_update(conn, TelegramClient(s.telegram_bot_token),
+            jobs.handle_update(conn, _tg(conn, s),
                                get_provider(s.call_provider), update, datetime.now(timezone.utc))
     except Exception:
         # Luôn trả 200 để Telegram không gửi lại mãi một tin lỗi.
@@ -128,7 +134,7 @@ def watch_push(body: WatchPush, authorization: str | None = Header(default=None)
         # Garmin dùng số âm cho "chưa có dữ liệu" (stress -1, -2).
         if payload["stress"] is not None and payload["stress"] < 0:
             payload["stress"] = None
-        jobs.handle_watch_push(conn, TelegramClient(s.telegram_bot_token),
+        jobs.handle_watch_push(conn, _tg(conn, s),
                                get_provider(s.call_provider), device, payload,
                                datetime.now(timezone.utc))
     return {"ok": True}

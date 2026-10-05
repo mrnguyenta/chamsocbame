@@ -2,6 +2,7 @@ import Link from "next/link";
 import { IconChevron, IconGear, IconHeart, IconTelegram, IconUsers } from "@/components/icons";
 import { Avatar } from "@/components/ui";
 import { requireSession } from "@/lib/auth";
+import { getBot } from "@/lib/bot";
 import { getFamilyAdmin } from "@/lib/data";
 import { age } from "@/lib/format";
 import { CONDITIONS } from "@/lib/metrics";
@@ -26,6 +27,7 @@ export default async function FamilyPage({ searchParams }: { searchParams: Promi
   const { moi } = await searchParams;
   const f = await getFamilyAdmin(session.familyId, session.caregiverId);
   const admin = session.isAdmin;
+  const bot = (await getBot()).username;
 
   return (
     <main className="container">
@@ -74,7 +76,7 @@ export default async function FamilyPage({ searchParams }: { searchParams: Promi
                   <span className={`chip ${e.hasTelegram ? "tone-ok" : "tone-neutral"}`}>{e.hasTelegram ? "Đã nối Telegram" : "Chưa nối Telegram"}</span>
                   <Link className="btn ghost small" href={`/cai-dat?nguoi=${e.id}`}>Cài đặt <IconChevron size={14} /></Link>
                   {admin && !e.hasTelegram && (
-                    <div style={{ width: "100%" }}><LinkCodeForm kind="elder" elderId={e.id} label={`Nối Telegram của ${e.name} (nhắc thuốc, nhập huyết áp)`} /></div>
+                    <div style={{ width: "100%" }}><LinkCodeForm bot={bot} kind="elder" elderId={e.id} label={`Nối Telegram của ${e.name} (nhắc thuốc, nhập huyết áp)`} /></div>
                   )}
                 </li>
               ))}
@@ -142,7 +144,7 @@ export default async function FamilyPage({ searchParams }: { searchParams: Promi
                 <p className="muted" style={{ marginTop: 0 }}>
                   Tạo (hoặc dùng) một nhóm Telegram có anh chị em, thêm bot vào nhóm, rồi gõ mã bên dưới trong nhóm.
                 </p>
-                <LinkCodeForm kind="group" label={f.hasTelegramGroup ? "Nối lại nhóm khác" : "Lấy mã nối nhóm"} />
+                <LinkCodeForm bot={bot} kind="group" label={f.hasTelegramGroup ? "Nối lại nhóm khác" : "Lấy mã nối nhóm"} />
               </>
             ) : <p className="muted" style={{ margin: 0 }}>Người quản trị gia đình nối nhóm Telegram.</p>}
           </section>

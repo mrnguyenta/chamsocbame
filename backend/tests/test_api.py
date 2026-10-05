@@ -39,6 +39,14 @@ def test_telegram_setup_registers_webhook(monkeypatch):
         return {"username": "chamsoc_bot"} if method == "getMe" else True
 
     monkeypatch.setattr(api.TelegramClient, "_call", fake_call)
+    from contextlib import contextmanager
+
+    @contextmanager
+    def fake_connect(url):
+        yield None
+
+    monkeypatch.setattr(api.db, "connect", fake_connect)
+    monkeypatch.setattr(api.db, "get_setting", lambda conn, key: None)
     client = TestClient(api.app, base_url="https://chamsocbame-api.vercel.app")
     assert client.post("/api/telegram/setup").status_code == 401
     r = client.post("/api/telegram/setup", headers={"Authorization": "Bearer c"})

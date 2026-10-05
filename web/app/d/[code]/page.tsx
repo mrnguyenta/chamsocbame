@@ -4,6 +4,7 @@ import { HeartArt } from "@/components/icons";
 import ShareLink from "@/components/ShareLink";
 import TelegramLogin from "@/components/TelegramLogin";
 import { getIdentity } from "@/lib/auth";
+import { getBot } from "@/lib/bot";
 import { getPairingState } from "@/lib/data";
 
 export const dynamic = "force-dynamic";
@@ -19,7 +20,7 @@ export default async function WatchLinkPage({ params }: { params: Promise<{ code
   const target = `/ket-noi-dong-ho?ma=${code}`;
   const state = await getPairingState(code);
   if (state === "pending" && (await getIdentity())) redirect(target);
-  const bot = process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME;
+  const bot = (await getBot()).username;
   const pretty = `${code.slice(0, 3)} ${code.slice(3)}`;
 
   return (

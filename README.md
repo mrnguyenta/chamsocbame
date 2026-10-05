@@ -66,6 +66,10 @@ Giới hạn:
 được tạo tự động. Nếu thông báo hiện trên điện thoại của ba mẹ, trang đó có nút gửi link cho con cháu
 qua Zalo/Messenger/Telegram. Đưa app lên Connect IQ Store: xem `watch/STORE.md`.
 
+**Bot Telegram:** dán token BotFather ở trang `/quan-tri` (cần mã quản trị `ADMIN_SETUP_KEY` đặt trên Vercel).
+Trang kiểm tra token với Telegram, lưu vào bảng `app_settings` và tự đăng ký webhook cho máy chủ; website và
+máy chủ đọc token từ đó (biến `TELEGRAM_BOT_TOKEN` chỉ còn là dự phòng). Sau đó gõ `/setdomain` trong BotFather.
+
 Đầy đủ, không cần quản trị viên tạo sẵn:
 1. Vào website → **Đăng nhập bằng Telegram**.
 2. Lần đầu: **Tạo gia đình** (bạn là quản trị) hoặc mở **link mời** anh chị em gửi.
