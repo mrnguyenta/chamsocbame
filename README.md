@@ -96,7 +96,7 @@ web/                      Website Next.js theo mockup
   app/cai-dat/            Cài đặt: bệnh nền, ngưỡng, thuốc, giờ báo cáo, tạo mã đồng hồ
   app/dang-nhap/          Đăng nhập bằng Telegram
   lib/demo.ts             Dữ liệu mẫu khi chưa có DATABASE_URL (chế độ demo để trình bày)
-watch/                    Ứng dụng Connect IQ (Monkey C) gửi dữ liệu mỗi 5 phút — CHƯA biên dịch, xem watch/README.md
+watch/                    Ứng dụng Connect IQ (Monkey C) gửi dữ liệu mỗi 5 phút — GitHub Actions tự build, xem watch/README.md
 backend/
   api/index.py            FastAPI cho Vercel (cron + webhook Telegram)
   chamsoc/
@@ -147,7 +147,8 @@ npm run dev                                                                 # xe
 
 ## Việc tiếp theo
 
-- [ ] Build ứng dụng đồng hồ bằng Connect IQ SDK, chạy trên trình giả lập rồi trên đồng hồ thật, sửa lỗi build nếu có.
+- [x] Build ứng dụng đồng hồ (GitHub Actions, 6 dòng máy).
+- [ ] Chạy thử ứng dụng đồng hồ trên đồng hồ thật.
 - [ ] Đưa ứng dụng đồng hồ lên Connect IQ Store dạng beta để chỉnh cài đặt từ điện thoại.
 - [ ] Thử với tài khoản Garmin thật, chỉnh lại tên trường dữ liệu nếu khác.
 - [ ] Báo cáo tuần kèm ảnh biểu đồ, tóm tắt bằng AI.

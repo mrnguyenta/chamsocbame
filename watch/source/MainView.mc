@@ -89,14 +89,17 @@ class MainView extends WatchUi.View {
         var status = "";
         var color  = Graphics.COLOR_WHITE;
         var app    = getChamSocApp();
-        var code   = Storage.getValue("last_status");
+        // Storage trả về kiểu chung; ép về Number để so sánh đúng kiểu.
+        var raw     = Storage.getValue("last_status");
+        var hasCode = raw instanceof Lang.Number;
+        var code    = hasCode ? raw as Lang.Number : 0;
         if (!Payload.isConfigured()) {
             status = str(Rez.Strings.StatusNotSet);
             color  = Graphics.COLOR_YELLOW;
         } else if (app.isSending()) {
             status = str(Rez.Strings.StatusSending);
             color  = Graphics.COLOR_WHITE;
-        } else if (code == null) {
+        } else if (!hasCode) {
             status = str(Rez.Strings.StatusNever);
             color  = Graphics.COLOR_WHITE;
         } else if (code == 200) {

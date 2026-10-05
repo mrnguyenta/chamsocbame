@@ -1,9 +1,7 @@
 # Ứng dụng đồng hồ Garmin "Chăm Sóc Ba Mẹ"
 
-> **Lưu ý quan trọng:** mã nguồn trong thư mục này **CHƯA được biên dịch** (môi trường
-> phát triển lúc viết không có Connect IQ SDK). Lần build đầu tiên có thể cần sửa vài lỗi
-> nhỏ (cú pháp, kiểu dữ liệu, tên API). Hãy build và chạy thử trên trình giả lập trước khi
-> cài cho ba mẹ.
+> **Tình trạng:** đã **biên dịch thành công** cho Venu 3/3S, Venu 4 (41/45 mm), vívoactive 5/6
+> bằng GitHub Actions (`.github/workflows/watch-app.yml`). **Chưa chạy thử trên đồng hồ thật.**
 
 ## Ứng dụng làm gì
 
@@ -71,48 +69,41 @@ Mức hao pin thêm là **nhỏ** (thường vài phần trăm mỗi ngày). Có
 
 ## Build
 
-1. Cài **Connect IQ SDK** (SDK Manager): https://developer.garmin.com/connect-iq/sdk/ —
-   tải SDK mới nhất và thiết bị Venu 3/3S, Venu 4, vívoactive 5/6.
-2. Cài **Visual Studio Code** + extension **Monkey C** (Garmin).
-3. Tạo developer key (một lần): VS Code → `Monkey C: Generate a Developer Key`, hoặc:
-   ```
-   openssl genrsa -out developer_key.pem 4096
-   openssl pkcs8 -topk8 -inform PEM -outform DER -in developer_key.pem -out developer_key -nocrypt
-   ```
-   **Không** commit file key vào git.
-4. Build từ thư mục `watch/`:
-   ```
-   monkeyc -d venu3 -f monkey.jungle -o bin/chamsoc.prg -y developer_key
-   ```
-   Thay `venu3` bằng `venu3s`, `venu441mm`, `venu445mm`, `vivoactive5`, `vivoactive6`.
-5. Chạy thử trên trình giả lập: `connectiq` rồi `monkeydo bin/chamsoc.prg venu3`.
-   Trong simulator: *File → Edit Persistent Storage / Application Settings* để nhập
-   `server_url`, `device_key`; *Simulation → Background Events → Trigger* để giả lập
-   sự kiện nền.
+Không cần cài gì trên máy: mỗi lần sửa thư mục `watch/` và đẩy lên GitHub, workflow **watch-app**
+tự build (dùng image Docker `ghcr.io/matco/connectiq-tester` có sẵn Connect IQ SDK). Tải kết quả ở
+GitHub → Actions → watch-app → lần chạy mới nhất → Artifacts → `chamsoc-watch-app`:
+- `chamsoc-<máy>.prg`: cài trực tiếp qua USB.
+- `chamsoc.iq`: gói để đưa lên Connect IQ Store.
 
-Ghi chú build:
-- Biểu tượng `resources/drawables/launcher_icon.png` là 40×40; trình biên dịch sẽ tự co giãn
-  (có thể in cảnh báo). Có thể thay bằng icon đúng kích thước từng máy sau.
-- Font hệ thống của đồng hồ cần hiển thị được tiếng Việt có dấu. Nếu chữ hiển thị thiếu dấu,
-  hãy đặt ngôn ngữ đồng hồ sang Tiếng Việt, hoặc đổi chuỗi trong
-  `resources/strings/strings.xml` sang không dấu.
+**Khoá ký:** nếu chưa có secret `CIQ_DEVELOPER_KEY`, workflow tạo khoá tạm mỗi lần (đủ để cài thử
+qua USB). Để đưa lên Store và cập nhật về sau phải dùng **một khoá cố định**:
+```
+openssl genrsa -out developer_key.pem 4096
+openssl pkcs8 -topk8 -inform PEM -outform DER -in developer_key.pem -out developer_key.der -nocrypt
+base64 -w0 developer_key.der   # dán vào GitHub → Settings → Secrets → Actions → CIQ_DEVELOPER_KEY
+```
+Giữ file khoá cẩn thận, **không** commit vào git. Mất khoá thì không cập nhật được ứng dụng trên Store.
+
+Build trên máy riêng (nếu muốn): cài Connect IQ SDK + VS Code extension Monkey C, rồi
+`monkeyc -d venu441mm -f monkey.jungle -o bin/chamsoc.prg -y developer_key.der`.
+Font đồng hồ cần hiển thị được tiếng Việt có dấu; nếu thiếu dấu, đặt ngôn ngữ đồng hồ sang Tiếng Việt.
 
 ## Cài lên đồng hồ
 
-**Cách 1 — Sideload (nhanh, cho gia đình):**
-1. Cắm đồng hồ vào máy tính bằng cáp USB.
-2. Chép `bin/chamsoc.prg` vào thư mục `GARMIN/APPS/` trên đồng hồ.
-   (Trên macOS cần ứng dụng *Android File Transfer* hoặc *OpenMTP* vì đồng hồ đời mới dùng MTP.)
-3. Rút cáp. Ứng dụng xuất hiện trong danh sách ứng dụng.
-   Lưu ý: ứng dụng sideload **không có trang Cài đặt trong Garmin Connect**. Cách đơn giản
-   để có cài đặt là dùng Cách 2. (Nếu buộc phải sideload, có thể tạm điền sẵn giá trị mặc định
-   cho `server_url`/`device_key` trong `resources/properties.xml` trước khi build — không commit.)
+**Cách 1 — Connect IQ Store (khuyên dùng, gọn nhất cho người dùng):**
+1. Một lần, người phát triển: đăng ký tài khoản miễn phí ở https://apps.developer.garmin.com,
+   tải `chamsoc.iq` lên, điền mô tả và ảnh, gửi duyệt. Ứng dụng **Beta** chỉ cài được lên đồng hồ
+   của chính tài khoản phát triển, nên để cài cho ba mẹ (tài khoản Garmin khác) cần **phát hành**.
+2. Người dùng (con cháu làm giúp, khoảng 5 phút): app **Garmin Connect** trên điện thoại ba mẹ →
+   Connect IQ Store → tìm "Chăm Sóc Ba Mẹ" → Cài đặt → mở **Cài đặt** của ứng dụng → dán **mã thiết bị**
+   (lấy trên website: Cài đặt → "Tạo mã cho đồng hồ") → mở ứng dụng trên đồng hồ một lần. Xong.
+3. Cập nhật về sau tự đến qua Store.
 
-**Cách 2 — Connect IQ Store (beta/riêng tư, khuyên dùng):**
-1. Xuất gói: VS Code → `Monkey C: Export Project` (tạo file `.iq`).
-2. Đăng nhập https://apps.developer.garmin.com → Upload app, chọn **Beta App**
-   (chỉ tài khoản developer thấy) hoặc phát hành với mô tả riêng tư/không công khai.
-3. Cài từ ứng dụng Connect IQ Store trên điện thoại của ba mẹ, rồi điền cài đặt như trên.
+**Cách 2 — chép qua USB (để thử nhanh):**
+1. Cắm đồng hồ vào máy tính, chép `chamsoc-<máy>.prg` vào thư mục `GARMIN/APPS/`
+   (macOS cần OpenMTP hoặc Android File Transfer).
+2. Ứng dụng chép tay **không có trang Cài đặt trong Garmin Connect**, nên phải điền sẵn
+   `server_url`/`device_key` trong `resources/properties.xml` trước khi build (không commit).
 
 ## Thiết bị hỗ trợ (product id trong `manifest.xml`)
 
