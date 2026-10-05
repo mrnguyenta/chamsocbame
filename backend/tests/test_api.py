@@ -52,4 +52,4 @@ def test_telegram_setup_registers_webhook(monkeypatch):
     r = client.post("/api/telegram/setup", headers={"Authorization": "Bearer c"})
     assert r.json() == {"ok": True, "bot": "chamsoc_bot", "webhook": "https://chamsocbame-api.vercel.app/api/telegram/webhook"}
     assert calls[0] == ("setWebhook", {"url": "https://chamsocbame-api.vercel.app/api/telegram/webhook", "secret_token": "h",
-                                       "allowed_updates": ["message", "callback_query"], "drop_pending_updates": True})
+                                       "allowed_updates": ["message", "callback_query", "my_chat_member"], "drop_pending_updates": True})

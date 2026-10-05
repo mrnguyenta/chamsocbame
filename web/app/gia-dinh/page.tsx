@@ -6,7 +6,7 @@ import { getBot } from "@/lib/bot";
 import { getFamilyAdmin } from "@/lib/data";
 import { age } from "@/lib/format";
 import { CONDITIONS } from "@/lib/metrics";
-import { revokeInvite, switchFamily, updateMember } from "./actions";
+import { revokeInvite, switchFamily, unlinkGroup, updateMember } from "./actions";
 import { AddElderForm, AddMemberForm, EditElderForm, EditMemberForm, InviteForm, LinkCodeForm } from "./forms";
 
 export const dynamic = "force-dynamic";
@@ -69,7 +69,7 @@ export default async function FamilyPage({ searchParams }: { searchParams: Promi
                   <span className="grow">
                     <span className="title" style={{ display: "block" }}>{e.name}</span>
                     <span className="muted">
-                      {[age(e.birthYear), e.conditions.map((c) => CONDITIONS[c] ?? c).join(", "), e.command ? `lệnh /${e.command}` : null]
+                      {[age(e.birthYear), e.conditions.map((c) => CONDITIONS[c] ?? c).join(", "), e.command ? `nhắn /${e.command} trong nhóm để xem nhanh` : null]
                         .filter(Boolean).join(" · ") || "Chưa có thông tin bệnh nền"}
                     </span>
                   </span>
@@ -145,13 +145,33 @@ export default async function FamilyPage({ searchParams }: { searchParams: Promi
         <aside className="side-col">
           <section className="card">
             <CardTitle icon={<IconTelegram size={20} />} tile="tile-blue" title="Nhóm Telegram gia đình"
-              sub={f.hasTelegramGroup ? "Đã nối — báo cáo và cảnh báo gửi vào nhóm" : "Chưa nối"} />
+              sub={f.groups.length ? `Bot gửi cảnh báo và báo cáo vào ${f.groups.length} nhóm` : "Chưa nối nhóm nào"} />
+            {f.groups.length > 0 && (
+              <ul className="list" style={{ marginBottom: 12 }}>
+                {f.groups.map((g) => (
+                  <li key={g.chatId} className="list-row" style={{ minHeight: 0 }}>
+                    <span className="icon-tile tile-blue" style={{ width: 36, height: 36 }}><IconTelegram size={18} /></span>
+                    <span className="grow">
+                      <span className="title" style={{ display: "block" }}>{g.title ?? "Nhóm Telegram"}</span>
+                      <span className="muted">Nối ngày {new Date(g.linkedAt).toLocaleDateString("vi-VN")}</span>
+                    </span>
+                    {admin && (
+                      <form action={unlinkGroup}>
+                        <input type="hidden" name="chat_id" value={g.chatId} />
+                        <button className="btn ghost small" type="submit" style={{ color: "var(--coral-ink)" }}>Gỡ</button>
+                      </form>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            )}
             {admin ? (
               <>
                 <p className="muted" style={{ marginTop: 0 }}>
-                  Tạo (hoặc dùng) một nhóm Telegram có anh chị em, thêm bot vào nhóm, rồi gõ mã bên dưới trong nhóm.
+                  {f.groups.length ? "Nối thêm nhóm khác (ví dụ nhóm cả họ): " : "Tạo (hoặc dùng) một nhóm Telegram có anh chị em, "}
+                  thêm bot vào nhóm, rồi gõ mã bên dưới trong nhóm. Mỗi mã dùng cho một nhóm.
                 </p>
-                <LinkCodeForm bot={bot} kind="group" label={f.hasTelegramGroup ? "Nối lại nhóm khác" : "Lấy mã nối nhóm"} />
+                <LinkCodeForm bot={bot} kind="group" label={f.groups.length ? "Lấy mã nối thêm nhóm" : "Lấy mã nối nhóm"} />
               </>
             ) : <p className="muted" style={{ margin: 0 }}>Người quản trị gia đình nối nhóm Telegram.</p>}
           </section>

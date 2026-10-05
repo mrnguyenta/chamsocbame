@@ -248,3 +248,11 @@ export async function updateMemberInfo(_: FormState, form: FormData): Promise<Fo
     return { ok: false, message: (e as Error).message };
   }
 }
+
+/** Gỡ một nhóm Telegram khỏi gia đình (bot không gửi vào nhóm đó nữa). */
+export async function unlinkGroup(form: FormData): Promise<void> {
+  if (isDemo) return;
+  const s = await admin();
+  await sql()`delete from family_chats where chat_id = ${String(form.get("chat_id"))}::bigint and family_id = ${s.familyId}`;
+  revalidatePath("/gia-dinh");
+}

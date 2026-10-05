@@ -51,9 +51,10 @@ def conn():
 @pytest.fixture()
 def family(conn):
     fam = conn.execute(
-        """insert into families (name, telegram_chat_id, quiet_start, quiet_end)
-           values ('Nhà mình', %s, '00:00', '00:00') returning *""", (GROUP,)).fetchone()
+        """insert into families (name, quiet_start, quiet_end)
+           values ('Nhà mình', '00:00', '00:00') returning *""").fetchone()
     fid = fam["id"]
+    db.link_family_chat(conn, str(fid), GROUP, "Nhà mình")
     conn.execute("""insert into caregivers (family_id, display_name, telegram_user_id, phone, role,
                     escalation_order) values (%s, 'Nguyên', %s, '+840001', 'admin', 2),
                     (%s, 'Chị Hạnh', %s, '+840002', 'alerts', 1)""", (fid, NGUYEN, fid, HANH))
@@ -294,13 +295,16 @@ def test_link_group_and_parent_telegram_with_codes(conn, family):
     conn.execute("insert into link_codes (code, family_id, kind) values ('111111', %s, 'group')", (fid,))
     conn.execute("insert into link_codes (code, family_id, kind, elder_id) values ('222222', %s, 'elder', %s)",
                  (fid, me["id"]))
-    msg = lambda text, chat, typ, user: {"message": {"text": text, "chat": {"id": chat, "type": typ}, "from": {"id": user}}}
+    msg = lambda text, chat, typ, user: {"message": {"text": text, "from": {"id": user}, "chat": {
+        "id": chat, "type": typ, **({"title": "Anh chị em"} if typ != "private" else {})}}}
 
     # Mã nhóm gõ trong tin riêng thì không nhận
     jobs.handle_update(conn, tg, NoopCallProvider(), msg("/ketnoi 111111", 77, "private", 77), now)
     assert "Mã không đúng" in tg.sent[-1][1]
     jobs.handle_update(conn, tg, NoopCallProvider(), msg("/start@ChamSocBot 111111", -555, "supergroup", NGUYEN), now)
-    assert conn.execute("select telegram_chat_id from families where id = %s", (fid,)).fetchone()["telegram_chat_id"] == -555
+    chats = conn.execute("select chat_id, title from family_chats where family_id = %s order by linked_at",
+                         (fid,)).fetchall()
+    assert [(c["chat_id"], c["title"]) for c in chats] == [(GROUP, "Nhà mình"), (-555, "Anh chị em")]
     assert "Đã nối nhóm" in tg.sent[-1][1]
     jobs.handle_update(conn, tg, NoopCallProvider(), msg("/ketnoi 111111", -555, "group", NGUYEN), now)
     assert "Mã không đúng" in tg.sent[-1][1]  # mã chỉ dùng một lần
@@ -343,3 +347,29 @@ def test_bot_token_from_admin_page_overrides_env(conn, monkeypatch):
     assert api._tg(conn, s)._base.endswith("/botenv-token")
     conn.execute("insert into app_settings (key, value) values ('telegram_bot_token', '123:abc')")
     assert api._tg(conn, s)._base.endswith("/bot123:abc")
+
+
+def test_family_with_two_groups_gets_reports_in_both(conn, family, monkeypatch):
+    tg, now = FakeTg(), datetime.now(timezone.utc)
+    fid = str(family["family"]["id"])
+    db.link_family_chat(conn, fid, -777, "Cả họ")
+    fam = db.family_by_chat(conn, -777)
+    assert str(fam["id"]) == fid and fam["chat_ids"] == [GROUP, -777]
+
+    jobs._to_groups(tg, fam["chat_ids"], "Báo cáo")
+    assert [m[0] for m in tg.sent[-2:]] == [GROUP, -777]
+
+    # Đổi tên nhóm -> cập nhật tên hiển thị trên website
+    jobs.handle_update(conn, tg, NoopCallProvider(), {"message": {
+        "new_chat_title": "Cả họ Lê", "chat": {"id": -777, "type": "group", "title": "Cả họ Lê"}, "from": {"id": 1}}}, now)
+    assert conn.execute("select title from family_chats where chat_id = -777").fetchone()["title"] == "Cả họ Lê"
+
+    # Nhóm thường nâng lên siêu nhóm -> đổi chat_id
+    jobs.handle_update(conn, tg, NoopCallProvider(), {"message": {
+        "migrate_to_chat_id": -100777, "chat": {"id": -777, "type": "group"}, "from": {"id": 1}}}, now)
+    assert db.family_by_chat(conn, -100777) is not None and db.family_by_chat(conn, -777) is None
+
+    # Bot bị xoá khỏi nhóm -> gỡ nhóm
+    jobs.handle_update(conn, tg, NoopCallProvider(), {"my_chat_member": {
+        "chat": {"id": -100777, "type": "supergroup"}, "new_chat_member": {"status": "kicked"}}}, now)
+    assert db.family_by_chat(conn, -100777) is None

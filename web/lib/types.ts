@@ -140,6 +140,8 @@ export interface SettingsData {
 export interface FamilyAdmin {
   name: string;
   hasTelegramGroup: boolean;
+  /** Các nhóm Telegram đã nối (tên nhóm lấy lúc nối, tự cập nhật khi nhóm đổi tên). */
+  groups: { chatId: string; title: string | null; linkedAt: string }[];
   members: {
     id: string; name: string; role: "admin" | "alerts" | "reports"; hasTelegram: boolean; phone: string | null; isMe: boolean;
     email: string | null; hasAccount: boolean;

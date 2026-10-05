@@ -111,8 +111,9 @@ export function AddElderForm() {
         <div className="row" style={{ gap: 10 }}>
           <label className="field" style={{ flex: "2 1 200px" }}>Cách gọi<input type="text" name="name" placeholder="Ba Hùng" required /></label>
           <label className="field" style={{ flex: "1 1 110px" }}>Năm sinh<input type="text" name="birth_year" inputMode="numeric" placeholder="1955" /></label>
-          <label className="field" style={{ flex: "1 1 120px" }}>Lệnh Telegram<input type="text" name="command" placeholder="ba" /></label>
+          <label className="field" style={{ flex: "1 1 150px" }}>Lệnh xem nhanh (không bắt buộc)<input type="text" name="command" placeholder="ba" /></label>
         </div>
+        <div className="muted" style={{ fontSize: 13 }}>Lệnh xem nhanh: gõ ví dụ <code>ba</code> thì trong nhóm Telegram chỉ cần nhắn <code>/ba</code> là bot trả lời tình hình sức khoẻ của người này.</div>
         <div className="muted">Bệnh nền (để tự tạo ngưỡng cảnh báo phù hợp)</div>
         <div className="row" style={{ gap: 8 }}>
           {Object.entries(CONDITIONS).map(([k, label]) => (
@@ -224,9 +225,10 @@ export function EditElderForm({ elder }: {
           <label className="field" style={{ flex: "2 1 200px" }}>Cách gọi<input type="text" name="name" defaultValue={elder.name} required /></label>
           <label className="field" style={{ flex: "1 1 110px" }}>Năm sinh
             <input type="text" name="birth_year" inputMode="numeric" defaultValue={elder.birthYear ?? ""} placeholder="1955" /></label>
-          <label className="field" style={{ flex: "1 1 120px" }}>Lệnh Telegram
+          <label className="field" style={{ flex: "1 1 150px" }}>Lệnh xem nhanh (không bắt buộc)
             <input type="text" name="command" defaultValue={elder.command ?? ""} placeholder="ba" /></label>
         </div>
+        <div className="muted" style={{ fontSize: 13 }}>Lệnh xem nhanh: gõ ví dụ <code>ba</code> thì trong nhóm Telegram chỉ cần nhắn <code>/ba</code> là bot trả lời tình hình sức khoẻ của người này.</div>
         <div className="muted">Bệnh nền (thêm bệnh mới sẽ tự thêm ngưỡng cảnh báo phù hợp)</div>
         <ConditionChips selected={elder.conditions} />
         <div className="row"><button className="btn primary small" type="submit" disabled={f.pending}>Lưu</button><Msg s={f.state} /></div>

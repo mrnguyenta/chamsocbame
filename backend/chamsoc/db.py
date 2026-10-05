@@ -21,7 +21,7 @@ def garmin_accounts(conn) -> list[dict]:
     return conn.execute(
         """
         select g.elder_id, g.token_ciphertext, g.status, e.display_name, e.family_id,
-               f.timezone, f.telegram_chat_id
+               f.timezone, (select coalesce(array_agg(fc.chat_id order by fc.linked_at), '{}') from family_chats fc where fc.family_id = f.id) as chat_ids
         from garmin_accounts g
         join elders e on e.id = g.elder_id
         join families f on f.id = e.family_id
@@ -289,7 +289,7 @@ def elders_of_family(conn, family_id: str) -> list[dict]:
 
 
 def families(conn) -> list[dict]:
-    return conn.execute("select * from families").fetchall()
+    return conn.execute("select f.*, (select coalesce(array_agg(fc.chat_id order by fc.linked_at), '{}') from family_chats fc where fc.family_id = f.id) as chat_ids from families f").fetchall()
 
 
 def mark_report_sent(conn, family_id: str, kind: str, day: date) -> bool:
@@ -304,13 +304,16 @@ def mark_report_sent(conn, family_id: str, kind: str, day: date) -> bool:
 
 
 def family_by_chat(conn, chat_id: int) -> dict | None:
-    return conn.execute("select * from families where telegram_chat_id = %s", (chat_id,)).fetchone()
+    return conn.execute(
+        "select f.*, (select coalesce(array_agg(fc.chat_id order by fc.linked_at), '{}') from family_chats fc where fc.family_id = f.id) as chat_ids from families f join family_chats c on c.family_id = f.id where c.chat_id = %s",
+        (chat_id,),
+    ).fetchone()
 
 
 def elder_by_telegram(conn, telegram_user_id: int) -> dict | None:
     return conn.execute(
         """
-        select e.*, f.telegram_chat_id as family_chat_id, f.timezone
+        select e.*, (select coalesce(array_agg(fc.chat_id order by fc.linked_at), '{}') from family_chats fc where fc.family_id = f.id) as chat_ids, f.timezone
         from elders e join families f on f.id = e.family_id
         where e.telegram_user_id = %s
         """,
@@ -358,11 +361,30 @@ def consume_link_code(conn, code: str, kinds: tuple[str, ...]) -> dict | None:
     ).fetchone()
 
 
-def set_family_chat(conn, family_id: str, chat_id: int) -> None:
-    # Một nhóm chỉ thuộc một gia đình: gỡ khỏi gia đình cũ nếu có.
-    conn.execute("update families set telegram_chat_id = null where telegram_chat_id = %s and id <> %s",
-                 (chat_id, family_id))
-    conn.execute("update families set telegram_chat_id = %s where id = %s", (chat_id, family_id))
+def link_family_chat(conn, family_id: str, chat_id: int, title: str | None) -> None:
+    """Nối thêm một nhóm Telegram vào gia đình (nhóm đang thuộc gia đình khác thì chuyển sang)."""
+    conn.execute(
+        """
+        insert into family_chats (chat_id, family_id, title) values (%s, %s, %s)
+        on conflict (chat_id) do update set family_id = excluded.family_id, title = excluded.title, linked_at = now()
+        """,
+        (chat_id, family_id, title),
+    )
+
+
+def update_chat_title(conn, chat_id: int, title: str | None) -> None:
+    if title:
+        conn.execute("update family_chats set title = %s where chat_id = %s and title is distinct from %s",
+                     (title, chat_id, title))
+
+
+def move_chat(conn, old_chat_id: int, new_chat_id: int) -> None:
+    """Nhóm thường được Telegram nâng lên siêu nhóm thì đổi chat_id."""
+    conn.execute("update family_chats set chat_id = %s where chat_id = %s", (new_chat_id, old_chat_id))
+
+
+def unlink_chat(conn, chat_id: int) -> None:
+    conn.execute("delete from family_chats where chat_id = %s", (chat_id,))
 
 
 def set_caregiver_telegram(conn, caregiver_id: str, telegram_user_id: int, telegram_name: str | None) -> None:
@@ -430,7 +452,7 @@ def resolve_missing(conn, elder_id: str, still_breached: set[str],
     rows = conn.execute(
         """
         select a.id, a.dedupe_key, a.rule_id, a.message, a.severity, a.opened_at,
-               a.notified_at, e.display_name, f.telegram_chat_id
+               a.notified_at, e.display_name, (select coalesce(array_agg(fc.chat_id order by fc.linked_at), '{}') from family_chats fc where fc.family_id = f.id) as chat_ids
         from alerts a join elders e on e.id = a.elder_id join families f on f.id = e.family_id
         where a.elder_id = %s and a.resolved_at is null
         """,
@@ -458,7 +480,7 @@ def pending_alerts(conn) -> list[dict]:
     return conn.execute(
         """
         select a.*, e.display_name as elder_name, e.family_id, e.telegram_user_id as elder_tg,
-               f.telegram_chat_id, f.timezone, f.quiet_start, f.quiet_end,
+               (select coalesce(array_agg(fc.chat_id order by fc.linked_at), '{}') from family_chats fc where fc.family_id = f.id) as chat_ids, f.timezone, f.quiet_start, f.quiet_end,
                coalesce(r.notify, 'family') as rule_notify
         from alerts a
         join elders e on e.id = a.elder_id
@@ -474,7 +496,7 @@ def alert_with_family(conn, alert_id: str) -> dict | None:
     try:
         return conn.execute(
             """
-            select a.*, e.family_id, e.display_name as elder_name, f.telegram_chat_id
+            select a.*, e.family_id, e.display_name as elder_name, (select coalesce(array_agg(fc.chat_id order by fc.linked_at), '{}') from family_chats fc where fc.family_id = f.id) as chat_ids
             from alerts a join elders e on e.id = a.elder_id join families f on f.id = e.family_id
             where a.id = %s
             """,
@@ -532,7 +554,7 @@ def due_medications(conn, now_utc: datetime, window: timedelta) -> list[dict]:
         """
         with due as (
           select s.id as schedule_id, s.name, s.note, e.id as elder_id, e.display_name,
-                 e.telegram_user_id, f.telegram_chat_id, f.timezone,
+                 e.telegram_user_id, (select coalesce(array_agg(fc.chat_id order by fc.linked_at), '{}') from family_chats fc where fc.family_id = f.id) as chat_ids, f.timezone,
                  (d + t) at time zone f.timezone as due_at
           from med_schedules s
           join elders e on e.id = s.elder_id
@@ -581,7 +603,7 @@ def missed_medications(conn, older_than: datetime) -> list[dict]:
     """Liều đã nhắc nhưng chưa bấm "Đã uống" sau một khoảng thời gian, chưa báo gia đình."""
     return conn.execute(
         """
-        select l.id, l.due_at, s.name, e.display_name, f.telegram_chat_id, f.timezone
+        select l.id, l.due_at, s.name, e.display_name, (select coalesce(array_agg(fc.chat_id order by fc.linked_at), '{}') from family_chats fc where fc.family_id = f.id) as chat_ids, f.timezone
         from med_logs l
         join med_schedules s on s.id = l.schedule_id
         join elders e on e.id = s.elder_id

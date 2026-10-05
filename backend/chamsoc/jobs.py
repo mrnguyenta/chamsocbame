@@ -17,6 +17,15 @@ from .models import SEVERITY_RANK, OpenAlert, Snapshot
 
 log = logging.getLogger(__name__)
 
+
+def _to_groups(tg: telegram.TelegramClient, chat_ids, text: str, buttons=None) -> None:
+    """Gửi vào mọi nhóm Telegram của gia đình; một nhóm lỗi (bot bị xoá...) không chặn nhóm khác."""
+    for chat_id in chat_ids or []:
+        try:
+            tg.send(chat_id, text, buttons)
+        except Exception:
+            log.exception("Gửi vào nhóm %s lỗi", chat_id)
+
 MED_WINDOW = timedelta(minutes=30)
 MED_MISSED_AFTER = timedelta(minutes=60)
 REPORT_GRACE = timedelta(hours=2)
@@ -42,9 +51,9 @@ def evaluate_elder(conn, tg: telegram.TelegramClient, snap: Snapshot, local_now:
         # Chỉ báo "đã bình thường" cho cảnh báo nghiêm trọng đã gửi trong hôm nay,
         # tránh tin thừa khi qua ngày mới.
         same_day = r["opened_at"].astimezone(local_now.tzinfo).date() == local_now.date()
-        if (r["notified_at"] and same_day and r["telegram_chat_id"]
+        if (r["notified_at"] and same_day and r["chat_ids"]
                 and SEVERITY_RANK[r["severity"]] >= SEVERITY_RANK["high"]):
-            tg.send(r["telegram_chat_id"], telegram.resolved_text(r["display_name"], r["message"]))
+            _to_groups(tg, r["chat_ids"], telegram.resolved_text(r["display_name"], r["message"]))
 
 
 # ---------- Đồng bộ Garmin (mỗi 15 phút) ----------
@@ -61,9 +70,9 @@ def sync_all(conn, settings: Settings, tg: telegram.TelegramClient, now_utc: dat
             new_token = garmin_sync.current_tokens(client)
         except GarminConnectAuthenticationError as e:
             log.warning("Garmin cần đăng nhập lại cho %s: %s", name, e)
-            if db.mark_garmin_error(conn, elder_id, "needs_relogin", str(e)) and acc["telegram_chat_id"]:
-                tg.send(
-                    acc["telegram_chat_id"],
+            if db.mark_garmin_error(conn, elder_id, "needs_relogin", str(e)) and acc["chat_ids"]:
+                _to_groups(
+                    tg, acc["chat_ids"],
                     f"<b>Mất kết nối Garmin · {escape(name)}</b>\n"
                     "Token hết hạn hoặc Garmin đổi cách đăng nhập. Quản trị chạy lại "
                     "<code>python -m chamsoc.link_garmin</code> để kết nối lại.",
@@ -144,8 +153,8 @@ def _run_step(conn, tg, calls: CallProvider, a: dict, alert: OpenAlert, action: 
     if action == "group":
         if alert.rule_notify == "elder" and a["elder_tg"]:
             tg.send(a["elder_tg"], f"Nhắc nhẹ: {escape(alert.message)}")
-        elif a["telegram_chat_id"]:
-            tg.send(a["telegram_chat_id"], text, telegram.alert_buttons(alert.id))
+        elif a["chat_ids"]:
+            _to_groups(tg, a["chat_ids"], text, telegram.alert_buttons(alert.id))
         return
 
     carers = db.caregivers_for_escalation(conn, a["family_id"])
@@ -166,21 +175,21 @@ def _run_step(conn, tg, calls: CallProvider, a: dict, alert: OpenAlert, action: 
 
 def medication_reminders(conn, tg: telegram.TelegramClient, now_utc: datetime) -> None:
     for m in db.due_medications(conn, now_utc, MED_WINDOW):
-        target = m["telegram_user_id"] or m["telegram_chat_id"]
-        if not target:
+        # Ba mẹ có Telegram thì nhắc riêng; không thì nhắc vào các nhóm gia đình.
+        targets = [m["telegram_user_id"]] if m["telegram_user_id"] else list(m["chat_ids"] or [])
+        if not targets:
             continue
         log_id = db.log_med_reminder(conn, str(m["schedule_id"]), m["due_at"])
         due_local = _local(m["due_at"], m["timezone"])
         name = m["name"] if m["telegram_user_id"] else f"{m['display_name']}: {m['name']}"
-        tg.send(target, telegram.med_reminder_text(name, m["note"], due_local),
-                [[("Đã uống", f"med:{log_id}")]])
+        _to_groups(tg, targets, telegram.med_reminder_text(name, m["note"], due_local),
+                   [[("Đã uống", f"med:{log_id}")]])
 
     for m in db.missed_medications(conn, now_utc - MED_MISSED_AFTER):
         due_local = _local(m["due_at"], m["timezone"])
         msg = f"{m['display_name']} chưa xác nhận uống {m['name']} (giờ uống {due_local:%H:%M})"
         db.record_missed_med(conn, str(m["id"]), msg)
-        if m["telegram_chat_id"]:
-            tg.send(m["telegram_chat_id"], f"<b>Nhắc gia đình</b>\n{escape(msg)}")
+        _to_groups(tg, m["chat_ids"], f"<b>Nhắc gia đình</b>\n{escape(msg)}")
 
 
 # ---------- Báo cáo sáng / tối ----------
@@ -205,7 +214,7 @@ def family_report(conn, family: dict, now_utc: datetime, title: str) -> str:
 
 def scheduled_reports(conn, tg: telegram.TelegramClient, now_utc: datetime) -> None:
     for f in db.families(conn):
-        if not f["telegram_chat_id"]:
+        if not f["chat_ids"]:
             continue
         local_now = _local(now_utc, f["timezone"])
         for kind, at, title in (("morning", f["morning_report_at"], "Báo cáo sáng"),
@@ -213,7 +222,7 @@ def scheduled_reports(conn, tg: telegram.TelegramClient, now_utc: datetime) -> N
             if at is None or not _within(local_now, at, REPORT_GRACE):
                 continue
             if db.mark_report_sent(conn, str(f["id"]), kind, local_now.date()):
-                tg.send(f["telegram_chat_id"], family_report(conn, f, now_utc, title))
+                _to_groups(tg, f["chat_ids"], family_report(conn, f, now_utc, title))
 
 
 def _within(local_now: datetime, at: time, grace: timedelta) -> bool:
@@ -240,10 +249,21 @@ def handle_update(conn, tg: telegram.TelegramClient, calls: CallProvider, update
     if cq := update.get("callback_query"):
         _handle_callback(conn, tg, cq)
         return
+    if member := update.get("my_chat_member"):
+        # Bot bị xoá khỏi nhóm: gỡ nhóm khỏi gia đình để không gửi vào chỗ không còn nhận được.
+        if (member.get("new_chat_member") or {}).get("status") in ("left", "kicked"):
+            db.unlink_chat(conn, (member.get("chat") or {}).get("id"))
+        return
     msg = update.get("message") or {}
-    text = (msg.get("text") or "").strip()
-    chat_id = (msg.get("chat") or {}).get("id")
+    chat = msg.get("chat") or {}
+    chat_id = chat.get("id")
     user_id = (msg.get("from") or {}).get("id")
+    if chat_id is not None and msg.get("migrate_to_chat_id"):
+        db.move_chat(conn, chat_id, msg["migrate_to_chat_id"])
+        return
+    if chat_id is not None and chat.get("type") in ("group", "supergroup"):
+        db.update_chat_title(conn, chat_id, msg.get("new_chat_title") or chat.get("title"))
+    text = (msg.get("text") or "").strip()
     if not text or chat_id is None:
         return
 
@@ -255,7 +275,7 @@ def handle_update(conn, tg: telegram.TelegramClient, calls: CallProvider, update
         if cmd in ("start", "ketnoi", "toi") and arg:
             sender = msg.get("from") or {}
             name = " ".join(filter(None, [sender.get("first_name"), sender.get("last_name")])) or sender.get("username")
-            _link_with_code(conn, tg, arg, chat_id, chat_type, user_id, name)
+            _link_with_code(conn, tg, arg, chat_id, chat_type, user_id, name, chat.get("title"))
             return
         if cmd in ("id", "start"):
             tg.send(chat_id, f"chat_id: <code>{chat_id}</code>\nuser_id: <code>{user_id}</code>\n\n"
@@ -297,7 +317,7 @@ def handle_update(conn, tg: telegram.TelegramClient, calls: CallProvider, update
 
 
 def _link_with_code(conn, tg: telegram.TelegramClient, code: str, chat_id: int, chat_type: str,
-                    user_id: int | None, user_name: str | None = None) -> None:
+                    user_id: int | None, user_name: str | None = None, chat_title: str | None = None) -> None:
     """Nối nhóm Telegram với gia đình, hoặc Telegram riêng của ba mẹ / người chăm sóc với hồ sơ của họ."""
     is_group = chat_type in ("group", "supergroup")
     link = db.consume_link_code(conn, code.strip(), ("group",) if is_group else ("elder", "caregiver"))
@@ -306,7 +326,7 @@ def _link_with_code(conn, tg: telegram.TelegramClient, code: str, chat_id: int, 
                 + ("" if is_group else " (Mã nối nhóm phải gõ trong nhóm gia đình.)"))
         return
     if is_group:
-        db.set_family_chat(conn, str(link["family_id"]), chat_id)
+        db.link_family_chat(conn, str(link["family_id"]), chat_id, chat_title)
         tg.send(chat_id, f"Đã nối nhóm này với <b>{escape(link['family_name'])}</b>. "
                          "Báo cáo và cảnh báo sẽ gửi vào đây. Gõ /tongquan để xem tình hình.")
     elif user_id and link["kind"] == "caregiver":
@@ -347,10 +367,9 @@ def _handle_callback(conn, tg: telegram.TelegramClient, cq: dict) -> None:
             tg.answer_callback(cq["id"], "Cảm ơn, đã giao cho bạn")
             if chat_id:
                 tg.clear_buttons(chat_id, message["message_id"])
-            if alert["telegram_chat_id"]:
-                tg.send(alert["telegram_chat_id"],
-                        f"{escape(carer['display_name'])} đã nhận xử lý cảnh báo của "
-                        f"{escape(alert['elder_name'])}.")
+            _to_groups(tg, alert["chat_ids"],
+                       f"{escape(carer['display_name'])} đã nhận xử lý cảnh báo của "
+                       f"{escape(alert['elder_name'])}.")
         else:
             tg.answer_callback(cq["id"], "Đã có người nhận rồi")
     elif action == "snooze":

@@ -22,10 +22,12 @@ def main() -> None:
 
     with db.connect(os.environ["DATABASE_URL"]) as conn, conn.transaction():
         fam = conn.execute(
-            "insert into families (name, telegram_chat_id, timezone) values (%s, %s, %s) returning id",
-            (cfg["name"], cfg.get("telegram_chat_id"), cfg.get("timezone", "Asia/Ho_Chi_Minh")),
+            "insert into families (name, timezone) values (%s, %s) returning id",
+            (cfg["name"], cfg.get("timezone", "Asia/Ho_Chi_Minh")),
         ).fetchone()
         family_id = fam["id"]
+        if cfg.get("telegram_chat_id"):
+            db.link_family_chat(conn, str(family_id), cfg["telegram_chat_id"], None)
         print(f"Gia đình: {family_id}")
 
         for c in cfg.get("caregivers", []):

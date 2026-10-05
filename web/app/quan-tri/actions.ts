@@ -67,7 +67,7 @@ export async function saveBot(_: AdminState, form: FormData): Promise<AdminState
     const secret = process.env.TELEGRAM_WEBHOOK_SECRET;
     const hook = secret ? await telegram(token, "setWebhook", {
       url: `${API_URL}/api/telegram/webhook`, secret_token: secret,
-      allowed_updates: ["message", "callback_query"], drop_pending_updates: true,
+      allowed_updates: ["message", "callback_query", "my_chat_member"], drop_pending_updates: true,
     }) : null;
     await writeSettings({ telegram_bot_token: token, telegram_bot_username: username });
     revalidatePath("/", "layout");

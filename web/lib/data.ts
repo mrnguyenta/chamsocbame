@@ -175,7 +175,8 @@ export async function getElderDetail(familyId: string, elderId: string): Promise
 export async function getSettings(familyId: string): Promise<SettingsData> {
   if (isDemo) return demoSettings();
   const db = sql();
-  const [f] = await db`select * from families where id = ${familyId}`;
+  const [f] = await db`select f.*, exists(select 1 from family_chats c where c.family_id = f.id) as has_group
+                       from families f where f.id = ${familyId}`;
   const elders = await db`select id, display_name, conditions from elders where family_id = ${familyId} order by created_at`;
   const ids = elders.map((e) => e.id);
   const [rules, meds, devices, garmin] = await Promise.all([
@@ -190,7 +191,7 @@ export async function getSettings(familyId: string): Promise<SettingsData> {
     family: {
       quietStart: hhmm(f.quiet_start)!, quietEnd: hhmm(f.quiet_end)!,
       morningReportAt: hhmm(f.morning_report_at)!, eveningReportAt: hhmm(f.evening_report_at),
-      hasTelegramGroup: f.telegram_chat_id != null,
+      hasTelegramGroup: !!f.has_group,
     },
     elders: elders.map((e) => {
       const g = garmin.find((x) => x.elder_id === e.id);
@@ -228,6 +229,7 @@ export async function getFamilyAdmin(familyId: string, caregiverId: string): Pro
     const o = demoOverview();
     return {
       name: o.familyName, hasTelegramGroup: true,
+      groups: [{ chatId: "-1", title: "Nhà mình (mẫu)", linkedAt: new Date().toISOString() }],
       members: o.carers.map((c, i) => ({ id: c.id, name: c.name, role: c.role, hasTelegram: c.hasTelegram, phone: c.phone, isMe: i === 0,
         email: null, hasAccount: true })),
       invites: [{ id: "i1", code: "demo123abc", role: "alerts", expiresAt: new Date(Date.now() + 5 * 864e5).toISOString() }],
@@ -235,8 +237,9 @@ export async function getFamilyAdmin(familyId: string, caregiverId: string): Pro
     };
   }
   const db = sql();
-  const [[f], members, invites, elders] = await Promise.all([
-    db`select name, telegram_chat_id from families where id = ${familyId}`,
+  const [[f], groups, members, invites, elders] = await Promise.all([
+    db`select name from families where id = ${familyId}`,
+    db`select chat_id::text, title, linked_at from family_chats where family_id = ${familyId} order by linked_at`,
     db`select id, display_name, role, telegram_user_id, phone, email, account_id from caregivers where family_id = ${familyId}
        order by (role = 'admin') desc, created_at`,
     db`select id, code, role, expires_at from invites where family_id = ${familyId} and revoked_at is null
@@ -246,7 +249,8 @@ export async function getFamilyAdmin(familyId: string, caregiverId: string): Pro
   ]);
   return {
     name: f?.name ?? "Gia đình",
-    hasTelegramGroup: f?.telegram_chat_id != null,
+    hasTelegramGroup: groups.length > 0,
+    groups: groups.map((g) => ({ chatId: g.chat_id, title: g.title ?? null, linkedAt: iso(g.linked_at)! })),
     members: members.map((m) => ({ id: m.id, name: m.display_name, role: m.role, hasTelegram: m.telegram_user_id != null,
       phone: m.phone, isMe: m.id === caregiverId, email: m.email ?? null, hasAccount: m.account_id != null })),
     invites: invites.map((i) => ({ id: i.id, code: i.code, role: i.role, expiresAt: iso(i.expires_at)! })),
