@@ -174,6 +174,33 @@ export default async function ElderPage({ params }: { params: Promise<{ id: stri
             <h2>{t("Hoạt động trong tuần", "This week's activity")}</h2>
             <StepsChart data={d.steps7} />
           </section>
+
+          <Block id="nguong" group="khoi" icon={<IconAlert size={20} />} tile="tile-amber" title={t("Ngưỡng cảnh báo", "Alert thresholds")}
+            sub={t(`${rules.filter((r) => r.enabled).length}/${rules.length} ngưỡng đang bật`,
+              `${rules.filter((r) => r.enabled).length}/${rules.length} thresholds on`)}>
+            {!canEdit && <div className="banner info">{t("Bạn đang xem. Chỉ quản trị gia đình mới sửa được.", "View only. Only family admins can make changes.")}</div>}
+            {RULE_GROUPS.map((g, i) => {
+              const rs = rules.filter((r) => g.metrics.includes(r.metric));
+              if (!rs.length) return null;
+              return (
+                <details key={g.key} className="group-block" open={i === 0}>
+                  <summary>
+                    <span className={`icon-tile ${g.tile}`}>{GROUP_ICON[g.key] ?? <IconBell size={20} />}</span>
+                    <span className="grow">
+                      <span className="title" style={{ display: "block" }}>{g.title}</span>
+                      <span className="muted" style={{ fontSize: 13 }}>{t(`${rs.length} ngưỡng · ${rs.filter((r) => r.enabled).length} đang bật`,
+                        `${rs.length} thresholds · ${rs.filter((r) => r.enabled).length} on`)}</span>
+                    </span>
+                    <IconChevron size={18} className="chev" />
+                  </summary>
+                  <div className="group-body">
+                    {rs.map((r) => <RuleForm key={r.id} rule={r} tile={g.tile} canEdit={canEdit} />)}
+                  </div>
+                </details>
+              );
+            })}
+            {canEdit && <AddRuleForm elderId={e.id} />}
+          </Block>
         </div>
 
         <aside className="side-col">
@@ -279,33 +306,6 @@ export default async function ElderPage({ params }: { params: Promise<{ id: stri
                   ))}
                 </ul>
               )}
-            </Block>
-
-            <Block id="nguong" group="khoi" icon={<IconAlert size={20} />} tile="tile-amber" title={t("Ngưỡng cảnh báo", "Alert thresholds")}
-              sub={t(`${rules.filter((r) => r.enabled).length}/${rules.length} ngưỡng đang bật`,
-                `${rules.filter((r) => r.enabled).length}/${rules.length} thresholds on`)}>
-              {!canEdit && <div className="banner info">{t("Bạn đang xem. Chỉ quản trị gia đình mới sửa được.", "View only. Only family admins can make changes.")}</div>}
-              {RULE_GROUPS.map((g, i) => {
-                const rs = rules.filter((r) => g.metrics.includes(r.metric));
-                if (!rs.length) return null;
-                return (
-                  <details key={g.key} className="group-block" open={i === 0}>
-                    <summary>
-                      <span className={`icon-tile ${g.tile}`}>{GROUP_ICON[g.key] ?? <IconBell size={20} />}</span>
-                      <span className="grow">
-                        <span className="title" style={{ display: "block" }}>{g.title}</span>
-                        <span className="muted" style={{ fontSize: 13 }}>{t(`${rs.length} ngưỡng · ${rs.filter((r) => r.enabled).length} đang bật`,
-                          `${rs.length} thresholds · ${rs.filter((r) => r.enabled).length} on`)}</span>
-                      </span>
-                      <IconChevron size={18} className="chev" />
-                    </summary>
-                    <div className="group-body">
-                      {rs.map((r) => <RuleForm key={r.id} rule={r} tile={g.tile} canEdit={canEdit} />)}
-                    </div>
-                  </details>
-                );
-              })}
-              {canEdit && <AddRuleForm elderId={e.id} />}
             </Block>
 
             <Block id="thuoc" group="khoi" icon={<IconPill size={20} />} tile="tile-violet" title={t("Thuốc", "Medications")}
