@@ -12,8 +12,6 @@ import os
 from datetime import date, datetime
 from zoneinfo import ZoneInfo
 
-import anthropic
-
 from . import db, facts
 
 log = logging.getLogger(__name__)
@@ -94,6 +92,9 @@ def _default(v):
 
 def _create(key: str, *, system: str, messages: list[dict], max_tokens: int, effort: str,
             schema: dict | None = None) -> str:
+    # Nạp ở đây (không ở đầu file): lỡ thiếu thư viện thì chỉ AI lỗi, đồng hồ và bot vẫn chạy.
+    import anthropic
+
     client = anthropic.Anthropic(api_key=key, timeout=180.0, max_retries=2)
     output_config: dict = {"effort": effort}
     if schema:
