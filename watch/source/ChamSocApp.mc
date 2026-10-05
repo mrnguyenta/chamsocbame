@@ -14,6 +14,7 @@
 //-----------------------------------------------------------------------------------
 
 using Toybox.Application;
+using Toybox.Application.Properties;
 using Toybox.Application.Storage;
 using Toybox.Background;
 using Toybox.Communications;
@@ -27,6 +28,7 @@ class ChamSocApp extends Application.AppBase {
 
     private var mIsForeground as Lang.Boolean = false;
     private var mSending      as Lang.Boolean = false;
+    private var mPairing      as Pairing?;
 
     function initialize() {
         AppBase.initialize();
@@ -43,6 +45,7 @@ class ChamSocApp extends Application.AppBase {
     //! Only called for the foreground app (never in the background process).
     function getInitialView() as [ WatchUi.Views ] or [ WatchUi.Views, WatchUi.InputDelegates ] {
         mIsForeground = true;
+        mPairing = new Pairing();
         registerBackground();
         return [new MainView(), new MainDelegate()];
     }
@@ -81,12 +84,27 @@ class ChamSocApp extends Application.AppBase {
         return mSending;
     }
 
+    //! Ghép bằng mã 6 số (chỉ có khi ứng dụng đang mở).
+    function pairing() as Pairing? {
+        return mPairing;
+    }
+
+    //! Website vừa nhận mã: bật dịch vụ nền và gửi ngay lần đầu.
+    function onPaired() as Void {
+        registerBackground();
+        sendNow();
+    }
+
     //! Immediate send from the foreground, same payload as the background service.
     function sendNow() as Void {
         if (mSending) {
             return;
         }
         if (!Payload.isConfigured()) {
+            var p = mPairing;
+            if (p != null) {
+                p.tick();
+            }
             WatchUi.requestUpdate();
             return;
         }
@@ -118,6 +136,11 @@ class ChamSocApp extends Application.AppBase {
         Storage.setValue("last_try", ts);
         if (code == 200) {
             Storage.setValue("last_sent", ts);
+        } else if (code == 401) {
+            // Website đã thu hồi mã của đồng hồ này: xoá khoá để hiện mã ghép mới.
+            Properties.setValue("device_key", "");
+            Storage.deleteValue("paired_to");
+            registerBackground();
         }
         if (mIsForeground) {
             WatchUi.requestUpdate();

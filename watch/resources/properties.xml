@@ -4,9 +4,10 @@
   Garmin Connect app -> Thiết bị -> Hoạt động & Ứng dụng / Connect IQ -> Chăm Sóc Ba Mẹ -> Cài đặt.
 -->
 <properties>
-  <!-- e.g. https://xxx.vercel.app (no trailing slash needed, it is stripped) -->
+  <!-- e.g. https://xxx.vercel.app (no trailing slash needed, it is stripped).
+       CI điền sẵn giá trị từ biến GitHub CHAMSOC_SERVER_URL để người dùng không phải gõ. -->
   <property id="server_url" type="string"></property>
-  <!-- Sent as "Authorization: Bearer <device_key>" -->
+  <!-- Sent as "Authorization: Bearer <device_key>". Trống = đồng hồ tự ghép bằng mã 6 số (Pairing.mc). -->
   <property id="device_key" type="string"></property>
   <!-- Minutes between background sends. Connect IQ minimum is 5. -->
   <property id="interval_min" type="number">5</property>

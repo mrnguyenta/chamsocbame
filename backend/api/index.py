@@ -4,6 +4,7 @@
 - POST /api/cron/tick        mỗi 5 phút: gửi/leo thang cảnh báo, nhắc thuốc, báo cáo
 - POST /api/telegram/webhook tin nhắn và nút bấm từ Telegram
 - POST /api/watch/push       ứng dụng Connect IQ trên đồng hồ gửi dữ liệu mỗi 5 phút
+- POST /api/watch/pair/start đồng hồ xin mã ghép 6 số; GET /api/watch/pair/status hỏi đã ghép chưa
 Supabase pg_cron gọi hai địa chỉ cron (xem supabase/cron.sql).
 """
 
@@ -12,11 +13,13 @@ from __future__ import annotations
 import hashlib
 import hmac
 import logging
+import secrets
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
 from fastapi import FastAPI, Header, HTTPException, Request
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
@@ -101,9 +104,7 @@ class WatchPush(BaseModel):
 @app.post("/api/watch/push")
 def watch_push(body: WatchPush, authorization: str | None = Header(default=None)) -> dict:
     s = _settings()
-    if not authorization or not authorization.startswith("Bearer "):
-        raise HTTPException(status_code=401)
-    key_hash = hashlib.sha256(authorization[7:].strip().encode()).hexdigest()
+    key_hash = _key_hash(authorization)
     with db.connect(s.database_url) as conn:
         device = db.watch_device_by_key(conn, key_hash)
         if device is None:
@@ -116,3 +117,46 @@ def watch_push(body: WatchPush, authorization: str | None = Header(default=None)
                                get_provider(s.call_provider), device, payload,
                                datetime.now(timezone.utc))
     return {"ok": True}
+
+
+def _key_hash(authorization: str | None) -> str:
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401)
+    return hashlib.sha256(authorization[7:].strip().encode()).hexdigest()
+
+
+class PairStart(BaseModel):
+    device: str | None = Field(default=None, max_length=64)
+
+
+PAIR_TTL_S = 15 * 60
+
+
+@app.post("/api/watch/pair/start")
+def watch_pair_start(body: PairStart) -> dict:
+    """Đồng hồ chưa có khoá: cấp mã 6 số để hiện lên màn hình và khoá bí mật để giữ lại."""
+    s = _settings()
+    key = secrets.token_urlsafe(24)
+    key_hash = hashlib.sha256(key.encode()).hexdigest()
+    with db.connect(s.database_url) as conn:
+        for _ in range(10):
+            code = f"{secrets.randbelow(10**6):06d}"
+            if db.start_pairing(conn, code, key_hash, body.device):
+                return {"code": code, "key": key, "expires_in": PAIR_TTL_S}
+    raise HTTPException(status_code=503)
+
+
+@app.get("/api/watch/pair/status")
+def watch_pair_status(authorization: str | None = Header(default=None)):
+    s = _settings()
+    key_hash = _key_hash(authorization)
+    with db.connect(s.database_url) as conn:
+        row = db.pairing_status(conn, key_hash)
+    if row is None:
+        raise HTTPException(status_code=404)
+    if row["claimed_at"]:
+        return {"status": "paired", "elder": row["display_name"]}
+    if row["expired"]:
+        # Mã hết hạn: đồng hồ xin mã mới.
+        return JSONResponse({"status": "expired"}, status_code=410)
+    return {"status": "pending"}

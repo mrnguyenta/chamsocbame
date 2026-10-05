@@ -14,6 +14,7 @@
 using Toybox.Application.Storage;
 using Toybox.Graphics;
 using Toybox.Lang;
+using Toybox.System;
 using Toybox.Time;
 using Toybox.Time.Gregorian;
 using Toybox.Timer;
@@ -32,6 +33,7 @@ class MainView extends WatchUi.View {
         var t = new Timer.Timer();
         t.start(method(:onTick), 5000, true);
         mTimer = t;
+        onTick();
     }
 
     function onHide() as Void {
@@ -43,6 +45,12 @@ class MainView extends WatchUi.View {
     }
 
     function onTick() as Void {
+        if (!Payload.isConfigured()) {
+            var p = getChamSocApp().pairing();
+            if (p != null) {
+                p.tick();
+            }
+        }
         WatchUi.requestUpdate();
     }
 
@@ -61,6 +69,26 @@ class MainView extends WatchUi.View {
         return s;
     }
 
+    private function drawPairing(dc as Graphics.Dc, cx as Lang.Number, h as Lang.Number, center as Lang.Number) as Void {
+        var p    = getChamSocApp().pairing();
+        var code = (p != null) ? p.displayCode() : null;
+        dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
+        if (Payload.serverUrl().length() == 0) {
+            dc.drawText(cx, h * 50 / 100, Graphics.FONT_SMALL, str(Rez.Strings.StatusNoServer), center);
+        } else if (code != null) {
+            dc.drawText(cx, h * 32 / 100, Graphics.FONT_SMALL, str(Rez.Strings.PairTitle), center);
+            dc.setColor(Graphics.COLOR_GREEN, Graphics.COLOR_TRANSPARENT);
+            dc.drawText(cx, h * 50 / 100, Graphics.FONT_NUMBER_MEDIUM, code, center);
+            dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_TRANSPARENT);
+            dc.drawText(cx, h * 70 / 100, Graphics.FONT_XTINY, str(Rez.Strings.PairHint), center);
+        } else if (!System.getDeviceSettings().phoneConnected) {
+            dc.setColor(Graphics.COLOR_ORANGE, Graphics.COLOR_TRANSPARENT);
+            dc.drawText(cx, h * 50 / 100, Graphics.FONT_SMALL, str(Rez.Strings.StatusNoPhone), center);
+        } else {
+            dc.drawText(cx, h * 50 / 100, Graphics.FONT_SMALL, str(Rez.Strings.PairWaiting), center);
+        }
+    }
+
     function onUpdate(dc as Graphics.Dc) as Void {
         var w  = dc.getWidth();
         var h  = dc.getHeight();
@@ -73,6 +101,12 @@ class MainView extends WatchUi.View {
         // Title
         dc.setColor(Graphics.COLOR_BLUE, Graphics.COLOR_TRANSPARENT);
         dc.drawText(cx, h * 17 / 100, Graphics.FONT_SMALL, str(Rez.Strings.Title), center);
+
+        // Chưa ghép với website: hiện mã 6 số to giữa màn hình.
+        if (!Payload.isConfigured()) {
+            drawPairing(dc, cx, h, center);
+            return;
+        }
 
         // Heart rate
         var hr = Payload.currentHr();

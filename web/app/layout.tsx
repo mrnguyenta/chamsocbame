@@ -40,6 +40,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
               <nav className="row" style={{ gap: 4, flex: "1 1 260px" }}>
                 <Link className="btn small" href="/" style={{ border: "none" }}>Tổng quan</Link>
                 <Link className="btn small" href="/cai-dat" style={{ border: "none" }}>Cài đặt</Link>
+                <Link className="btn small" href="/ket-noi-dong-ho" style={{ border: "none" }}>Kết nối đồng hồ</Link>
               </nav>
             )}
             {session && !isDemo && (

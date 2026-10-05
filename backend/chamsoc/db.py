@@ -163,6 +163,33 @@ def watch_device_by_key(conn, key_hash: str) -> dict | None:
     ).fetchone()
 
 
+def start_pairing(conn, code: str, key_hash: str, device: str | None) -> bool:
+    """Tạo lần ghép mới; trả về False nếu mã đang bị một lần ghép khác giữ."""
+    conn.execute("delete from watch_pairings where claimed_at is null and expires_at < now()")
+    row = conn.execute(
+        """
+        insert into watch_pairings (code, key_hash, device) values (%s, %s, %s)
+        on conflict (code) where claimed_at is null do nothing
+        returning id
+        """,
+        (code, key_hash, device),
+    ).fetchone()
+    return row is not None
+
+
+def pairing_status(conn, key_hash: str) -> dict | None:
+    return conn.execute(
+        """
+        select p.claimed_at, p.expires_at < now() as expired, e.display_name
+        from watch_pairings p
+        left join watch_devices w on w.id = p.device_id
+        left join elders e on e.id = w.elder_id
+        where p.key_hash = %s
+        """,
+        (key_hash,),
+    ).fetchone()
+
+
 def create_watch_device(conn, elder_id: str, key_hash: str, label: str | None) -> str:
     row = conn.execute(
         "insert into watch_devices (elder_id, key_hash, label) values (%s, %s, %s) returning id",

@@ -167,3 +167,32 @@ export async function deleteDevice(form: FormData): Promise<void> {
               where w.id = ${String(form.get("device_id"))} and e.id = w.elder_id and e.family_id = ${s.familyId}`;
   revalidatePath("/cai-dat");
 }
+
+/** Ghép đồng hồ: con cháu nhập mã 6 số đang hiện trên đồng hồ. */
+export async function claimWatch(_: ActionState, form: FormData): Promise<ActionState> {
+  if (isDemo) return { ok: true, message: "Chế độ demo: giả lập đã kết nối đồng hồ." };
+  try {
+    const s = await admin();
+    const elderId = String(form.get("elder_id"));
+    await assertElder(s.familyId, elderId);
+    const code = String(form.get("code") ?? "").replace(/\D/g, "");
+    if (code.length !== 6) throw new Error("Mã gồm 6 chữ số, xem trên màn hình đồng hồ");
+    const label = String(form.get("label") ?? "").trim() || "Đồng hồ Garmin";
+    const name = await sql().begin(async (tx) => {
+      const [p] = await tx`
+        select id, key_hash from watch_pairings
+        where code = ${code} and claimed_at is null and expires_at > now() for update`;
+      if (!p) throw new Error("Mã không đúng hoặc đã hết hạn. Mở lại ứng dụng trên đồng hồ để lấy mã mới.");
+      const [d] = await tx`
+        insert into watch_devices (elder_id, key_hash, label) values (${elderId}, ${p.key_hash}, ${label})
+        returning id`;
+      await tx`update watch_pairings set claimed_at = now(), device_id = ${d.id} where id = ${p.id}`;
+      const [e] = await tx`select display_name from elders where id = ${elderId}`;
+      return e.display_name as string;
+    });
+    revalidatePath("/cai-dat");
+    return { ok: true, message: `Đã kết nối đồng hồ với ${name}. Đồng hồ sẽ báo "Đã kết nối" trong ít giây.` };
+  } catch (e) {
+    return { ok: false, message: (e as Error).message };
+  }
+}

@@ -94,16 +94,19 @@ Font đồng hồ cần hiển thị được tiếng Việt có dấu; nếu th
 1. Một lần, người phát triển: đăng ký tài khoản miễn phí ở https://apps.developer.garmin.com,
    tải `chamsoc.iq` lên, điền mô tả và ảnh, gửi duyệt. Ứng dụng **Beta** chỉ cài được lên đồng hồ
    của chính tài khoản phát triển, nên để cài cho ba mẹ (tài khoản Garmin khác) cần **phát hành**.
-2. Người dùng (con cháu làm giúp, khoảng 5 phút): app **Garmin Connect** trên điện thoại ba mẹ →
-   Connect IQ Store → tìm "Chăm Sóc Ba Mẹ" → Cài đặt → mở **Cài đặt** của ứng dụng → dán **mã thiết bị**
-   (lấy trên website: Cài đặt → "Tạo mã cho đồng hồ") → mở ứng dụng trên đồng hồ một lần. Xong.
+2. Người dùng (con cháu làm giúp, khoảng 3 phút), theo trang **Kết nối đồng hồ** trên website:
+   - Quét mã QR trên website bằng điện thoại của ba mẹ → app Garmin Connect mở trang ứng dụng → **Cài đặt**.
+   - Mở ứng dụng trên đồng hồ: màn hình hiện **mã 6 số** (hiệu lực 15 phút).
+   - Trên website chọn người thân, gõ mã 6 số → đồng hồ báo "Đã kết nối" và bắt đầu gửi dữ liệu.
+   Không phải gõ gì trên Garmin Connect, vì địa chỉ máy chủ được điền sẵn lúc build
+   (biến GitHub `CHAMSOC_SERVER_URL`, xem workflow).
 3. Cập nhật về sau tự đến qua Store.
 
 **Cách 2 — chép qua USB (để thử nhanh):**
 1. Cắm đồng hồ vào máy tính, chép `chamsoc-<máy>.prg` vào thư mục `GARMIN/APPS/`
    (macOS cần OpenMTP hoặc Android File Transfer).
-2. Ứng dụng chép tay **không có trang Cài đặt trong Garmin Connect**, nên phải điền sẵn
-   `server_url`/`device_key` trong `resources/properties.xml` trước khi build (không commit).
+2. Ứng dụng chép tay **không có trang Cài đặt trong Garmin Connect**, nhưng vẫn ghép bằng mã 6 số được,
+   miễn là bản build đã điền sẵn địa chỉ máy chủ (biến `CHAMSOC_SERVER_URL`).
 
 ## Thiết bị hỗ trợ (product id trong `manifest.xml`)
 

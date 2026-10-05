@@ -76,7 +76,13 @@ export default async function SettingsPage() {
                   </li>
                 ))}
               </ul>
-              <WatchKeyForm elderId={e.id} />
+              <div className="row" style={{ marginTop: 10 }}>
+                <a className="btn primary small" href={`/ket-noi-dong-ho?nguoi=${e.id}`}>Kết nối đồng hồ bằng mã 6 số</a>
+              </div>
+              <details style={{ marginTop: 8 }}>
+                <summary className="muted" style={{ cursor: "pointer" }}>Cách thủ công: tạo mã dài để dán vào Garmin Connect</summary>
+                <WatchKeyForm elderId={e.id} />
+              </details>
             </section>
           ))}
         </div>

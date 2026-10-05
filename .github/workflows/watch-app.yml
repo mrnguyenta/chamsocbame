@@ -39,6 +39,17 @@ jobs:
             echo "::warning::Đang dùng khoá tạm. Thêm secret CIQ_DEVELOPER_KEY để đưa lên Store."
           fi
 
+      - name: Điền sẵn địa chỉ máy chủ
+        env:
+          SERVER_URL: ${{ vars.CHAMSOC_SERVER_URL }}
+        run: |
+          if [ -n "$SERVER_URL" ]; then
+            sed -i "s|<property id=\"server_url\" type=\"string\"></property>|<property id=\"server_url\" type=\"string\">$SERVER_URL</property>|" resources/properties.xml
+            grep server_url resources/properties.xml
+          else
+            echo "::warning::Chưa đặt biến CHAMSOC_SERVER_URL: người dùng phải tự nhập địa chỉ máy chủ."
+          fi
+
       - name: Thông tin SDK và thiết bị
         run: |
           monkeyc --version || true

@@ -249,3 +249,39 @@ def test_walking_does_not_trigger_high_hr_and_silence_is_detected(conn, family):
     jobs.evaluate_all(conn, tg, now + timedelta(minutes=45))
     jobs.process_alerts(conn, tg, calls, now + timedelta(minutes=45))
     assert any("Đồng hồ chưa gửi dữ liệu 45 phút" in t for t in tg.texts_to(GROUP))
+
+
+def test_pairing_with_six_digit_code(conn, family, monkeypatch):
+    import importlib
+    from fastapi.testclient import TestClient
+
+    for k, v in {"DATABASE_URL": URL, "TELEGRAM_BOT_TOKEN": "t", "TELEGRAM_WEBHOOK_SECRET": "h",
+                 "CRON_SECRET": "c", "TOKEN_ENCRYPTION_KEY": "k"}.items():
+        monkeypatch.setenv(k, v)
+    api = importlib.import_module("api.index")
+    monkeypatch.setattr(api, "TelegramClient", lambda token: FakeTg())
+    client = TestClient(api.app)
+
+    r = client.post("/api/watch/pair/start", json={"device": "006-B4384-00"})
+    assert r.status_code == 200
+    code, key = r.json()["code"], r.json()["key"]
+    assert len(code) == 6 and code.isdigit()
+    auth = {"Authorization": f"Bearer {key}"}
+    assert client.get("/api/watch/pair/status", headers=auth).json() == {"status": "pending"}
+    assert client.post("/api/watch/push", json={"ts": 1}, headers=auth).status_code == 401
+
+    # Website nhận mã (cùng câu lệnh với web/app/cai-dat/actions.ts claimWatch)
+    p = conn.execute("select id, key_hash from watch_pairings where code = %s and claimed_at is null "
+                     "and expires_at > now()", (code,)).fetchone()
+    d = conn.execute("insert into watch_devices (elder_id, key_hash, label) values (%s, %s, 'Venu 4') "
+                     "returning id", (family["ba"]["id"], p["key_hash"])).fetchone()
+    conn.execute("update watch_pairings set claimed_at = now(), device_id = %s where id = %s", (d["id"], p["id"]))
+
+    assert client.get("/api/watch/pair/status", headers=auth).json() == {"status": "paired", "elder": "Ba Hùng"}
+    assert client.post("/api/watch/push", json={"ts": 1, "steps": 10}, headers=auth).status_code == 200
+
+    # Mã hết hạn -> 410 để đồng hồ xin mã mới; khoá lạ -> 404
+    r2 = client.post("/api/watch/pair/start", json={}).json()
+    conn.execute("update watch_pairings set expires_at = now() - interval '1 minute' where code = %s", (r2["code"],))
+    assert client.get("/api/watch/pair/status", headers={"Authorization": f"Bearer {r2['key']}"}).status_code == 410
+    assert client.get("/api/watch/pair/status", headers={"Authorization": "Bearer la"}).status_code == 404

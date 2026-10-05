@@ -5,7 +5,7 @@
     title="@Strings.SettingServerUrl"
     prompt="https://xxx.vercel.app"
   >
-    <settingConfig type="alphaNumeric" required="true" />
+    <settingConfig type="alphaNumeric" />
   </setting>
 
   <setting
@@ -13,7 +13,7 @@
     title="@Strings.SettingDeviceKey"
     prompt="@Strings.SettingDeviceKeyPrompt"
   >
-    <settingConfig type="alphaNumeric" required="true" />
+    <settingConfig type="alphaNumeric" />
   </setting>
 
   <setting

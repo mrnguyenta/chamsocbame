@@ -10,6 +10,11 @@
   <string id="StatusNoPhone">Không thấy điện thoại</string>
   <string id="StatusSending">Đang gửi...</string>
   <string id="StatusNever">Chưa gửi</string>
+  <string id="StatusNoServer">Chưa có địa chỉ máy chủ</string>
+
+  <string id="PairTitle">Mã kết nối</string>
+  <string id="PairHint">Nhập mã này trên website</string>
+  <string id="PairWaiting">Đang lấy mã...</string>
 
   <string id="SentAt">Gửi lúc</string>
   <string id="NeverSent">Chưa gửi lần nào</string>
@@ -18,6 +23,6 @@
 
   <string id="SettingServerUrl">Địa chỉ máy chủ (server_url)</string>
   <string id="SettingDeviceKey">Mã thiết bị (device_key)</string>
-  <string id="SettingDeviceKeyPrompt">Dán mã thiết bị từ trang web gia đình</string>
+  <string id="SettingDeviceKeyPrompt">Để trống: đồng hồ sẽ hiện mã 6 số để nhập trên website</string>
   <string id="SettingInterval">Chu kỳ gửi (phút, tối thiểu 5)</string>
 </strings>
