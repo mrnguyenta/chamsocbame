@@ -1,0 +1,35 @@
+<!doctype html><html lang="vi"><head><meta charset="utf-8">
+<style>
+/* Be Vietnam Pro (Google Fonts) nhúng base64 khi render */
+* { box-sizing: border-box; margin: 0; }
+html, body { width: 500px; height: 500px; overflow: hidden; }
+body { font-family: "Be Vietnam Pro", sans-serif; position: relative;
+  background: radial-gradient(420px 380px at 0% 0%, #cdeee6 0%, transparent 70%),
+              radial-gradient(420px 380px at 100% 100%, #fcdccb 0%, transparent 70%),
+              linear-gradient(135deg, #e3f5f0 0%, #f6f1ec 55%, #fdeee6 100%); }
+.strap { position: absolute; left: 190px; width: 120px; height: 90px; background: linear-gradient(#2a3433, #1b2322); border-radius: 16px; }
+.strap.top { top: 22px; } .strap.bottom { top: 300px; }
+.bezel { position: absolute; left: 110px; top: 66px; width: 280px; height: 280px; border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #6c7674, #2c3534 60%, #161c1b); box-shadow: 0 20px 40px rgba(18,48,44,.35); }
+.btn { position: absolute; width: 14px; height: 32px; background: #3a4443; border-radius: 4px; }
+.face { position: absolute; left: 132px; top: 88px; width: 236px; height: 236px; border-radius: 50%; background: #000;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.heart { width: 70px; height: 70px; }
+.hr { color: #fff; font-size: 64px; font-weight: 800; line-height: 1; margin-top: 4px; font-variant-numeric: tabular-nums; }
+.ok { color: #3ddc84; font-size: 17px; font-weight: 700; margin-top: 6px; }
+.name { position: absolute; left: 0; right: 0; top: 404px; text-align: center; font-size: 40px; font-weight: 800; color: #0b6f69; letter-spacing: -0.01em; }
+.tag { position: absolute; left: 0; right: 0; top: 456px; text-align: center; font-size: 17px; font-weight: 600; color: #3d5a54; }
+</style></head><body>
+<div class="strap top"></div><div class="strap bottom"></div>
+<div class="btn" style="left:103px; top:150px"></div><div class="btn" style="left:103px; top:230px"></div>
+<div class="btn" style="left:383px; top:140px"></div><div class="btn" style="left:383px; top:240px; background:#b8452f"></div>
+<div class="bezel"></div>
+<div class="face">
+  <svg class="heart" viewBox="0 0 24 24"><defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ff7a6b"/><stop offset="1" stop-color="#e5484d"/></linearGradient></defs>
+    <path fill="url(#g)" d="M12 21s-7.5-4.6-9.6-9.2C.9 8.4 2.9 4.5 6.6 4.5c2.1 0 3.6 1.1 4.4 2.5.8-1.4 2.3-2.5 4.4-2.5 3.7 0 5.7 3.9 4.2 7.3C19.5 16.4 12 21 12 21z"/></svg>
+  <div class="hr">72</div>
+  <div class="ok">Đã kết nối</div>
+</div>
+<div class="name">Chăm Sóc Ba Mẹ</div>
+<div class="tag">Sức khoẻ ba mẹ · cảnh báo qua Telegram</div>
+</body></html>
