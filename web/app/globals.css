@@ -41,37 +41,8 @@
   --sleep-deep: #3f5fd8; --sleep-light: #8fa8f0; --sleep-rem: #8b6fe0; --sleep-awake: #f2a65a;
   --grid: rgba(16, 92, 86, 0.10);
 }
-@media (prefers-color-scheme: dark) {
-  :root:where(:not([data-theme="light"])) {
-    color-scheme: dark;
-    --bg: #0f1a19;
-    --bg-grad: radial-gradient(1200px 700px at 0% 0%, #12302d 0%, transparent 60%),
-               radial-gradient(1000px 700px at 100% 100%, #33221c 0%, transparent 60%),
-               linear-gradient(135deg, #0f1d1c 0%, #121a19 50%, #1c1614 100%);
-    --surface: rgba(28, 40, 39, 0.72);
-    --surface-solid: #1a2524;
-    --surface-2: rgba(38, 54, 52, 0.8);
-    --border: rgba(255, 255, 255, 0.07);
-    --border-strong: #35504d;
-    --outline: rgba(255, 255, 255, 0.06);
-    --shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
-    --shadow-sm: 0 4px 14px rgba(0, 0, 0, 0.3);
-    --text: #eef6f5;
-    --text-2: #cfe0de;
-    --muted: #a5bab7;
-    --accent: #2fc2b6; --accent-strong: #138f86; --accent-ink: #7fe0d6; --accent-soft: #163a37;
-    --coral: #f28474; --coral-ink: #f6b0a5; --coral-soft: #43201c;
-    --amber: #f0b45a; --amber-ink: #f4cf95; --amber-soft: #3d2c12;
-    --violet: #a48ef0; --violet-ink: #c9bcf7; --violet-soft: #2c2547;
-    --blue: #6aa8ec; --blue-ink: #a9cbf4; --blue-soft: #1c2c44;
-    --neutral-bg: #26302f; --neutral-fg: #cfd8d6;
-    --info-fg: #b9cff0;
-    --series-hr: #f07a6e;
-    --series-steps: #2fc2b6;
-    --sleep-deep: #6d86ec; --sleep-light: #a9bcf4; --sleep-rem: #a48ef0; --sleep-awake: #f2b46e;
-    --grid: rgba(255, 255, 255, 0.08);
-  }
-}
+/* Luôn dùng tông sáng như mockup, kể cả khi máy đang để chế độ tối. */
+
 
 * { box-sizing: border-box; }
 html, body { margin: 0; color: var(--text); }
