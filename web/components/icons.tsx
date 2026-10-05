@@ -27,6 +27,7 @@ export const IconChevron = (p: P) => <S {...p}><path d="m9 18 6-6-6-6" /></S>;
 export const IconBack = (p: P) => <S {...p}><path d="m15 18-6-6 6-6" /></S>;
 export const IconArrow = (p: P) => <S {...p}><path d="M5 12h14M13 6l6 6-6 6" /></S>;
 export const IconUsers = (p: P) => <S {...p}><circle cx="9" cy="8" r="3.5" /><path d="M2.5 20a6.5 6.5 0 0 1 13 0" /><path d="M16 4.5a3.5 3.5 0 0 1 0 7M21.5 20a6.5 6.5 0 0 0-4-6" /></S>;
+export const IconUser = (p: P) => <S {...p}><circle cx="12" cy="8" r="4" /><path d="M4 21a8 8 0 0 1 16 0" /></S>;
 export const IconAlert = (p: P) => <S {...p}><path d="M12 9v4M12 17h.01" /><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z" /></S>;
 export const IconFile = (p: P) => <S {...p}><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z" /><path d="M14 3v5h5M9 13h6M9 17h4" /></S>;
 export const IconTelegram = (p: P) => <S {...p}><path d="m22 3-20 8 7 2 2 7 4-5 5 4z" /><path d="m9 13 6-4" /></S>;

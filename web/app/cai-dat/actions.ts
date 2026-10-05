@@ -48,7 +48,7 @@ export async function saveRule(_: ActionState, form: FormData): Promise<ActionSt
     const r = parseRule(form);
     await sql()`update alert_rules set threshold = ${r.threshold}, severity = ${r.severity},
                 active_after = ${r.activeAfter}, enabled = ${r.enabled} where id = ${id}`;
-    revalidatePath("/cai-dat");
+    revalidatePath("/", "layout");
     return { ok: true, message: "Đã lưu" };
   } catch (e) {
     return { ok: false, message: (e as Error).message };
@@ -67,7 +67,7 @@ export async function addRule(_: ActionState, form: FormData): Promise<ActionSta
     const r = parseRule(form);
     await sql()`insert into alert_rules (elder_id, metric, comparator, threshold, severity, active_after, enabled)
                 values (${elderId}, ${metric}, ${comparator}, ${r.threshold}, ${r.severity}, ${r.activeAfter}, true)`;
-    revalidatePath("/cai-dat");
+    revalidatePath("/", "layout");
     return { ok: true, message: "Đã thêm ngưỡng" };
   } catch (e) {
     return { ok: false, message: (e as Error).message };
@@ -80,7 +80,7 @@ export async function deleteRule(form: FormData): Promise<void> {
   const id = String(form.get("rule_id"));
   await assertRule(s.familyId, id);
   await sql()`delete from alert_rules where id = ${id}`;
-  revalidatePath("/cai-dat");
+  revalidatePath("/", "layout");
 }
 
 export async function saveConditions(_: ActionState, form: FormData): Promise<ActionState> {
@@ -93,7 +93,7 @@ export async function saveConditions(_: ActionState, form: FormData): Promise<Ac
     await sql()`update elders set conditions = ${picked} where id = ${elderId}`;
     // Thêm ngưỡng huyết áp / đường huyết còn thiếu khi vừa chọn bệnh nền mới.
     await sql()`select chamsoc_ensure_default_rules(${elderId}, ${picked})`;
-    revalidatePath("/cai-dat");
+    revalidatePath("/", "layout");
     return { ok: true, message: "Đã lưu bệnh nền" };
   } catch (e) {
     return { ok: false, message: (e as Error).message };
@@ -109,7 +109,7 @@ export async function saveFamily(_: ActionState, form: FormData): Promise<Action
     if (![qs, qe, mr].every((t) => TIME.test(t)) || (er && !TIME.test(er))) throw new Error("Giờ dạng HH:MM");
     await sql()`update families set quiet_start = ${qs}, quiet_end = ${qe}, morning_report_at = ${mr},
                 evening_report_at = ${er || null} where id = ${s.familyId}`;
-    revalidatePath("/cai-dat");
+    revalidatePath("/", "layout");
     return { ok: true, message: "Đã lưu" };
   } catch (e) {
     return { ok: false, message: (e as Error).message };
@@ -128,7 +128,7 @@ export async function addMed(_: ActionState, form: FormData): Promise<ActionStat
     if (!times.length || !times.every((t) => TIME.test(t))) throw new Error("Giờ uống dạng 07:00, 19:00");
     await sql()`insert into med_schedules (elder_id, name, note, times)
                 values (${elderId}, ${name}, ${String(form.get("note") ?? "").trim() || null}, ${times}::time[])`;
-    revalidatePath("/cai-dat");
+    revalidatePath("/", "layout");
     return { ok: true, message: "Đã thêm thuốc" };
   } catch (e) {
     return { ok: false, message: (e as Error).message };
@@ -141,7 +141,7 @@ export async function deleteMed(form: FormData): Promise<void> {
   const id = String(form.get("med_id"));
   await sql()`update med_schedules m set active = false from elders e
               where m.id = ${id} and e.id = m.elder_id and e.family_id = ${s.familyId}`;
-  revalidatePath("/cai-dat");
+  revalidatePath("/", "layout");
 }
 
 /** Tạo mã cho ứng dụng đồng hồ. Mã chỉ hiện một lần, chỉ lưu bản băm. */
@@ -155,7 +155,7 @@ export async function createWatchKey(_: ActionState, form: FormData): Promise<Ac
     const hash = createHash("sha256").update(key).digest("hex");
     const label = String(form.get("label") ?? "").trim() || null;
     await sql()`insert into watch_devices (elder_id, key_hash, label) values (${elderId}, ${hash}, ${label})`;
-    revalidatePath("/cai-dat");
+    revalidatePath("/", "layout");
     return { ok: true, message: "Đã tạo mã. Chép ngay, mã chỉ hiện một lần.", key };
   } catch (e) {
     return { ok: false, message: (e as Error).message };
@@ -167,7 +167,7 @@ export async function deleteDevice(form: FormData): Promise<void> {
   const s = await admin();
   await sql()`delete from watch_devices w using elders e
               where w.id = ${String(form.get("device_id"))} and e.id = w.elder_id and e.family_id = ${s.familyId}`;
-  revalidatePath("/cai-dat");
+  revalidatePath("/", "layout");
 }
 
 /** Ghép đồng hồ: con cháu nhập mã 6 số đang hiện trên đồng hồ. */
@@ -192,7 +192,7 @@ export async function claimWatch(_: ActionState, form: FormData): Promise<Action
       const [e] = await tx`select display_name from elders where id = ${elderId}`;
       return e.display_name as string;
     });
-    revalidatePath("/cai-dat");
+    revalidatePath("/", "layout");
     return { ok: true, message: `Đã kết nối đồng hồ với ${name}. Đồng hồ sẽ báo "Đã kết nối" trong ít giây.` };
   } catch (e) {
     return { ok: false, message: (e as Error).message };

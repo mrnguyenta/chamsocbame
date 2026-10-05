@@ -37,8 +37,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             {session && <TopNav />}
             <div style={{ flex: 1 }} />
             {identity && !isDemo && (
-              <form action="/api/auth/logout" method="post" className="row" style={{ gap: 8, flexWrap: "nowrap" }}>
-                {identity.isSystemAdmin && <Link className="btn ghost small hide-sm" href="/quan-tri">Quản trị</Link>}
+              // Điện thoại: tên và Đăng xuất nằm trong tab Tài khoản, đầu trang chỉ để logo.
+              <form action="/api/auth/logout" method="post" className="row hide-sm" style={{ gap: 8, flexWrap: "nowrap" }}>
+                {identity.isSystemAdmin && <Link className="btn ghost small" href="/quan-tri">Quản trị</Link>}
                 <Link className="muted" href="/tai-khoan" title="Tài khoản"
                   style={{ whiteSpace: "nowrap", textDecoration: "none", maxWidth: 90, overflow: "hidden", textOverflow: "ellipsis" }}>
                   {session?.name ?? identity.name}

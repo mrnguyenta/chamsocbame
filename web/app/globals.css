@@ -244,3 +244,31 @@ details.group-block[open] > summary { border-bottom: 1px solid var(--outline); }
 details.group-block > .group-body { padding: 12px 14px 14px; display: grid; gap: 10px;
   grid-template-columns: repeat(auto-fill, minmax(min(100%, 380px), 1fr)); }
 @media (prefers-reduced-motion: reduce) { details.group-block > summary .chev { transition: none; } }
+
+/* Thẻ lớn người thân (Trang chủ, Người thân) */
+a.elder-card { display: flex; flex-direction: column; gap: 14px; text-decoration: none; color: var(--text);
+  border-left: 6px solid var(--accent); transition: transform .15s ease, box-shadow .15s ease; }
+a.elder-card.is-warn { border-left-color: var(--coral); }
+a.elder-card.is-off { border-left-color: var(--amber); }
+a.elder-card:hover { transform: translateY(-2px); box-shadow: var(--shadow); }
+a.elder-card:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.elder-hr { background: var(--surface-solid); border-radius: 20px; padding: 14px 16px; box-shadow: var(--shadow-sm);
+  display: flex; gap: 14px; align-items: center; }
+.big-num { font-size: 40px; font-weight: 800; line-height: 1.05; font-variant-numeric: tabular-nums; }
+.big-num .unit { font-size: 14px; font-weight: 500; color: var(--muted); }
+.elder-stats { display: flex; flex-wrap: wrap; gap: 8px 18px; font-size: 15px; font-weight: 600; color: var(--text-2); }
+.elder-stats span, .elder-card .muted svg { display: inline-flex; align-items: center; gap: 6px; vertical-align: -2px; }
+@media (prefers-reduced-motion: reduce) { a.elder-card { transition: none; } a.elder-card:hover { transform: none; } }
+
+/* Khối lớn thu gọn được trên trang từng người và trang Tài khoản */
+details.block { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+  box-shadow: var(--shadow-sm); overflow: hidden; scroll-margin-top: 80px; }
+details.block > summary { list-style: none; cursor: pointer; display: flex; align-items: center; gap: 12px; padding: 16px 18px; }
+details.block > summary::-webkit-details-marker { display: none; }
+details.block > summary:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+details.block > summary h2 { margin: 0; font-size: 18px; }
+details.block > summary .grow { flex: 1; min-width: 0; }
+details.block > summary .chev { color: var(--muted); flex: none; transition: transform .2s ease; }
+details.block[open] > summary .chev { transform: rotate(90deg); }
+details.block > .block-body { padding: 0 18px 18px; display: flex; flex-direction: column; gap: 12px; }
+@media (prefers-reduced-motion: reduce) { details.block > summary .chev { transition: none; } }

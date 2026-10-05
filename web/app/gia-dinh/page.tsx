@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { IconChevron, IconGear, IconHeart, IconTelegram, IconUsers } from "@/components/icons";
+import { IconChevron, IconHeart, IconTelegram, IconUsers } from "@/components/icons";
 import { Avatar } from "@/components/ui";
 import { requireSession } from "@/lib/auth";
 import { getBot } from "@/lib/bot";
@@ -36,7 +36,7 @@ export default async function FamilyPage({ searchParams }: { searchParams: Promi
           <h1 style={{ fontSize: 26 }}>{f.name}</h1>
           <div className="muted" style={{ fontSize: 14 }}>{f.elders.length} người thân · {f.members.length} người chăm sóc</div>
         </div>
-        <Link className="btn small" href="/cai-dat"><IconGear size={16} /> Ngưỡng & thuốc</Link>
+        <Link className="btn small" href="/tai-khoan">← Tài khoản</Link>
       </div>
 
       {moi && (
@@ -74,7 +74,7 @@ export default async function FamilyPage({ searchParams }: { searchParams: Promi
                     </span>
                   </span>
                   <span className={`chip ${e.hasTelegram ? "tone-ok" : "tone-neutral"}`}>{e.hasTelegram ? "Đã nối Telegram" : "Chưa nối Telegram"}</span>
-                  <Link className="btn ghost small" href={`/cai-dat?nguoi=${e.id}`}>Cài đặt <IconChevron size={14} /></Link>
+                  <Link className="btn ghost small" href={`/nguoi-than/${e.id}`}>Mở trang <IconChevron size={14} /></Link>
                   {admin && !e.hasTelegram && (
                     <div style={{ width: "100%" }}><LinkCodeForm bot={bot} kind="elder" elderId={e.id} label={`Nối Telegram của ${e.name} (nhắc thuốc, nhập huyết áp)`} /></div>
                   )}
@@ -143,7 +143,7 @@ export default async function FamilyPage({ searchParams }: { searchParams: Promi
         </div>
 
         <aside className="side-col">
-          <section className="card">
+          <section id="telegram" className="card" style={{ scrollMarginTop: 80 }}>
             <CardTitle icon={<IconTelegram size={20} />} tile="tile-blue" title="Nhóm Telegram gia đình"
               sub={f.groups.length ? `Bot gửi cảnh báo và báo cáo vào ${f.groups.length} nhóm` : "Chưa nối nhóm nào"} />
             {f.groups.length > 0 && (

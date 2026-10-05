@@ -43,7 +43,7 @@ export default async function PairPage({ searchParams }: { searchParams: Promise
 
   return (
     <main className="container" style={{ maxWidth: 760 }}>
-      {session && <Link href="/cai-dat" className="btn small" style={{ alignSelf: "flex-start" }}>← Cài đặt</Link>}
+      {session && <Link href="/tai-khoan" className="btn small" style={{ alignSelf: "flex-start" }}>← Tài khoản</Link>}
       <h1 style={{ fontSize: 26 }}>Kết nối đồng hồ</h1>
       <p style={{ margin: 0 }}>
         Làm một lần cho mỗi đồng hồ, khoảng 3 phút. Sau đó đồng hồ tự gửi dữ liệu mỗi 5 phút, ba mẹ không phải làm gì.

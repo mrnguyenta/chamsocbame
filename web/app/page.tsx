@@ -1,19 +1,14 @@
 import Link from "next/link";
 import AutoRefresh from "@/components/AutoRefresh";
-import HrChart from "@/components/HrChart";
-import {
-  HeartArt, IconAlert, IconBell, IconBolt, IconChart, IconChevron, IconMoon, IconPill, IconSteps, IconWatch,
-} from "@/components/icons";
-import { Avatar, SeverityChip, StatusChip } from "@/components/ui";
+import ElderCard from "@/components/ElderCard";
+import { IconAlert, IconBell, IconPlus, IconUsers, IconWatch } from "@/components/icons";
+import { SeverityChip } from "@/components/ui";
 import { requireSession } from "@/lib/auth";
 import { getOverview } from "@/lib/data";
 import { isDemo } from "@/lib/db";
-import { age, fmtAgo, fmtDateTime, fmtDuration, fmtNum } from "@/lib/format";
-import type { ElderSummary } from "@/lib/types";
+import { fmtDateTime } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
-
-const ROLE = { admin: "Quản trị", alerts: "Nhận cảnh báo", reports: "Chỉ nhận báo cáo" } as const;
 
 function greeting(): string {
   const h = Number(new Date().toLocaleString("en-US", { hour: "numeric", hour12: false, timeZone: "Asia/Ho_Chi_Minh" }));
@@ -21,66 +16,6 @@ function greeting(): string {
   if (h < 14) return "Chào buổi trưa";
   if (h < 18) return "Chào buổi chiều";
   return "Chào buổi tối";
-}
-
-function MiniStat({ icon, tile, label, value, unit }: {
-  icon: React.ReactNode; tile: string; label: string; value: string | number; unit?: string;
-}) {
-  return (
-    <div className="kpi">
-      <div className="label"><span className={`icon-tile sm ${tile}`}>{icon}</span>{label}</div>
-      <div className="value">{value}{unit && value !== "—" && <span className="unit"> {unit}</span>}</div>
-    </div>
-  );
-}
-
-function ElderCard({ e }: { e: ElderSummary }) {
-  const hr = e.hrNow ?? e.today.restingHr;
-  const high = e.status === "attention";
-  return (
-    <article className="card" style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-      <div className="row" style={{ flexWrap: "nowrap" }}>
-        <Avatar name={e.name} />
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontWeight: 700, fontSize: 18 }}>{e.name}</div>
-          <div className="muted">
-            {[age(e.birthYear), e.watchLabel ?? "chưa gắn đồng hồ",
-              e.watchBattery != null ? `pin ${e.watchBattery}%` : null].filter(Boolean).join(" · ")}
-          </div>
-        </div>
-        <StatusChip status={e.status} />
-      </div>
-
-      <div style={{ background: "var(--surface-solid)", borderRadius: 20, padding: 16, boxShadow: "var(--shadow-sm)",
-        display: "flex", gap: 14, alignItems: "center" }}>
-        <HeartArt size={58} />
-        <div style={{ flex: "0 0 auto" }}>
-          <div className="muted">{e.hrNow != null ? "Nhịp tim lúc này" : "Nhịp tim nghỉ"}</div>
-          <div style={{ fontSize: 30, fontWeight: 800, lineHeight: 1.1, color: high ? "var(--coral-ink)" : undefined }}>
-            {hr ?? "—"}{hr != null && <span className="unit" style={{ fontSize: 13, fontWeight: 500, color: "var(--muted)" }}> bpm</span>}
-          </div>
-        </div>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <HrChart data={e.hr24h} height={44} compact label={`Nhịp tim 24 giờ của ${e.name}`} />
-        </div>
-      </div>
-
-      <div className="kpis tight">
-        <MiniStat icon={<IconSteps size={16} />} tile="tile-teal" label="Bước chân" value={fmtNum(e.today.steps)} />
-        <MiniStat icon={<IconMoon size={16} />} tile="tile-violet" label="Giấc ngủ" value={fmtDuration(e.today.sleepSeconds)} />
-        <MiniStat icon={<IconBolt size={16} />} tile="tile-amber" label="Năng lượng" value={e.today.bodyBattery ?? "—"} unit="/100" />
-      </div>
-
-      <div className="row" style={{ justifyContent: "space-between" }}>
-        <span className="muted" style={e.status === "offline" ? { color: "var(--warn-fg)", fontWeight: 600 } : undefined}>
-          {e.liveSource ? "Đồng hồ gửi trực tiếp" : "Garmin Connect"} · {fmtAgo(e.lastDataAt)}
-        </span>
-        <Link className="btn primary small" href={`/nguoi-than/${e.id}`}>
-          Xem chi tiết <span className="arrow"><IconChevron size={16} /></span>
-        </Link>
-      </div>
-    </article>
-  );
 }
 
 export default async function OverviewPage() {
@@ -91,10 +26,11 @@ export default async function OverviewPage() {
 
   const actions = [
     { href: "/ket-noi-dong-ho", label: "Kết nối đồng hồ", tile: "tile-teal", icon: <IconWatch size={22} /> },
-    { href: "/cai-dat#thuoc", label: "Lịch thuốc", tile: "tile-violet", icon: <IconPill size={22} /> },
+    { href: "/nguoi-than#them", label: "Thêm người thân", tile: "tile-violet", icon: <IconPlus size={22} /> },
     { href: "/canh-bao", label: "Cảnh báo", tile: "tile-coral", icon: <IconAlert size={22} /> },
-    { href: "/cai-dat", label: "Ngưỡng", tile: "tile-blue", icon: <IconChart size={22} /> },
+    { href: "/gia-dinh", label: "Anh chị em", tile: "tile-blue", icon: <IconUsers size={22} /> },
   ];
+  const openBy = (id: string) => o.openAlerts.filter((a) => a.elderId === id).length;
 
   return (
     <main className="container">
@@ -130,9 +66,11 @@ export default async function OverviewPage() {
       <div className="split">
         <section className="main-col" aria-label="Người thân">
           <div className="grid-cards">
-            {o.elders.map((e) => <ElderCard key={e.id} e={e} />)}
+            {o.elders.map((e) => <ElderCard key={e.id} e={e} openAlerts={openBy(e.id)} />)}
           </div>
-          {o.elders.length === 0 && <div className="card">Chưa có người thân nào.</div>}
+          {o.elders.length === 0 && (
+            <div className="card">Chưa có người thân nào. <Link href="/nguoi-than#them">Thêm ba mẹ</Link> hoặc <Link href="/ket-noi-dong-ho">kết nối đồng hồ</Link>.</div>
+          )}
         </section>
 
         <aside className="side-col">
@@ -167,21 +105,6 @@ export default async function OverviewPage() {
             </ul>
           </section>
 
-          <section className="card">
-            <h2>Người cùng chăm sóc</h2>
-            <ul className="list">
-              {o.carers.map((c) => (
-                <li key={c.id} className="list-row" style={{ minHeight: 0 }}>
-                  <Avatar name={c.name} small />
-                  <span className="grow">
-                    <span className="title" style={{ display: "block" }}>{c.name}</span>
-                    <span className="muted">{ROLE[c.role]}{c.phone ? " · có số gọi khẩn" : ""}</span>
-                  </span>
-                  <span className={`chip ${c.hasTelegram ? "tone-ok" : "tone-neutral"}`}>{c.hasTelegram ? "Telegram" : "Chưa nối"}</span>
-                </li>
-              ))}
-            </ul>
-          </section>
         </aside>
       </div>
       <p className="muted">Thông tin chỉ để tham khảo, không thay thế chẩn đoán của bác sĩ.</p>
