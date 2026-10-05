@@ -1,6 +1,6 @@
 //-----------------------------------------------------------------------------------
 //
-// Chăm Sóc Ba Mẹ - background service.
+// Chăm Sóc Người Thân - background service.
 //
 // Runs every `interval_min` minutes (min 5) via Background.registerForTemporalEvent(),
 // even when the app is closed. Collects data (Payload.build()), POSTs it through the

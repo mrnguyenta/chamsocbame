@@ -1,8 +1,8 @@
 //-----------------------------------------------------------------------------------
 //
-// Chăm Sóc Ba Mẹ - the single foreground screen (large text for elderly users).
+// Chăm Sóc Người Thân - the single foreground screen (large text for elderly users).
 //
-//   Chăm Sóc Ba Mẹ
+//   Chăm Sóc Người Thân
 //        72            <- current heart rate
 //   nhịp tim / phút
 //     Đã kết nối       <- status of the latest send
@@ -101,7 +101,8 @@ class MainView extends WatchUi.View {
 
         // Title
         dc.setColor(Graphics.COLOR_BLUE, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx, h * 17 / 100, Graphics.FONT_SMALL, str(Rez.Strings.Title), center);
+        // FONT_TINY: "Chăm Sóc Người Thân" phải vừa dây cung màn hình tròn nhỏ (Fenix 7S, 240 px).
+        dc.drawText(cx, h * 17 / 100, Graphics.FONT_TINY, str(Rez.Strings.Title), center);
 
         // Chưa ghép với website: hiện mã 6 số to giữa màn hình.
         if (!Payload.isConfigured()) {

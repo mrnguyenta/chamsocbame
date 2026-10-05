@@ -9,7 +9,7 @@ import { setSystemAdmin } from "./actions";
 import { BotForm, ClaimForm, GeneralForm, ResetPasswordForm } from "./forms";
 
 export const dynamic = "force-dynamic";
-export const metadata: Metadata = { title: "Quản trị hệ thống · Chăm Sóc Ba Mẹ", robots: { index: false } };
+export const metadata: Metadata = { title: "Quản trị hệ thống · Chăm Sóc Người Thân", robots: { index: false } };
 
 function Title({ icon, tile, title, sub }: { icon: React.ReactNode; tile: string; title: string; sub?: string }) {
   return (

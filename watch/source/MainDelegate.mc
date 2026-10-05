@@ -1,6 +1,6 @@
 //-----------------------------------------------------------------------------------
 //
-// Chăm Sóc Ba Mẹ - input handling. Select button or a screen tap = send now.
+// Chăm Sóc Người Thân - input handling. Select button or a screen tap = send now.
 // Back button keeps the default behaviour (exit app; background keeps running).
 //
 //-----------------------------------------------------------------------------------

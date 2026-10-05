@@ -1,6 +1,6 @@
 //-----------------------------------------------------------------------------------
 //
-// Chăm Sóc Ba Mẹ - shared settings + payload builder.
+// Chăm Sóc Người Thân - shared settings + payload builder.
 //
 // Used by BOTH the background service (BgDelegate) and the foreground app
 // ("send now" button), hence annotated (:background). Keep it small: the

@@ -1,6 +1,6 @@
 //-----------------------------------------------------------------------------------
 //
-// Chăm Sóc Ba Mẹ - ghép đồng hồ với website bằng mã 6 số (giống ghép TV với tài khoản).
+// Chăm Sóc Người Thân - ghép đồng hồ với website bằng mã 6 số (giống ghép TV với tài khoản).
 //
 // Chỉ chạy khi ứng dụng đang mở và đồng hồ chưa có khoá (device_key rỗng):
 //   1. POST {server_url}/api/watch/pair/start  -> {"code": "482917", "key": "...", "expires_in": 900}

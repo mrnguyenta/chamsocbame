@@ -1,4 +1,4 @@
-# Đưa "Chăm Sóc Ba Mẹ" lên Connect IQ Store
+# Đưa "Chăm Sóc Người Thân" lên Connect IQ Store
 
 Cài qua Store là cách gọn nhất cho người dùng: không cáp, không máy tính, tự cập nhật.
 Việc dưới đây chỉ làm **một lần** (người phát triển).
@@ -29,7 +29,7 @@ cần bản chính thức (mục 2).
 2. Mở https://apps-developer.garmin.com, đăng nhập tài khoản Garmin (cùng tài khoản đang dùng Garmin Connect).
    Lần đầu: đồng ý điều khoản nhà phát triển.
 3. **Upload an App** → chọn file `chamsoc-beta.iq` → **đánh dấu "Beta App"** → điền tên
-   "Chăm Sóc Ba Mẹ", mô tả (mục 3), danh mục Health & Fitness → gửi.
+   "Chăm Sóc Người Thân", mô tả (mục 3), danh mục Health & Fitness → gửi.
 4. Cài xuống đồng hồ: trên trang quản lý (apps-developer.garmin.com) mở app Beta vừa tải lên → nút
    **Download** → chọn đồng hồ. App được cài ở lần đồng bộ kế tiếp của Garmin Connect trên điện thoại
    (mở Garmin Connect, kéo xuống để đồng bộ).
@@ -48,25 +48,31 @@ cần bản chính thức (mục 2).
 
 ## 3. Nội dung trang Store
 
-**Tên:** Chăm Sóc Ba Mẹ
+**Tên:** Chăm Sóc Người Thân
 
 **Loại:** Device App (watch-app) · **Danh mục:** Health & Fitness
 
-**Mô tả ngắn (VI):** Gửi nhịp tim, bước chân, giấc ngủ của ba mẹ cho con cháu mỗi 5 phút,
-cảnh báo qua Telegram khi có chỉ số bất thường.
+**Mô tả ngắn (VI):** Theo dõi sức khoẻ người thân từ xa: đồng hồ gửi nhịp tim, vận động, căng thẳng mỗi 5 phút,
+cả nhà nhận cảnh báo qua Telegram khi có bất thường.
+
+**Short description (EN):** Check on your loved ones from afar: the watch sends heart rate, activity and stress
+every 5 minutes, and the whole family gets Telegram alerts when something looks wrong.
 
 **Mô tả (VI):**
-> Chăm Sóc Ba Mẹ giúp con cháu theo dõi sức khoẻ ba mẹ từ xa.
-> - Mỗi 5 phút đồng hồ tự gửi nhịp tim, bước chân, SpO2, mức căng thẳng, Body Battery và pin đồng hồ, kể cả khi ứng dụng đã đóng.
-> - Cảnh báo vào nhóm Telegram gia đình khi nhịp tim quá cao/thấp, lâu không cử động, đồng hồ mất kết nối…
+> Chăm Sóc Người Thân giúp cả nhà theo dõi sức khoẻ ông bà, ba mẹ và người thân từ xa.
+> - Mỗi 5 phút đồng hồ tự gửi nhịp tim, bước chân, calo, quãng đường, căng thẳng, Body Battery, nhịp thở, SpO2 và pin đồng hồ, kể cả khi ứng dụng đã đóng.
+> - Cảnh báo vào nhóm Telegram gia đình khi nhịp tim quá cao/thấp, ngồi/nằm im quá lâu, căng thẳng cao kéo dài, không đeo đồng hồ hoặc đồng hồ mất kết nối.
+> - Website cho cả nhà: mỗi người thân một trang, ngưỡng cảnh báo theo bệnh nền, nhắc uống thuốc, báo cáo sáng/tối.
 > - Kết nối một chạm: mở ứng dụng, bấm thông báo trên điện thoại. Không cần gõ cài đặt.
 > - Miễn phí cho gia đình. Cần điện thoại có Garmin Connect ở gần, bật Bluetooth và có mạng.
 > - Không phải thiết bị y tế, không thay thế bác sĩ hay dịch vụ cấp cứu.
 
 **Description (EN):**
-> Chăm Sóc Ba Mẹ ("Care for Mom & Dad") lets family members check on their elderly parents remotely.
-> Every 5 minutes the watch sends heart rate, steps, SpO2, stress, Body Battery and battery level to the
-> family dashboard, and alerts are delivered to the family's Telegram group when something looks wrong.
+> Chăm Sóc Người Thân ("Care for Loved Ones") lets a family check on grandparents, parents and other loved ones remotely.
+> Every 5 minutes the watch sends heart rate, steps, calories, distance, stress, Body Battery, respiration, SpO2 and
+> battery level to the family dashboard, even when the app is closed. Alerts go to the family's Telegram group when
+> heart rate is too high or low, someone has been inactive for hours, stress stays high, the watch is not worn or
+> it stops sending.
 > One-tap pairing: open the app and tap the notification on the phone. Requires the Garmin Connect app
 > on a nearby phone with Bluetooth and internet.
 > Not a medical device; it does not diagnose anything and does not replace a doctor or emergency services.

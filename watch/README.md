@@ -1,4 +1,4 @@
-# Ứng dụng đồng hồ Garmin "Chăm Sóc Ba Mẹ"
+# Ứng dụng đồng hồ Garmin "Chăm Sóc Người Thân"
 
 > **Tình trạng:** đã **biên dịch thành công** cho Venu 3/3S, Venu 4 (41/45 mm), vívoactive 5/6
 > bằng GitHub Actions (`.github/workflows/watch-app.yml`). **Chưa chạy thử trên đồng hồ thật.**
@@ -34,7 +34,7 @@ Trường không đọc được sẽ là `null`. Máy chủ nên coi trường 
 
 Màn hình đồng hồ (chữ to, tiếng Việt):
 
-- "Chăm Sóc Ba Mẹ"
+- "Chăm Sóc Người Thân"
 - Nhịp tim hiện tại (cập nhật mỗi 5 giây khi đang mở app)
 - Trạng thái: "Đã kết nối" / "Chưa cài đặt" / "Sai mã thiết bị" (HTTP 401) /
   "Không thấy điện thoại" (mã -104) / "Lỗi gửi: <mã>"
@@ -58,8 +58,8 @@ Mức hao pin thêm là **nhỏ** (thường vài phần trăm mỗi ngày). Có
 ## Cài đặt từ điện thoại (server_url, device_key)
 
 1. Mở ứng dụng **Garmin Connect** trên điện thoại → chọn đồng hồ → **Hoạt động & Ứng dụng**
-   (hoặc **Connect IQ Apps / Ứng dụng Connect IQ**) → **Chăm Sóc Ba Mẹ** → **Cài đặt**.
-   (Hoặc dùng ứng dụng **Connect IQ Store** → Thiết bị của tôi → Chăm Sóc Ba Mẹ → Cài đặt.)
+   (hoặc **Connect IQ Apps / Ứng dụng Connect IQ**) → **Chăm Sóc Người Thân** → **Cài đặt**.
+   (Hoặc dùng ứng dụng **Connect IQ Store** → Thiết bị của tôi → Chăm Sóc Người Thân → Cài đặt.)
 2. Điền:
    - **Địa chỉ máy chủ (server_url)**: ví dụ `https://xxx.vercel.app` (không cần dấu `/` ở cuối).
    - **Mã thiết bị (device_key)**: mã lấy từ trang web gia đình.

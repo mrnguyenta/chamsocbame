@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <strings>
-  <string id="AppName">Chăm Sóc Ba Mẹ</string>
-  <string id="Title">Chăm Sóc Ba Mẹ</string>
+  <string id="AppName">Chăm Sóc Người Thân</string>
+  <string id="Title">Chăm Sóc Người Thân</string>
 
   <string id="StatusOk">Đã kết nối</string>
   <string id="StatusNotSet">Chưa cài đặt</string>

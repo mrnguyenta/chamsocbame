@@ -7,8 +7,8 @@ import { isDemo } from "@/lib/db";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Chăm Sóc Ba Mẹ",
-  description: "Theo dõi sức khoẻ ba mẹ từ đồng hồ Garmin, cảnh báo qua Telegram",
+  title: "Chăm Sóc Người Thân",
+  description: "Theo dõi sức khoẻ người thân từ đồng hồ Garmin, cảnh báo qua Telegram",
 };
 
 export const viewport: Viewport = { width: "device-width", initialScale: 1, themeColor: "#dff3ef" };
@@ -32,7 +32,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
               <span aria-hidden className="icon-tile" style={{ background: "var(--accent-strong)", color: "#fff", borderRadius: 12 }}>
                 <IconHeart size={20} />
               </span>
-              <strong style={{ fontSize: 17, whiteSpace: "nowrap", minWidth: 0, overflow: "hidden", textOverflow: "ellipsis" }}>Chăm Sóc Ba Mẹ</strong>
+              <strong style={{ fontSize: 17, whiteSpace: "nowrap", minWidth: 0, overflow: "hidden", textOverflow: "ellipsis" }}>Chăm Sóc Người Thân</strong>
             </Link>
             {session && <TopNav />}
             <div style={{ flex: 1 }} />

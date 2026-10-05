@@ -8,7 +8,7 @@ import { getPairingState } from "@/lib/data";
 export const dynamic = "force-dynamic";
 
 /**
- * Trang đồng hồ mở trên điện thoại (thông báo "Chăm Sóc Ba Mẹ" từ Garmin Connect).
+ * Trang đồng hồ mở trên điện thoại (thông báo "Chăm Sóc Người Thân" từ Garmin Connect).
  * - Con cháu đang đăng nhập: vào thẳng trang kết nối, mã đã điền sẵn.
  * - Điện thoại của ba mẹ: gửi link này cho con cháu, con cháu bấm là kết nối được.
  */
@@ -34,7 +34,7 @@ export default async function WatchLinkPage({ params }: { params: Promise<{ code
             <div style={{ width: "100%", display: "flex", flexDirection: "column", gap: 10 }}>
               <h2 style={{ fontSize: 17 }}>Đây là điện thoại của ba mẹ?</h2>
               <p className="muted" style={{ fontSize: 14, margin: 0 }}>Gửi link này cho con cháu. Con cháu bấm vào là kết nối xong, ba mẹ không phải làm gì thêm.</p>
-              <ShareLink text={`Đồng hồ của ba/mẹ đang chờ kết nối Chăm Sóc Ba Mẹ (mã ${pretty}). Con bấm vào đây để kết nối:`} />
+              <ShareLink text={`Đồng hồ của ba/mẹ đang chờ kết nối Chăm Sóc Người Thân (mã ${pretty}). Con bấm vào đây để kết nối:`} />
             </div>
             <div style={{ width: "100%", display: "flex", flexDirection: "column", gap: 10, alignItems: "center" }}>
               <h2 style={{ fontSize: 17 }}>Bạn là con cháu?</h2>
@@ -51,7 +51,7 @@ export default async function WatchLinkPage({ params }: { params: Promise<{ code
         ) : (
           <div>
             <h1 style={{ fontSize: 22 }}>Mã đã hết hạn</h1>
-            <p className="muted">Mở lại ứng dụng “Chăm Sóc Ba Mẹ” trên đồng hồ để lấy mã mới, điện thoại sẽ nhận thông báo mới.</p>
+            <p className="muted">Mở lại ứng dụng “Chăm Sóc Người Thân” trên đồng hồ để lấy mã mới, điện thoại sẽ nhận thông báo mới.</p>
           </div>
         )}
       </section>

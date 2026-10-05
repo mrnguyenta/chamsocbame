@@ -32,7 +32,7 @@ from chamsoc.config import Settings  # noqa: E402
 from chamsoc.telegram import TelegramClient  # noqa: E402
 
 logging.basicConfig(level=logging.INFO)
-app = FastAPI(title="Chăm Sóc Ba Mẹ")
+app = FastAPI(title="Chăm Sóc Người Thân")
 
 
 def _settings() -> Settings:

@@ -4,7 +4,7 @@
   language is Vietnamese. Keep the ids identical in both files.
 -->
 <strings>
-  <string id="AppName">Cham Soc Ba Me</string>
+  <string id="AppName">Cham Soc Nguoi Than</string>
   <string id="Title">Family Care</string>
 
   <string id="StatusOk">Connected</string>

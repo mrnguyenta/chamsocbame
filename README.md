@@ -1,4 +1,4 @@
-# Chăm Sóc Ba Mẹ
+# Chăm Sóc Người Thân
 
 Theo dõi sức khoẻ ba mẹ, ông bà qua đồng hồ **Garmin**, gửi báo cáo, cảnh báo và nhắc thuốc qua **Telegram** cho cả gia đình.
 

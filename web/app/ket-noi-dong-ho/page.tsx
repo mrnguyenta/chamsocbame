@@ -52,7 +52,7 @@ export default async function PairPage({ searchParams }: { searchParams: Promise
       <section className="card row" style={{ alignItems: "flex-start", gap: 16, flexWrap: "nowrap" }}>
         <span style={STEP}>1</span>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <h2 style={{ marginBottom: 6 }}>Cài ứng dụng “Chăm Sóc Ba Mẹ” lên đồng hồ</h2>
+          <h2 style={{ marginBottom: 6 }}>Cài ứng dụng “Chăm Sóc Người Thân” lên đồng hồ</h2>
           {storeUrl ? (
             <div className="row" style={{ alignItems: "flex-start", gap: 18 }}>
               <div aria-label="Mã QR tới ứng dụng" style={{ background: "#fff", padding: 6, borderRadius: 8, lineHeight: 0 }}

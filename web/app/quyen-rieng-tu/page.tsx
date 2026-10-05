@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { getContactEmail } from "@/lib/settings";
 
-export const metadata: Metadata = { title: "Quyền riêng tư · Chăm Sóc Ba Mẹ" };
+export const metadata: Metadata = { title: "Quyền riêng tư · Chăm Sóc Người Thân" };
 
 export const dynamic = "force-dynamic";
 
@@ -15,7 +15,7 @@ export default async function PrivacyPage() {
         <p className="muted" style={{ margin: 0 }}>Cập nhật: 05/10/2026</p>
 
         <h2>Ứng dụng làm gì</h2>
-        <p>Chăm Sóc Ba Mẹ giúp con cháu theo dõi sức khoẻ ba mẹ từ xa qua đồng hồ Garmin và báo qua Telegram.
+        <p>Chăm Sóc Người Thân giúp gia đình theo dõi sức khoẻ ông bà, ba mẹ và người thân từ xa qua đồng hồ Garmin và báo qua Telegram.
           <strong> Đây không phải thiết bị y tế</strong>, không chẩn đoán bệnh và không thay thế bác sĩ hay dịch vụ cấp cứu.</p>
 
         <h2>Dữ liệu thu thập</h2>
@@ -45,7 +45,7 @@ export default async function PrivacyPage() {
 
         <h1 style={{ fontSize: 22 }} lang="en">Privacy policy (English)</h1>
         <div lang="en" style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-          <p>Chăm Sóc Ba Mẹ (“Care for Mom &amp; Dad”) lets family members check on elderly parents through their Garmin watch
+          <p>Chăm Sóc Người Thân (“Care for Loved Ones”) lets a family check on grandparents, parents and other loved ones through their Garmin watch
             and Telegram. <strong>It is not a medical device</strong>; it does not diagnose anything and does not replace a
             doctor or emergency services.</p>
           <p><strong>Data collected.</strong> From the watch, only after it is paired with a 6-digit code: heart rate, steps,

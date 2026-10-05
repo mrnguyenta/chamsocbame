@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <!--
-    Chăm Sóc Ba Mẹ - Garmin Connect IQ watch app.
+    Chăm Sóc Người Thân - Garmin Connect IQ watch app.
 
     Background service sends on-watch health data every 5 minutes through the
     paired phone (Garmin Connect app, Bluetooth) to our backend.

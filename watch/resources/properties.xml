@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
   Application properties, editable from the phone:
-  Garmin Connect app -> Thiết bị -> Hoạt động & Ứng dụng / Connect IQ -> Chăm Sóc Ba Mẹ -> Cài đặt.
+  Garmin Connect app -> Thiết bị -> Hoạt động & Ứng dụng / Connect IQ -> Chăm Sóc Người Thân -> Cài đặt.
 -->
 <properties>
   <!-- e.g. https://xxx.vercel.app (no trailing slash needed, it is stripped).

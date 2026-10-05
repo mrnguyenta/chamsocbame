@@ -1,6 +1,6 @@
 //-----------------------------------------------------------------------------------
 //
-// Chăm Sóc Ba Mẹ - application entry point.
+// Chăm Sóc Người Thân - application entry point.
 //
 // - Registers the background temporal event (every interval_min minutes, min 5).
 //   The registration persists after the app is closed.

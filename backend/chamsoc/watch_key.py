@@ -3,7 +3,7 @@
     python -m chamsoc.watch_key --elder <elder_id> [--label "Venu 4 của Ba"]
 
 Mã chỉ hiện một lần; cơ sở dữ liệu chỉ lưu bản băm. Dán mã vào phần cài đặt của
-ứng dụng "Chăm Sóc Ba Mẹ" trong app Garmin Connect trên điện thoại của ba mẹ.
+ứng dụng "Chăm Sóc Người Thân" trong app Garmin Connect trên điện thoại của ba mẹ.
 """
 
 from __future__ import annotations

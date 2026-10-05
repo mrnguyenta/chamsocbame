@@ -67,7 +67,7 @@ export function JoinByCodeForm() {
 export function InviteForm() {
   const [state, action, pending] = useActionState(createInvite, INIT);
   const link = state.value ? `${typeof window !== "undefined" ? window.location.origin : ""}/moi/${state.value}` : "";
-  const shareText = `Mời bạn cùng theo dõi sức khoẻ ba mẹ trên Chăm Sóc Ba Mẹ: ${link}`;
+  const shareText = `Mời bạn cùng theo dõi sức khoẻ người thân trên Chăm Sóc Người Thân: ${link}`;
   return (
     <form action={action} style={{ display: "flex", flexDirection: "column", gap: 10 }}>
       <div className="row" style={{ gap: 8 }}>

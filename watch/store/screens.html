@@ -6,17 +6,17 @@ html, body { width: 454px; height: 454px; background: transparent; overflow: hid
 /* Bố cục theo watch/source/MainView.mc: vị trí theo % chiều cao màn hình tròn */
 .face { position: relative; width: 454px; height: 454px; border-radius: 50%; background: #000; font-family: "Be Vietnam Pro", sans-serif; }
 .l { position: absolute; left: 0; right: 0; text-align: center; transform: translateY(-50%); white-space: nowrap; }
-.small { font-size: 30px; font-weight: 600; } .medium { font-size: 38px; font-weight: 700; }
+.small { font-size: 30px; font-weight: 600; } .title { font-size: 25px; font-weight: 600; } .medium { font-size: 38px; font-weight: 700; }
 .num { font-size: 104px; font-weight: 800; letter-spacing: 2px; } .xtiny { font-size: 21px; font-weight: 500; }
 .blue { color: #4ea3ff; } .white { color: #fff; } .green { color: #3ddc84; } .red { color: #ff4040; }
 .ltgray { color: #aab2b0; } .code { font-size: 84px; } .dkgray { color: #6b7371; }
 </style></head><body><div class="face" id="face"></div>
 <script>
 const S = {
-  pair_vi: [["17","small blue","Chăm Sóc Ba Mẹ"],["32","small white","Mã kết nối"],["50","num green code","482 917"],["66","xtiny ltgray","Mở thông báo trên điện thoại"],["76","xtiny ltgray","hoặc nhập mã trên web"]],
-  main_vi: [["17","small blue","Chăm Sóc Ba Mẹ"],["36","num red","72"],["51","xtiny ltgray","nhịp tim / phút"],["65","medium green","Đã kết nối"],["78","small white","Gửi lúc 07:35"],["89","xtiny dkgray","Bấm để gửi ngay"]],
-  main_en: [["17","small blue","Family Care"],["36","num red","72"],["51","xtiny ltgray","heart rate / min"],["65","medium green","Connected"],["78","small white","Sent at 07:35"],["89","xtiny dkgray","Press to send now"]],
-  pair_en: [["17","small blue","Family Care"],["32","small white","Pairing code"],["50","num green code","482 917"],["66","xtiny ltgray","Tap the phone notification"],["76","xtiny ltgray","or enter the code online"]],
+  pair_vi: [["17","title blue","Chăm Sóc Người Thân"],["32","small white","Mã kết nối"],["50","num green code","482 917"],["66","xtiny ltgray","Mở thông báo trên điện thoại"],["76","xtiny ltgray","hoặc nhập mã trên web"]],
+  main_vi: [["17","title blue","Chăm Sóc Người Thân"],["36","num red","72"],["51","xtiny ltgray","nhịp tim / phút"],["65","medium green","Đã kết nối"],["78","small white","Gửi lúc 07:35"],["89","xtiny dkgray","Bấm để gửi ngay"]],
+  main_en: [["17","title blue","Family Care"],["36","num red","72"],["51","xtiny ltgray","heart rate / min"],["65","medium green","Connected"],["78","small white","Sent at 07:35"],["89","xtiny dkgray","Press to send now"]],
+  pair_en: [["17","title blue","Family Care"],["32","small white","Pairing code"],["50","num green code","482 917"],["66","xtiny ltgray","Tap the phone notification"],["76","xtiny ltgray","or enter the code online"]],
 };
 const which = location.hash.slice(1);
 document.getElementById("face").innerHTML = S[which].map(([y, c, t]) => `<div class="l ${c}" style="top:${y}%">${t}</div>`).join("");
