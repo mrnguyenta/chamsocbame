@@ -53,7 +53,7 @@ body {
 a { color: var(--accent-ink); }
 a:hover { color: var(--accent-strong); }
 h1, h2, h3 { margin: 0; line-height: 1.25; letter-spacing: -0.01em; }
-button, input, select { font: inherit; color: inherit; }
+button, input, select, textarea { font: inherit; color: inherit; }
 :focus-visible { outline: 3px solid color-mix(in srgb, var(--accent) 60%, transparent); outline-offset: 2px; }
 
 .container { max-width: 1200px; margin: 0 auto; padding: 24px 16px 110px; display: flex; flex-direction: column; gap: 22px; }
@@ -149,6 +149,8 @@ input[type="text"], input[type="number"], input[type="time"], input[type="passwo
 input[type="email"], input[inputmode], select {
   min-height: 42px; border-radius: 12px; border: 1px solid var(--border-strong); padding: 0 12px; background: var(--surface-solid);
 }
+textarea { min-height: 42px; border-radius: 12px; border: 1px solid var(--border-strong); padding: 10px 12px;
+  background: var(--surface-solid); line-height: 1.45; }
 label.field { display: flex; flex-direction: column; gap: 6px; font-size: 13px; color: var(--muted); }
 
 .avatar { width: 52px; height: 52px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
@@ -319,9 +321,16 @@ details.block > .block-body { padding: 0 18px 18px; display: flex; flex-directio
 .chat .typing span:nth-child(3) { animation-delay: 0.3s; }
 @keyframes ai-dot { 0%, 80%, 100% { opacity: 0.3; transform: translateY(0); } 40% { opacity: 1; transform: translateY(-3px); } }
 @media (prefers-reduced-motion: reduce) { .chat .typing span { animation: none; } }
-.chat-input { display: flex; gap: 8px; align-items: flex-end; }
-.chat-input textarea { flex: 1; min-height: 46px; max-height: 140px; font-size: 16px; resize: vertical; border-radius: 16px; }
-.chat-input .btn { width: 46px; height: 46px; min-height: 46px; padding: 0; justify-content: center; flex: none; }
+/* Ô soạn câu hỏi: một khung bo tròn, chữ và nút gửi nằm trong, viền sáng lên khi đang gõ */
+.chat-input { display: flex; gap: 8px; align-items: flex-end; padding: 6px 6px 6px 14px; border-radius: 22px;
+  background: var(--surface-solid); border: 1px solid var(--border-strong); box-shadow: var(--shadow-sm);
+  transition: border-color .15s ease, box-shadow .15s ease; }
+.chat-input:focus-within { border-color: var(--accent); box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 18%, transparent); }
+.chat-input textarea { flex: 1; min-height: 40px; max-height: 140px; padding: 9px 0; border: 0; border-radius: 0;
+  background: transparent; font-size: 16px; resize: none; outline: none; field-sizing: content; }
+.chat-input textarea::placeholder { color: var(--muted); }
+.chat-input .btn { width: 42px; height: 42px; min-height: 42px; padding: 0; border-radius: 50%; justify-content: center; flex: none; }
+.chat-input .btn:disabled { opacity: 0.45; }
 .ai-chat .clear { align-self: center; background: none; border: 0; cursor: pointer; font: inherit; font-size: 13px; color: var(--muted); }
 
 /* Nút chat nổi: linh vật trợ lý */
@@ -355,4 +364,22 @@ details.block > .block-body { padding: 0 18px 18px; display: flex; flex-directio
 @media (min-width: 900px) {
   .ai-panel { inset: auto 24px 92px auto; width: 400px; height: min(620px, calc(100vh - 120px)); border-radius: 24px;
     box-shadow: 0 24px 60px rgba(16, 92, 86, 0.22); border: 1px solid var(--border-strong); }
+}
+
+/* Trang chi tiết một người thân */
+.detail-head { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+.detail-head .back { background: var(--surface-solid); box-shadow: var(--shadow-sm); color: var(--text); flex: none; }
+.detail-head .people { flex: 1 1 100%; }
+@media (min-width: 1100px) { .detail-head .people { flex: 0 1 auto; max-width: 45%; } }
+.kpis.five { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+.kpis.six { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+@media (max-width: 760px) { .kpis.five { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 520px) { .kpis.six { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.side-card .card-head { margin-bottom: 10px; }
+@media (min-width: 1100px) { .detail-split > .side-col { flex: 0 0 370px; } }
+/* Khối lịch sử & cài đặt: thu gọn thì 2 khối một hàng, mở khối nào thì khối đó trải hết chiều ngang */
+.blocks-grid { display: grid; gap: 12px; grid-template-columns: minmax(0, 1fr); align-items: start; }
+@media (min-width: 1000px) {
+  .blocks-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .blocks-grid > details.block[open] { grid-column: 1 / -1; }
 }

@@ -73,26 +73,15 @@ export default async function ElderPage({ params }: { params: Promise<{ id: stri
       <AutoRefresh seconds={60} />
       <OpenOnHash />
 
-      <div className="row" style={{ justifyContent: "space-between", flexWrap: "nowrap" }}>
-        <Link href="/" className="icon-tile" aria-label={t("Về tổng quan", "Back to overview")}
-          style={{ background: "var(--surface-solid)", boxShadow: "var(--shadow-sm)", color: "var(--text)" }}>
+      {/* Đầu trang: một khối gồm quay lại, người đang xem, trạng thái; chọn người khác ngay bên dưới. */}
+      <section className="card detail-head">
+        <Link href="/" className="icon-tile back" aria-label={t("Về tổng quan", "Back to overview")}>
           <IconBack size={20} />
         </Link>
-        <h1 style={{ fontSize: 18, textAlign: "center" }}>{e.name}</h1>
-        <a href="#nguong" className="btn small">{t("Ngưỡng", "Thresholds")}</a>
-      </div>
-
-      <nav className="pills" aria-label={t("Chọn người thân", "Choose a family member")}>
-        {settings.elders.map((x) => (
-          <Link key={x.id} href={`/nguoi-than/${x.id}`} className="pill" aria-current={x.id === e.id ? "page" : undefined}>{x.name}</Link>
-        ))}
-      </nav>
-
-      <section className="card row" style={{ gap: 16, flexWrap: "nowrap" }}>
         <Avatar name={e.name} />
         <div style={{ flex: 1, minWidth: 0 }}>
           <div className="row" style={{ gap: 10 }}>
-            <h2 style={{ fontSize: 22, margin: 0 }}>{e.name}</h2>
+            <h1 style={{ fontSize: 24, margin: 0 }}>{e.name}</h1>
             <StatusChip status={e.status} />
           </div>
           <div className="muted" style={{ fontSize: 13 }}>
@@ -102,6 +91,13 @@ export default async function ElderPage({ params }: { params: Promise<{ id: stri
               .filter(Boolean).join(" · ")}
           </div>
         </div>
+        {settings.elders.length > 1 && (
+          <nav className="pills people" aria-label={t("Chọn người thân", "Choose a family member")}>
+            {settings.elders.map((x) => (
+              <Link key={x.id} href={`/nguoi-than/${x.id}`} className="pill" aria-current={x.id === e.id ? "page" : undefined}>{x.name}</Link>
+            ))}
+          </nav>
+        )}
       </section>
 
       <nav className="pills" aria-label={t("Mục", "Sections")}>
@@ -113,7 +109,7 @@ export default async function ElderPage({ params }: { params: Promise<{ id: stri
         <a className="pill" href="#thong-tin">{t("Thông tin", "Info")}</a>
       </nav>
 
-      <div className="split">
+      <div className="split detail-split">
         <div className="main-col">
           <section id="tong-quan" className="card" style={{ display: "flex", flexWrap: "wrap", gap: 24, alignItems: "center", justifyContent: "center" }}>
             <HeartRing bpm={hr} />
@@ -151,7 +147,7 @@ export default async function ElderPage({ params }: { params: Promise<{ id: stri
               )}
             </div>
             <HrChart data={e.hr24h} threshold={hrRule?.threshold} label={t(`Nhịp tim 24 giờ của ${e.name}`, `${e.name}'s 24-hour heart rate`)} />
-            <div className="kpis" style={{ marginTop: 16 }}>
+            <div className="kpis six" style={{ marginTop: 16 }}>
               <Kpi icon={<IconHeart size={16} />} tile="tile-coral" label={t("Nhịp tim nghỉ", "Resting heart rate")} value={e.today.restingHr ?? "—"} unit="bpm" />
               <Kpi icon={<IconDrop size={16} />} tile="tile-blue" label={t("SpO2 thấp nhất", "Lowest SpO2")} value={e.today.spo2Min ?? "—"} unit="%" />
               <Kpi icon={<IconLungs size={16} />} tile="tile-teal" label={t("Nhịp thở", "Breathing rate")} value={e.today.respiration ?? "—"} unit={t("lần/phút", "breaths/min")} />
@@ -164,31 +160,77 @@ export default async function ElderPage({ params }: { params: Promise<{ id: stri
             </div>
           </section>
 
-          <div className="split">
-            <section id="van-dong" className="card" style={{ flex: "1 1 300px", minWidth: 0 }}>
-              <h2>{t("Vận động hôm nay", "Activity today")}</h2>
-              <div className="kpis tight" style={{ marginBottom: 14 }}>
-                <Kpi icon={<IconSteps size={16} />} tile="tile-teal" label={t("Bước", "Steps")} value={fmtNum(e.today.steps, lang)} />
-                <Kpi icon={<IconFlame size={16} />} tile="tile-coral" label={t("Calo", "Calories")} value={fmtNum(e.today.calories ?? null, lang)} unit="kcal" />
-                <Kpi icon={<IconRoute size={16} />} tile="tile-blue" label={t("Quãng đường", "Distance")}
-                  value={e.today.distanceM != null
-                    ? t((e.today.distanceM / 1000).toFixed(1).replace(".", ","), (e.today.distanceM / 1000).toFixed(1)) : "—"} unit="km" />
-                <Kpi icon={<IconBolt size={16} />} tile="tile-amber" label={t("Phút vận động", "Active minutes")} value={e.today.activeMin ?? "—"} unit={t("phút", "min")} />
-                <Kpi icon={<IconSteps size={16} />} tile="tile-violet" label={t("Tầng leo", "Floors climbed")} value={e.today.floors ?? "—"} />
-              </div>
-              <h2>{t("Hoạt động trong tuần", "This week's activity")}</h2>
-              <StepsChart data={d.steps7} />
-            </section>
-            <section id="giac-ngu" className="card" style={{ flex: "1 1 300px", minWidth: 0 }}>
-              <h2>{t("Giấc ngủ đêm qua", "Last night's sleep")}</h2>
-              {d.sleep ? <SleepBar sleep={d.sleep} /> : <div className="muted">{t("Chưa có dữ liệu giấc ngủ.", "No sleep data yet.")}</div>}
-              {e.today.sleepScore != null && <div className="muted" style={{ marginTop: 10 }}>{t("Điểm ngủ", "Sleep score")} {e.today.sleepScore}/100</div>}
-            </section>
-          </div>
+          <section id="van-dong" className="card">
+            <h2>{t("Vận động hôm nay", "Activity today")}</h2>
+            <div className="kpis five" style={{ margin: "12px 0 18px" }}>
+              <Kpi icon={<IconSteps size={16} />} tile="tile-teal" label={t("Bước", "Steps")} value={fmtNum(e.today.steps, lang)} />
+              <Kpi icon={<IconFlame size={16} />} tile="tile-coral" label={t("Calo", "Calories")} value={fmtNum(e.today.calories ?? null, lang)} unit="kcal" />
+              <Kpi icon={<IconRoute size={16} />} tile="tile-blue" label={t("Quãng đường", "Distance")}
+                value={e.today.distanceM != null
+                  ? t((e.today.distanceM / 1000).toFixed(1).replace(".", ","), (e.today.distanceM / 1000).toFixed(1)) : "—"} unit="km" />
+              <Kpi icon={<IconBolt size={16} />} tile="tile-amber" label={t("Phút vận động", "Active minutes")} value={e.today.activeMin ?? "—"} unit={t("phút", "min")} />
+              <Kpi icon={<IconSteps size={16} />} tile="tile-violet" label={t("Tầng leo", "Floors climbed")} value={e.today.floors ?? "—"} />
+            </div>
+            <h2>{t("Hoạt động trong tuần", "This week's activity")}</h2>
+            <StepsChart data={d.steps7} />
+          </section>
         </div>
 
         <aside className="side-col">
-          <section className="card">
+          <section className="card side-card">
+            <div className="card-head">
+              <h2>{t("Cảnh báo đang mở", "Open alerts")}</h2>
+              <a className="link-sm" href="#canh-bao">{t("Lịch sử", "History")}</a>
+            </div>
+            {openAlerts.length === 0
+              ? <div className="row" style={{ gap: 10 }}><span className="chip tone-ok">{t("Không có", "None")}</span>
+                  <span className="muted" style={{ fontSize: 14 }}>{t("Mọi chỉ số trong ngưỡng.", "Everything is within thresholds.")}</span></div>
+              : (
+                <ul className="list">
+                  {openAlerts.map((a) => (
+                    <li key={a.id} className="list-row">
+                      <span className="icon-tile tile-coral"><IconBell size={20} /></span>
+                      <span className="grow">
+                        <span className="title" style={{ display: "block" }}>{alertText(a, lang)}</span>
+                        <span className="muted">{fmtDateTime(a.openedAt, lang)}{a.ackedBy ? t(` · ${a.ackedBy} đang xử lý`, ` · ${a.ackedBy} is handling it`) : t(" · chưa ai nhận", " · not taken yet")}</span>
+                      </span>
+                      <SeverityChip severity={a.severity} />
+                    </li>
+                  ))}
+                </ul>
+              )}
+          </section>
+
+          <section id="giac-ngu" className="card side-card">
+            <div className="card-head">
+              <h2>{t("Giấc ngủ đêm qua", "Last night's sleep")}</h2>
+              {e.today.sleepScore != null && <span className="muted">{t("Điểm", "Score")} {e.today.sleepScore}/100</span>}
+            </div>
+            {d.sleep ? <SleepBar sleep={d.sleep} /> : <div className="muted">{t("Chưa có dữ liệu giấc ngủ.", "No sleep data yet.")}</div>}
+          </section>
+
+          <section className="card side-card">
+            <div className="card-head">
+              <h2>{t("Thuốc hôm nay", "Today's medicines")}</h2>
+              <a className="link-sm" href="#thuoc">{t("Lịch thuốc", "Schedule")}</a>
+            </div>
+            {d.meds.length === 0 ? <div className="muted">{t("Chưa có lịch uống thuốc.", "No medication schedule yet.")}</div> : (
+              <ul className="list">
+                {d.meds.map((m, i) => (
+                  <li key={i} className="list-row">
+                    <span className={`icon-tile ${m.takenAt ? "tile-teal" : "tile-violet"}`}><IconPill size={20} /></span>
+                    <span className="grow">
+                      <span className="title" style={{ display: "block" }}>{m.name}</span>
+                      <span className="muted">{fmtTime(m.dueAt, lang)}{m.note ? ` · ${m.note}` : ""}</span>
+                    </span>
+                    <span className={`chip ${m.takenAt ? "tone-ok" : "tone-neutral"}`}>{m.takenAt ? t("Đã uống", "Taken") : t("Chưa", "Not yet")}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+
+          <section className="card side-card">
             <h2>{t("Hồ sơ đo (7 ngày)", "Readings (7 days)")}</h2>
             {d.readings.length === 0 ? <div className="muted">{lang === "en"
               ? <>None yet. Parents text <code>130/85</code> or <code>đường 7.2</code> (glucose) to the bot.</>
@@ -215,11 +257,12 @@ export default async function ElderPage({ params }: { params: Promise<{ id: stri
         </aside>
       </div>
 
-      <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+      <h2 className="section-title" style={{ margin: "6px 0 -8px" }}>{t("Lịch sử & cài đặt", "History & settings")}</h2>
+      <div className="blocks-grid">
         <Block id="canh-bao" icon={<IconBell size={20} />} tile="tile-coral" title={t("Cảnh báo", "Alerts")}
           sub={openAlerts.length ? t(`${openAlerts.length} đang mở · 30 ngày qua`, `${openAlerts.length} open · last 30 days`)
             : t("Không có cảnh báo đang mở · 30 ngày qua", "No open alerts · last 30 days")}
-          open={openAlerts.length > 0}>
+          >
             {d.alerts.length === 0 ? <div className="muted">{t("Không có cảnh báo.", "No alerts.")}</div> : (
             <ul className="list">
               {d.alerts.map((a) => (
@@ -271,22 +314,6 @@ export default async function ElderPage({ params }: { params: Promise<{ id: stri
         <Block id="thuoc" icon={<IconPill size={20} />} tile="tile-violet" title={t("Thuốc", "Medications")}
           sub={t("Bot nhắc đúng giờ; quá 60 phút chưa bấm “Đã uống” thì báo cả nhà",
             "The bot reminds on time; if “Taken” isn't tapped within 60 minutes, the whole family is notified")}>
-          <div className="section-title" style={{ margin: 0 }}>{t("Hôm nay", "Today")}</div>
-            {d.meds.length === 0 ? <div className="muted">{t("Chưa có lịch uống thuốc.", "No medication schedule yet.")}</div> : (
-            <ul className="list">
-              {d.meds.map((m, i) => (
-                <li key={i} className="list-row">
-                  <span className={`icon-tile ${m.takenAt ? "tile-teal" : "tile-violet"}`}><IconPill size={20} /></span>
-                  <span className="grow">
-                    <span className="title" style={{ display: "block" }}>{m.name}</span>
-                    <span className="muted">{fmtTime(m.dueAt, lang)}{m.note ? ` · ${m.note}` : ""}</span>
-                  </span>
-                  <span className={`chip ${m.takenAt ? "tone-ok" : "tone-neutral"}`}>{m.takenAt ? t("Đã uống", "Taken") : t("Chưa", "Not yet")}</span>
-                </li>
-              ))}
-            </ul>
-          )}
-          <div className="section-title" style={{ margin: "6px 0 0" }}>{t("Lịch uống", "Schedule")}</div>
           {(es?.meds.length ?? 0) === 0 && <div className="muted">{t("Chưa có lịch thuốc.", "No medications scheduled.")}</div>}
           <ul className="list">
             {es?.meds.map((m) => (

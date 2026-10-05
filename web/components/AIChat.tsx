@@ -76,7 +76,7 @@ export default function AIChat({ suggestions, compact = false }: { suggestions: 
         <div ref={end} />
       </div>
       <form className="chat-input" onSubmit={(e) => { e.preventDefault(); ask(text); }}>
-        <textarea ref={input} value={text} onChange={(e) => setText(e.target.value)} rows={compact ? 1 : 2} maxLength={2000}
+        <textarea ref={input} value={text} onChange={(e) => setText(e.target.value)} rows={1} maxLength={2000}
           placeholder={t("Hỏi về sức khoẻ của ba mẹ, người thân…", "Ask about your loved ones' health…")}
           aria-label={t("Câu hỏi", "Question")}
           onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); ask(text); } }} />
