@@ -53,7 +53,7 @@ jobs:
       - name: Thông tin SDK và thiết bị
         run: |
           monkeyc --version || true
-          ls /root/.Garmin/ConnectIQ/Devices | grep -E '^(venu|vivoactive)' || true
+          ls /root/.Garmin/ConnectIQ/Devices | grep -E '^(venu|vivoactive|fenix7)' || true
 
       - name: Build .prg cho từng đồng hồ
         run: |

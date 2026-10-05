@@ -11,6 +11,12 @@
 <iq:manifest version="3" xmlns:iq="http://www.garmin.com/xml/connectiq">
   <iq:application id="446e5af5-d06c-401c-a181-5600ec61a835" type="watch-app" name="@Strings.AppName" entry="ChamSocApp" launcherIcon="@Drawables.LauncherIcon" minApiLevel="3.1.0">
     <iq:products>
+      <iq:product id="fenix7"/>
+      <iq:product id="fenix7s"/>
+      <iq:product id="fenix7x"/>
+      <iq:product id="fenix7pro"/>
+      <iq:product id="fenix7spro"/>
+      <iq:product id="fenix7xpro"/>
       <iq:product id="venu3"/>
       <iq:product id="venu3s"/>
       <iq:product id="venu441mm"/>
