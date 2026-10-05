@@ -34,6 +34,8 @@ from chamsoc.config import Settings  # noqa: E402
 from chamsoc.telegram import TelegramClient  # noqa: E402
 
 logging.basicConfig(level=logging.INFO)
+# httpx ghi cả địa chỉ gọi Telegram (có token bot) ở mức INFO: chỉ ghi khi có lỗi.
+logging.getLogger("httpx").setLevel(logging.WARNING)
 app = FastAPI(title="Chăm Sóc Người Thân")
 
 
