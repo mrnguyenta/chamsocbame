@@ -85,6 +85,33 @@ class Payload {
         };
     }
 
+    //! Trung bình các giá trị hợp lệ trong [minV, maxV] của một SensorHistory iterator, hoặc null.
+    static function averageValue(it, minV as Lang.Number, maxV as Lang.Number) as Lang.Number or Null {
+        if (it == null) {
+            return null;
+        }
+        var sum = 0;
+        var cnt = 0;
+        var s = it.next();
+        var n = 0;
+        while ((s != null) && (n < 120)) {
+            var d = s.data;
+            if (d != null) {
+                var v = d.toNumber();
+                if ((v >= minV) && (v <= maxV)) {
+                    sum += v;
+                    cnt++;
+                }
+            }
+            s = it.next();
+            n++;
+        }
+        if (cnt == 0) {
+            return null;
+        }
+        return (sum / cnt).toNumber();
+    }
+
     //! Walk a SensorHistory iterator (newest first) and return the first value
     //! that lies in [minV, maxV], or null.
     static function latestValue(it, minV as Lang.Number, maxV as Lang.Number) as Lang.Number or Null {
@@ -188,6 +215,41 @@ class Payload {
         body["steps"]       = steps;
         body["respiration"] = resp;
 
+        // --- Calo, quãng đường, tầng, phút vận động, thanh nhắc vận động (ngồi yên) ---
+        var cal = null;
+        var dist = null;
+        var floors = null;
+        var activeMin = null;
+        var moveBar = null;
+        if (info != null) {
+            if (ActivityMonitor.Info has :calories) {
+                cal = info.calories;
+            }
+            if (ActivityMonitor.Info has :distance) {
+                var d = info.distance;
+                if (d != null) {
+                    dist = (d / 100).toNumber(); // cm -> m
+                }
+            }
+            if (ActivityMonitor.Info has :floorsClimbed) {
+                floors = info.floorsClimbed;
+            }
+            if (ActivityMonitor.Info has :activeMinutesDay) {
+                var am = info.activeMinutesDay;
+                if (am != null) {
+                    activeMin = am.total;
+                }
+            }
+            if (ActivityMonitor.Info has :moveBarLevel) {
+                moveBar = info.moveBarLevel;
+            }
+        }
+        body["calories"]   = cal;
+        body["distance_m"] = dist;
+        body["floors"]     = floors;
+        body["active_min"] = activeMin;
+        body["move_bar"]   = moveBar;
+
         // --- Stress / Body Battery / SpO2: latest SensorHistory sample ---
         var stress = null;
         var bb     = null;
@@ -212,7 +274,16 @@ class Payload {
                 }), 50, 100);
             }
         }
+        // Căng thẳng trung bình 1 giờ qua: để cảnh báo căng thẳng cao kéo dài, không báo vì một lần đo lẻ.
+        var stress1h = null;
+        if ((Toybox has :SensorHistory) && (SensorHistory has :getStressHistory)) {
+            stress1h = averageValue(SensorHistory.getStressHistory({
+                :period => new Time.Duration(3600),
+                :order  => SensorHistory.ORDER_NEWEST_FIRST
+            }), 0, 100);
+        }
         body["stress"]       = stress;
+        body["stress_1h"]    = stress1h;
         body["body_battery"] = bb;
         body["spo2"]         = spo2;
 

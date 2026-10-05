@@ -10,6 +10,16 @@ export interface Today {
   bodyBattery: number | null;
   spo2Min: number | null;
   stressAvg: number | null;
+  // Từ đồng hồ (gửi mỗi 5 phút); thiếu thì là null/undefined.
+  stressNow?: number | null;
+  stress1h?: number | null;
+  respiration?: number | null;
+  calories?: number | null;
+  distanceM?: number | null;
+  floors?: number | null;
+  activeMin?: number | null;
+  /** HRV đêm qua (ms), từ Garmin Connect. */
+  hrv?: number | null;
 }
 
 export interface ElderSummary {
@@ -26,6 +36,10 @@ export interface ElderSummary {
   watchLabel: string | null;
   watchBattery: number | null;
   hr24h: { ts: string; bpm: number }[];
+  /** Đang đeo, không đeo (đồng hồ vẫn gửi nhưng không có nhịp tim), hay đang sạc. */
+  wear?: "worn" | "not_worn" | "charging" | null;
+  /** Số phút ngồi/nằm im (ban ngày, đang đeo); null nếu không áp dụng. */
+  inactiveMin?: number | null;
 }
 
 export interface AlertRow {

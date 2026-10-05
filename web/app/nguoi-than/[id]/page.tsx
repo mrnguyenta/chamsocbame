@@ -9,7 +9,7 @@ import SleepBar from "@/components/SleepBar";
 import StepsChart from "@/components/StepsChart";
 import {
   IconAlert, IconBack, IconBell, IconBolt, IconChevron, IconDrop, IconFile, IconHeart, IconMoon, IconPill, IconPulse,
-  IconSteps, IconTelegram, IconUser, IconWatch,
+  IconSteps, IconTelegram, IconUser, IconWatch, IconFlame, IconRoute, IconLungs,
 } from "@/components/icons";
 import { Avatar, Kpi, SeverityChip, StatusChip } from "@/components/ui";
 import { requireSession } from "@/lib/auth";
@@ -30,6 +30,7 @@ const GARMIN_STATUS: Record<string, { label: string; tone: string }> = {
 // Biểu tượng cho từng khối ngưỡng (khớp RULE_GROUPS trong lib/metrics).
 const GROUP_ICON: Record<string, React.ReactNode> = {
   tim: <IconHeart size={20} />, ha: <IconDrop size={20} />, vandong: <IconSteps size={20} />, thietbi: <IconWatch size={20} />,
+  cangthang: <IconBolt size={20} />,
 };
 
 export const dynamic = "force-dynamic";
@@ -115,9 +116,15 @@ export default async function ElderPage({ params }: { params: Promise<{ id: stri
               {hrState && (
                 <div className={`chip ${hrState === "Bình thường" ? "tone-ok" : "tone-danger"}`} style={{ marginTop: 6 }}>{hrState}</div>
               )}
+              {e.wear === "not_worn" && <div className="chip tone-neutral" style={{ marginTop: 6 }}>Đang không đeo đồng hồ</div>}
+              {e.wear === "charging" && <div className="chip tone-neutral" style={{ marginTop: 6 }}>Đồng hồ đang sạc</div>}
+              {e.inactiveMin != null && e.inactiveMin >= 90 && (
+                <div className="chip tone-warn" style={{ marginTop: 6 }}>Ngồi/nằm im {Math.floor(e.inactiveMin / 60)} giờ {e.inactiveMin % 60} phút</div>
+              )}
               <div className="kpis tight" style={{ marginTop: 16 }}>
-                <Kpi icon={<IconSteps size={16} />} tile="tile-teal" label="Bước" value={fmtNum(e.today.steps)} />
                 <Kpi icon={<IconBolt size={16} />} tile="tile-amber" label="Năng lượng" value={e.today.bodyBattery ?? "—"} />
+                <Kpi icon={<IconPulse size={16} />} tile="tile-coral" label="Căng thẳng" value={e.today.stressNow ?? e.today.stressAvg ?? "—"}
+                  note={e.today.stress1h != null ? `TB 1 giờ: ${e.today.stress1h}` : undefined} />
                 <Kpi icon={<IconMoon size={16} />} tile="tile-violet" label="Ngủ" value={fmtDuration(e.today.sleepSeconds)} />
               </div>
             </div>
@@ -135,6 +142,9 @@ export default async function ElderPage({ params }: { params: Promise<{ id: stri
             <div className="kpis" style={{ marginTop: 16 }}>
               <Kpi icon={<IconHeart size={16} />} tile="tile-coral" label="Nhịp tim nghỉ" value={e.today.restingHr ?? "—"} unit="bpm" />
               <Kpi icon={<IconDrop size={16} />} tile="tile-blue" label="SpO2 thấp nhất" value={e.today.spo2Min ?? "—"} unit="%" />
+              <Kpi icon={<IconLungs size={16} />} tile="tile-teal" label="Nhịp thở" value={e.today.respiration ?? "—"} unit="lần/phút" />
+              <Kpi icon={<IconHeart size={16} />} tile="tile-violet" label="HRV đêm qua" value={e.today.hrv ?? "—"} unit="ms"
+                note={e.today.hrv == null ? "Cần liên kết Garmin Connect" : undefined} />
               <Kpi icon={<IconPulse size={16} />} tile="tile-coral" label="Huyết áp" value={bp ? `${bp.systolic}/${bp.diastolic}` : "—"}
                 note={bp ? fmtDateTime(bp.measuredAt) : "Ba mẹ nhắn 130/85 cho bot"} />
               <Kpi icon={<IconDrop size={16} />} tile="tile-violet" label="Đường huyết" value={glucose?.value ?? "—"}
@@ -144,6 +154,15 @@ export default async function ElderPage({ params }: { params: Promise<{ id: stri
 
           <div className="split">
             <section id="van-dong" className="card" style={{ flex: "1 1 300px", minWidth: 0 }}>
+              <h2>Vận động hôm nay</h2>
+              <div className="kpis tight" style={{ marginBottom: 14 }}>
+                <Kpi icon={<IconSteps size={16} />} tile="tile-teal" label="Bước" value={fmtNum(e.today.steps)} />
+                <Kpi icon={<IconFlame size={16} />} tile="tile-coral" label="Calo" value={fmtNum(e.today.calories ?? null)} unit="kcal" />
+                <Kpi icon={<IconRoute size={16} />} tile="tile-blue" label="Quãng đường"
+                  value={e.today.distanceM != null ? (e.today.distanceM / 1000).toFixed(1).replace(".", ",") : "—"} unit="km" />
+                <Kpi icon={<IconBolt size={16} />} tile="tile-amber" label="Phút vận động" value={e.today.activeMin ?? "—"} unit="phút" />
+                <Kpi icon={<IconSteps size={16} />} tile="tile-violet" label="Tầng leo" value={e.today.floors ?? "—"} />
+              </div>
               <h2>Hoạt động trong tuần</h2>
               <StepsChart data={d.steps7} />
             </section>

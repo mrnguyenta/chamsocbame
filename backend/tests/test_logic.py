@@ -172,10 +172,12 @@ def test_build_snapshot_from_garmin_payloads():
             {"systolic": 145, "diastolic": 90, "measurementTimestampGMT": "2026-10-04T23:35:00.0"},
             {"systolic": 132, "diastolic": 84, "measurementTimestampGMT": "2026-10-05T00:40:00.0"},
         ]}]},
+        hrv={"hrvSummary": {"lastNightAvg": 38, "status": "BALANCED"}},
     )
     assert (s.resting_hr, s.steps, s.sleep_score, s.spo2_min, s.body_battery) == (62, 4820, 72, 92, 45)
     assert s.stress_avg is None
     assert (s.systolic, s.diastolic) == (132, 84)
+    assert s.hrv_last_night == 38
     assert s.last_device_upload_at == datetime.fromtimestamp(1791100000, tz=timezone.utc)
 
 
@@ -203,3 +205,48 @@ def test_hr_now_skipped_while_walking_and_live_keys_are_dayless():
     [c] = rules.evaluate(snap(last_live_at=now - timedelta(minutes=47)), [stale], now)
     assert c.value == 47 and c.dedupe_key == stale.id
     assert rules.evaluate(snap(), [stale], now) == []  # chưa cài ứng dụng đồng hồ
+
+
+# ---------- ngồi im lâu / không đeo đồng hồ / căng thẳng ----------
+
+def test_inactive_for_hours_in_daytime_breaches():
+    now = datetime(2026, 10, 5, 14, 0, tzinfo=VN)
+    s = snap(last_live_at=now - timedelta(minutes=3), last_hr_at=now - timedelta(minutes=2),
+             last_move_at=now - timedelta(hours=4))
+    found = rules.evaluate(s, [rule("inactive_minutes", "gt", 180)], now)
+    assert len(found) == 1 and found[0].value == 240
+    assert found[0].message == "Ngồi/nằm im không đi lại 240 phút (ngưỡng > 180 phút)"
+
+
+def test_inactive_counts_from_7am_and_not_at_night_or_charging_or_unworn():
+    r = [rule("inactive_minutes", "gt", 180)]
+    morning = datetime(2026, 10, 5, 9, 0, tzinfo=VN)
+    base = dict(last_live_at=morning - timedelta(minutes=3), last_hr_at=morning - timedelta(minutes=1),
+                last_move_at=morning - timedelta(hours=12))  # ngủ từ tối qua
+    assert rules.evaluate(snap(**base), r, morning) == []            # mới 120 phút kể từ 7 giờ
+    night = datetime(2026, 10, 5, 23, 0, tzinfo=VN)
+    assert rules.evaluate(snap(last_live_at=night, last_hr_at=night, last_move_at=night - timedelta(hours=6)),
+                          r, night) == []
+    noon = datetime(2026, 10, 5, 13, 0, tzinfo=VN)
+    long_ago = dict(last_live_at=noon, last_move_at=noon - timedelta(hours=5))
+    assert rules.evaluate(snap(**long_ago, last_hr_at=noon, charging=True), r, noon) == []
+    assert rules.evaluate(snap(**long_ago, last_hr_at=noon - timedelta(hours=1)), r, noon) == []  # không đeo
+
+
+def test_not_worn_but_watch_still_sending():
+    now = datetime(2026, 10, 5, 15, 0, tzinfo=VN)
+    r = [rule("not_worn_minutes", "gt", 90)]
+    s = snap(last_live_at=now - timedelta(minutes=4), last_hr_at=now - timedelta(minutes=120))
+    assert [c.value for c in rules.evaluate(s, r, now)] == [120]
+    # Mất kết nối (đồng hồ không gửi) thì là cảnh báo khác, không báo "không đeo".
+    s2 = snap(last_live_at=now - timedelta(hours=2), last_hr_at=now - timedelta(hours=2))
+    assert rules.evaluate(s2, r, now) == []
+    assert rules.evaluate(snap(last_live_at=now, last_hr_at=None, charging=True), r, now) == []
+    # Vừa kết nối, chưa có mẫu nhịp tim nào: đếm từ lần gửi đầu tiên, không phải từ 7 giờ sáng.
+    assert rules.evaluate(snap(last_live_at=now, first_live_at=now - timedelta(minutes=5)), r, now) == []
+
+
+def test_stress_hour_average():
+    now = datetime(2026, 10, 5, 10, 0, tzinfo=VN)
+    found = rules.evaluate(snap(stress_1h=86), [rule("stress_1h", "gt", 80)], now)
+    assert found and found[0].dedupe_key == "r-stress_1h-gt"

@@ -272,3 +272,4 @@ details.block > summary .chev { color: var(--muted); flex: none; transition: tra
 details.block[open] > summary .chev { transform: rotate(90deg); }
 details.block > .block-body { padding: 0 18px 18px; display: flex; flex-direction: column; gap: 12px; }
 @media (prefers-reduced-motion: reduce) { details.block > summary .chev { transition: none; } }
+.banner.warn { background: var(--amber-soft); color: var(--amber-ink); }

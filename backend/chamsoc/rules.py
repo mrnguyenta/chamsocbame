@@ -21,10 +21,29 @@ METRICS: dict[str, tuple[str, str]] = {
     "hr_now": ("Nhịp tim hiện tại (10 phút)", "bpm"),
     "no_live_minutes": ("Đồng hồ chưa gửi dữ liệu", "phút"),
     "watch_battery": ("Pin đồng hồ", "%"),
+    "inactive_minutes": ("Ngồi/nằm im không đi lại", "phút"),
+    "not_worn_minutes": ("Không đeo đồng hồ", "phút"),
+    "stress_1h": ("Căng thẳng trung bình 1 giờ", ""),
 }
 
+# Ngồi im / không đeo đồng hồ chỉ tính ban ngày (giờ địa phương), ban đêm ngủ là bình thường.
+DAY_START_HOUR, DAY_END_HOUR = 7, 21
+# Đồng hồ phải còn gửi dữ liệu gần đây thì mới kết luận ngồi im / không đeo (khác với mất kết nối).
+LIVE_FRESH_MINUTES = 20
+
 # Trạng thái kéo dài, không gắn với ngày.
-DAYLESS_METRICS = {"no_sync_hours", "no_live_minutes", "watch_battery"}
+DAYLESS_METRICS = {"no_sync_hours", "no_live_minutes", "watch_battery", "inactive_minutes",
+                   "not_worn_minutes", "stress_1h"}
+
+
+def _minutes(delta) -> float:
+    return float(max(0, int(delta.total_seconds() // 60)))
+
+
+def _daytime_live(snapshot: Snapshot, now: datetime) -> bool:
+    if not (DAY_START_HOUR <= now.hour < DAY_END_HOUR) or snapshot.charging:
+        return False
+    return snapshot.last_live_at is not None and _minutes(now - snapshot.last_live_at) <= LIVE_FRESH_MINUTES
 
 
 def metric_value(snapshot: Snapshot, metric: str, now: datetime) -> float | None:
@@ -40,6 +59,22 @@ def metric_value(snapshot: Snapshot, metric: str, now: datetime) -> float | None
         if snapshot.last_live_at is None:
             return None
         return float(int((now - snapshot.last_live_at).total_seconds() // 60))
+    if metric == "inactive_minutes":
+        # Chỉ khi đang đeo đồng hồ (có nhịp tim gần đây) và đồng hồ vẫn gửi đều.
+        if snapshot.last_move_at is None or not _daytime_live(snapshot, now):
+            return None
+        if snapshot.last_hr_at is None or _minutes(now - snapshot.last_hr_at) > LIVE_FRESH_MINUTES:
+            return None
+        day_start = now.replace(hour=DAY_START_HOUR, minute=0, second=0, microsecond=0)
+        return _minutes(now - max(snapshot.last_move_at, day_start))
+    if metric == "not_worn_minutes":
+        if not _daytime_live(snapshot, now):
+            return None
+        day_start = now.replace(hour=DAY_START_HOUR, minute=0, second=0, microsecond=0)
+        since = snapshot.last_hr_at or snapshot.first_live_at  # vừa kết nối, chưa có nhịp tim: đếm từ lần gửi đầu
+        if since is None:
+            return None
+        return _minutes(now - max(since, day_start))
     return getattr(snapshot, metric)
 
 
@@ -108,6 +143,9 @@ def default_rules(elder_id: str, conditions: list[str]) -> list[dict]:
         dict(metric="no_live_minutes", comparator="gt", threshold=30, severity="warn"),
         dict(metric="watch_battery", comparator="lt", threshold=15, severity="info",
              notify="elder"),
+        dict(metric="inactive_minutes", comparator="gt", threshold=180, severity="warn"),
+        dict(metric="not_worn_minutes", comparator="gt", threshold=90, severity="info"),
+        dict(metric="stress_1h", comparator="gt", threshold=80, severity="warn"),
         dict(metric="sleep_hours", comparator="lt", threshold=5, severity="warn",
              active_after="10:00"),
         dict(metric="steps", comparator="lt", threshold=1000, severity="info",

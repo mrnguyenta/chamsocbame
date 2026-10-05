@@ -80,6 +80,7 @@ def build_snapshot(
     spo2: dict | None,
     device: dict | None,
     blood_pressure: dict | None,
+    hrv: dict | None = None,
 ) -> Snapshot:
     """Tách riêng khỏi lời gọi mạng để kiểm thử bằng dữ liệu mẫu."""
     summary = summary or {}
@@ -115,6 +116,7 @@ def build_snapshot(
         last_device_upload_at=upload,
         systolic=systolic,
         diastolic=diastolic,
+        hrv_last_night=((hrv or {}).get("hrvSummary") or {}).get("lastNightAvg"),
     )
 
 
@@ -126,6 +128,7 @@ def fetch_snapshot(client: Garmin, elder_id: str, elder_name: str, day: date) ->
         "spo2": _safe(client.get_spo2_data, d),
         "device": _safe(client.get_device_last_used),
         "blood_pressure": _safe(client.get_blood_pressure, d),
+        "hrv": _safe(client.get_hrv_data, d),
     }
     snap = build_snapshot(elder_id, elder_name, day, **raw)
     return snap, raw

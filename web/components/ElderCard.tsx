@@ -1,6 +1,6 @@
 import Link from "next/link";
 import HrChart from "./HrChart";
-import { HeartArt, IconAlert, IconBolt, IconChevron, IconMoon, IconSteps, IconWatch } from "./icons";
+import { HeartArt, IconAlert, IconBolt, IconChevron, IconFlame, IconMoon, IconPulse, IconSteps, IconWatch } from "./icons";
 import { Avatar, StatusChip } from "./ui";
 import { age, fmtAgo, fmtDuration, fmtNum } from "@/lib/format";
 import type { ElderSummary } from "@/lib/types";
@@ -39,10 +39,24 @@ export default function ElderCard({ e, openAlerts = 0 }: { e: ElderSummary; open
         </div>
       )}
 
+      {e.wear === "not_worn" && (
+        <div className="banner info" style={{ padding: "10px 14px" }}><IconWatch size={18} /> Đang không đeo đồng hồ</div>
+      )}
+      {e.wear === "charging" && (
+        <div className="banner info" style={{ padding: "10px 14px" }}><IconWatch size={18} /> Đồng hồ đang sạc</div>
+      )}
+      {e.inactiveMin != null && e.inactiveMin >= 90 && (
+        <div className="banner warn" style={{ padding: "10px 14px" }}>
+          Ngồi/nằm im {e.inactiveMin >= 120 ? `${Math.floor(e.inactiveMin / 60)} giờ ${e.inactiveMin % 60} phút` : `${e.inactiveMin} phút`}
+        </div>
+      )}
+
       <div className="elder-stats">
         <span><IconSteps size={16} /> {fmtNum(e.today.steps)} bước</span>
-        <span><IconMoon size={16} /> {fmtDuration(e.today.sleepSeconds)}</span>
+        {e.today.calories != null && <span><IconFlame size={16} /> {fmtNum(e.today.calories)} kcal</span>}
+        <span><IconPulse size={16} /> căng thẳng {e.today.stressNow ?? e.today.stressAvg ?? "—"}</span>
         <span><IconBolt size={16} /> {e.today.bodyBattery ?? "—"}/100</span>
+        <span><IconMoon size={16} /> {fmtDuration(e.today.sleepSeconds)}</span>
       </div>
 
       <div className="row" style={{ justifyContent: "space-between", flexWrap: "nowrap" }}>

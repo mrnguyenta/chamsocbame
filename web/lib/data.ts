@@ -35,6 +35,10 @@ async function elderRows(familyId: string, elderId?: string): Promise<Row[]> {
            dm.body_battery, dm.spo2_min, dm.stress_avg,
            ls.hr as live_hr, ls.measured_at as live_at, ls.steps as live_steps,
            ls.body_battery as live_bb, ls.resting_hr as live_rhr,
+           ls.stress as live_stress, ls.stress_1h, ls.respiration, ls.calories, ls.distance_m, ls.floors,
+           ls.active_min, ls.charging, dm.hrv_last_night,
+           (select max(ts) from hr_samples h where h.elder_id = e.id) as last_hr_at, mv.last_move_at,
+           extract(hour from now() at time zone f.timezone)::int as local_hour,
            w.label as watch_label, w.battery as watch_battery,
            greatest(ls.measured_at, g.last_device_upload_at) as last_data_at
     from elders e
@@ -42,6 +46,10 @@ async function elderRows(familyId: string, elderId?: string): Promise<Row[]> {
     left join daily_metrics dm on dm.elder_id = e.id and dm.day = (now() at time zone f.timezone)::date
     left join live_status ls on ls.elder_id = e.id
     left join garmin_accounts g on g.elder_id = e.id
+    left join lateral (
+      select coalesce(max(ts) filter (where d > 0), min(ts)) as last_move_at
+      from (select ts, steps - lag(steps) over (order by ts) as d from step_samples
+            where elder_id = e.id and ts > now() - interval '24 hours') x) mv on true
     left join lateral (select label, battery from watch_devices
                        where elder_id = e.id order by last_seen_at desc nulls last limit 1) w on true
     where e.family_id = ${familyId} ${elderId ? db`and e.id = ${elderId}` : db``}
@@ -71,8 +79,15 @@ async function openAlerts(familyId: string): Promise<AlertRow[]> {
   return rows.map(toAlert);
 }
 
+const minsSince = (t: unknown) => (t ? Math.max(0, Math.floor((Date.now() - new Date(t as string).getTime()) / 60_000)) : null);
+
 function toSummary(e: Row, open: AlertRow[], hr: Map<string, { ts: string; bpm: number }[]>): ElderSummary {
   const liveFresh = e.live_at && Date.now() - new Date(e.live_at).getTime() < 15 * 60_000;
+  // Giống backend/chamsoc/rules.py: đồng hồ vẫn gửi mà 30 phút không có nhịp tim là đang không đeo.
+  const hrAgo = minsSince(e.last_hr_at);
+  const wear = !liveFresh ? null : e.charging ? "charging" : hrAgo == null || hrAgo > 30 ? "not_worn" : "worn";
+  const daytime = e.local_hour >= 7 && e.local_hour < 21;
+  const inactive = wear === "worn" && daytime ? Math.min(minsSince(e.last_move_at) ?? 0, (e.local_hour - 7) * 60 + new Date().getMinutes()) : null;
   return {
     id: e.id, name: e.display_name, birthYear: e.birth_year, conditions: e.conditions ?? [],
     status: statusOf(e, open),
@@ -82,11 +97,15 @@ function toSummary(e: Row, open: AlertRow[], hr: Map<string, { ts: string; bpm: 
     watchLabel: e.watch_label ?? null,
     watchBattery: e.watch_battery ?? null,
     hr24h: hr.get(e.id) ?? [],
+    wear, inactiveMin: inactive,
     today: {
       restingHr: e.resting_hr ?? e.live_rhr ?? null,
       steps: e.live_steps != null ? Math.max(e.steps ?? 0, e.live_steps) : e.steps,
       sleepSeconds: e.sleep_seconds, deepSleepSeconds: e.deep_sleep_seconds, sleepScore: e.sleep_score,
       bodyBattery: e.live_bb ?? e.body_battery, spo2Min: e.spo2_min, stressAvg: e.stress_avg,
+      stressNow: liveFresh ? e.live_stress : null, stress1h: liveFresh ? e.stress_1h : null,
+      respiration: liveFresh ? e.respiration : null, calories: e.calories, distanceM: e.distance_m,
+      floors: e.floors, activeMin: e.active_min, hrv: e.hrv_last_night,
     },
   };
 }

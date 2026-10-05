@@ -119,6 +119,12 @@ class WatchPush(BaseModel):
     respiration: int | None = Field(default=None, ge=0, le=80)
     battery: int | None = Field(default=None, ge=0, le=100)
     charging: bool | None = None
+    calories: int | None = Field(default=None, ge=0, le=20000)
+    distance_m: int | None = Field(default=None, ge=0, le=200000)
+    floors: int | None = Field(default=None, ge=0, le=1000)
+    active_min: int | None = Field(default=None, ge=0, le=1440)
+    move_bar: int | None = Field(default=None, ge=0, le=5)
+    stress_1h: int | None = Field(default=None, ge=0, le=100)
     device: str | None = None
 
 

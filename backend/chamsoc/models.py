@@ -38,6 +38,12 @@ class Snapshot:
     active_recently: bool = False       # vừa đi lại nhiều trong 10 phút gần nhất
     last_live_at: datetime | None = None
     watch_battery: int | None = None
+    charging: bool = False
+    stress_1h: int | None = None        # căng thẳng trung bình 1 giờ qua (đồng hồ tính)
+    last_move_at: datetime | None = None  # lần cuối số bước tăng (hôm nay)
+    last_hr_at: datetime | None = None    # mẫu nhịp tim mới nhất: không có lâu = không đeo đồng hồ
+    first_live_at: datetime | None = None  # lần gửi đầu tiên trong 24 giờ qua (mốc khi chưa có nhịp tim)
+    hrv_last_night: int | None = None     # HRV đêm qua (Garmin Connect)
 
 
 @dataclass

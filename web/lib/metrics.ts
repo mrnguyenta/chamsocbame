@@ -10,6 +10,9 @@ export const METRICS: Record<string, { label: string; unit: string; hint: string
   no_sync_hours: { label: "Garmin Connect chưa đồng bộ", unit: "giờ", hint: "Đồng hồ → điện thoại → Garmin" },
   no_live_minutes: { label: "Đồng hồ chưa gửi dữ liệu", unit: "phút", hint: "Ứng dụng đồng hồ gửi mỗi 5 phút" },
   watch_battery: { label: "Pin đồng hồ", unit: "%", hint: "Không báo khi đang sạc" },
+  inactive_minutes: { label: "Ngồi/nằm im không đi lại", unit: "phút", hint: "7h–21h, khi đang đeo đồng hồ; đếm từ lần cuối có bước chân" },
+  not_worn_minutes: { label: "Không đeo đồng hồ", unit: "phút", hint: "7h–21h: đồng hồ vẫn gửi nhưng không đo được nhịp tim; không tính lúc sạc" },
+  stress_1h: { label: "Căng thẳng trung bình 1 giờ", unit: "", hint: "Thang Garmin 0–100, đồng hồ tính trung bình 1 giờ qua" },
   systolic: { label: "Huyết áp tâm thu", unit: "mmHg", hint: "Số trên" },
   diastolic: { label: "Huyết áp tâm trương", unit: "mmHg", hint: "Số dưới" },
   glucose: { label: "Đường huyết", unit: "mmol/L", hint: "Nhập tay qua Telegram" },
@@ -40,6 +43,7 @@ export const STATUS: Record<string, { label: string; tone: string }> = {
 export const RULE_GROUPS: { key: string; title: string; tile: string; metrics: string[] }[] = [
   { key: "tim", title: "Tim mạch & SpO2", tile: "tile-coral", metrics: ["hr_now", "resting_hr", "spo2_min"] },
   { key: "ha", title: "Huyết áp & đường huyết", tile: "tile-violet", metrics: ["systolic", "diastolic", "glucose"] },
-  { key: "vandong", title: "Vận động & giấc ngủ", tile: "tile-teal", metrics: ["steps", "sleep_hours", "body_battery", "stress_avg"] },
-  { key: "thietbi", title: "Thiết bị", tile: "tile-blue", metrics: ["no_live_minutes", "no_sync_hours", "watch_battery"] },
+  { key: "vandong", title: "Vận động & giấc ngủ", tile: "tile-teal", metrics: ["inactive_minutes", "steps", "sleep_hours", "body_battery"] },
+  { key: "cangthang", title: "Căng thẳng", tile: "tile-amber", metrics: ["stress_1h", "stress_avg"] },
+  { key: "thietbi", title: "Thiết bị", tile: "tile-blue", metrics: ["not_worn_minutes", "no_live_minutes", "no_sync_hours", "watch_battery"] },
 ];

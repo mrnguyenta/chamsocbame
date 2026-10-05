@@ -77,8 +77,8 @@ def upsert_daily_metrics(conn, s: Snapshot, raw: dict) -> None:
         """
         insert into daily_metrics (elder_id, day, resting_hr, max_hr, min_hr, steps,
             sleep_seconds, deep_sleep_seconds, sleep_score, spo2_avg, spo2_min,
-            body_battery, stress_avg, respiration_avg, raw, updated_at)
-        values (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, now())
+            body_battery, stress_avg, respiration_avg, hrv_last_night, raw, updated_at)
+        values (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, now())
         on conflict (elder_id, day) do update set
             resting_hr = excluded.resting_hr, max_hr = excluded.max_hr,
             min_hr = excluded.min_hr, steps = excluded.steps,
@@ -87,11 +87,11 @@ def upsert_daily_metrics(conn, s: Snapshot, raw: dict) -> None:
             sleep_score = excluded.sleep_score, spo2_avg = excluded.spo2_avg,
             spo2_min = excluded.spo2_min, body_battery = excluded.body_battery,
             stress_avg = excluded.stress_avg, respiration_avg = excluded.respiration_avg,
-            raw = excluded.raw, updated_at = now()
+            hrv_last_night = excluded.hrv_last_night, raw = excluded.raw, updated_at = now()
         """,
         (s.elder_id, s.day, s.resting_hr, s.max_hr, s.min_hr, s.steps, s.sleep_seconds,
          s.deep_sleep_seconds, s.sleep_score, s.spo2_avg, s.spo2_min, s.body_battery,
-         s.stress_avg, s.respiration_avg, json.dumps(raw, default=str)),
+         s.stress_avg, s.respiration_avg, s.hrv_last_night, json.dumps(raw, default=str)),
     )
 
 
@@ -142,7 +142,7 @@ def snapshot_from_db(conn, elder: dict, day: date, now_utc: datetime) -> Snapsho
         "select last_device_upload_at from garmin_accounts where elder_id = %s", (elder["id"],)
     ).fetchone() or {}
     fields = ("resting_hr", "max_hr", "min_hr", "steps", "sleep_seconds", "deep_sleep_seconds",
-              "sleep_score", "spo2_avg", "spo2_min", "body_battery", "stress_avg")
+              "sleep_score", "spo2_avg", "spo2_min", "body_battery", "stress_avg", "hrv_last_night")
     s = Snapshot(elder_id=str(elder["id"]), elder_name=elder["display_name"], day=day,
                  last_device_upload_at=g.get("last_device_upload_at"),
                  **{k: m.get(k) for k in fields})
@@ -206,19 +206,23 @@ def save_live_push(conn, device_id: str, elder_id: str, p: dict, measured_at: da
     conn.execute(
         """
         insert into live_status (elder_id, measured_at, received_at, hr, resting_hr, steps, stress,
-                                 body_battery, spo2, respiration, battery, charging)
-        values (%s, %s, now(), %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                                 body_battery, spo2, respiration, battery, charging,
+                                 calories, distance_m, floors, active_min, move_bar, stress_1h)
+        values (%s, %s, now(), %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
         on conflict (elder_id) do update set
           measured_at = excluded.measured_at, received_at = now(), hr = excluded.hr,
           resting_hr = excluded.resting_hr, steps = excluded.steps, stress = excluded.stress,
           body_battery = excluded.body_battery, spo2 = excluded.spo2,
           respiration = excluded.respiration, battery = excluded.battery,
-          charging = excluded.charging
+          charging = excluded.charging, calories = excluded.calories,
+          distance_m = excluded.distance_m, floors = excluded.floors,
+          active_min = excluded.active_min, move_bar = excluded.move_bar, stress_1h = excluded.stress_1h
         where live_status.measured_at <= excluded.measured_at
         """,
         (elder_id, measured_at, _bpm(p.get("hr")), _bpm(p.get("resting_hr")), p.get("steps"),
          p.get("stress"), p.get("body_battery"), p.get("spo2"), p.get("respiration"),
-         p.get("battery"), p.get("charging")),
+         p.get("battery"), p.get("charging"), p.get("calories"), p.get("distance_m"),
+         p.get("floors"), p.get("active_min"), p.get("move_bar"), p.get("stress_1h")),
     )
     samples = [(elder_id, datetime.fromtimestamp(ts, tz=measured_at.tzinfo), bpm)
                for ts, bpm in p.get("hr_samples") or [] if 20 <= bpm <= 250]
@@ -246,6 +250,21 @@ def merge_live(conn, s: Snapshot, now_utc: datetime) -> Snapshot:
         return s
     s.last_live_at = live["measured_at"]
     s.watch_battery = None if live["charging"] else live["battery"]
+    s.charging = bool(live["charging"])
+    s.stress_1h = live.get("stress_1h")
+    s.last_hr_at = conn.execute("select max(ts) as ts from hr_samples where elder_id = %s",
+                                (s.elder_id,)).fetchone()["ts"]
+    # Lần cuối số bước tăng trong 24 giờ qua; chưa tăng lần nào thì tính từ mẫu đầu tiên.
+    move = conn.execute(
+        """
+        select max(ts) filter (where d > 0) as moved, min(ts) as first
+        from (select ts, steps - lag(steps) over (order by ts) as d
+              from step_samples where elder_id = %s and ts > %s) x
+        """,
+        (s.elder_id, now_utc - timedelta(hours=24)),
+    ).fetchone()
+    s.last_move_at = move["moved"] or move["first"]
+    s.first_live_at = move["first"]
     bpm = conn.execute(
         """
         select percentile_disc(0.5) within group (order by bpm) as median, count(*) as n
