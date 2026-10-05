@@ -61,7 +61,12 @@ Giới hạn:
 
 ## Cổng cho người chăm sóc (tự phục vụ)
 
-Ai cũng dùng được, không cần quản trị viên tạo sẵn:
+**Cách nhanh nhất (đã cài app lên đồng hồ):** mở app trên đồng hồ → điện thoại nhận thông báo → bấm vào
+→ đăng nhập Telegram → gõ tên người đeo → **Kết nối đồng hồ**. Gia đình, người thân và ngưỡng cảnh báo
+được tạo tự động. Nếu thông báo hiện trên điện thoại của ba mẹ, trang đó có nút gửi link cho con cháu
+qua Zalo/Messenger/Telegram. Đưa app lên Connect IQ Store: xem `watch/STORE.md`.
+
+Đầy đủ, không cần quản trị viên tạo sẵn:
 1. Vào website → **Đăng nhập bằng Telegram**.
 2. Lần đầu: **Tạo gia đình** (bạn là quản trị) hoặc mở **link mời** anh chị em gửi.
 3. Trang **Gia đình**: thêm ba mẹ (ngưỡng cảnh báo tự tạo theo bệnh nền), tạo **link mời** cho người khác

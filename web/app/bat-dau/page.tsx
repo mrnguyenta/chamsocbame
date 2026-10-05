@@ -1,4 +1,5 @@
-import { HeartArt, IconPlus, IconUsers } from "@/components/icons";
+import Link from "next/link";
+import { HeartArt, IconPlus, IconUsers, IconWatch } from "@/components/icons";
 import { getSession, requireIdentity } from "@/lib/auth";
 import { CreateFamilyForm, JoinByCodeForm } from "../gia-dinh/forms";
 
@@ -20,6 +21,16 @@ export default async function StartPage() {
           </div>
         </div>
       </div>
+      {!hasFamily && (
+        <section className="card row" style={{ gap: 14, flexWrap: "wrap" }}>
+          <span className="icon-tile tile-teal"><IconWatch size={20} /></span>
+          <div style={{ flex: "1 1 240px" }}>
+            <h2>Đã cài ứng dụng lên đồng hồ?</h2>
+            <div className="muted">Kết nối luôn, gia đình sẽ được tạo tự động. Đặt tên và mời anh chị em sau.</div>
+          </div>
+          <Link className="btn primary" href="/ket-noi-dong-ho">Kết nối đồng hồ</Link>
+        </section>
+      )}
       <div className="split">
         <section className="card" style={{ flex: "1 1 320px", minWidth: 0 }}>
           <div className="card-title">

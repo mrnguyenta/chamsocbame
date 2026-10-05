@@ -96,8 +96,12 @@ Font đồng hồ cần hiển thị được tiếng Việt có dấu; nếu th
    của chính tài khoản phát triển, nên để cài cho ba mẹ (tài khoản Garmin khác) cần **phát hành**.
 2. Người dùng (con cháu làm giúp, khoảng 3 phút), theo trang **Kết nối đồng hồ** trên website:
    - Quét mã QR trên website bằng điện thoại của ba mẹ → app Garmin Connect mở trang ứng dụng → **Cài đặt**.
-   - Mở ứng dụng trên đồng hồ: màn hình hiện **mã 6 số** (hiệu lực 15 phút).
-   - Trên website chọn người thân, gõ mã 6 số → đồng hồ báo "Đã kết nối" và bắt đầu gửi dữ liệu.
+   - Mở ứng dụng trên đồng hồ: màn hình hiện **mã 6 số** (hiệu lực 15 phút), và điện thoại nhận
+     **thông báo** (`Communications.openWebPage`). Bấm vào là mở trang `/d/<mã>`:
+     con cháu đang đăng nhập thì vào thẳng form kết nối có sẵn mã; nếu là điện thoại của ba mẹ thì
+     trang có nút gửi link qua Zalo/Messenger/Telegram cho con cháu.
+   - Chọn người đeo (hoặc gõ tên người mới) → **Kết nối đồng hồ**. Người mới chưa có gia đình thì
+     gia đình được tạo tự động. Bấm nút trên đồng hồ khi đang hiện mã để gửi lại thông báo.
    Không phải gõ gì trên Garmin Connect, vì địa chỉ máy chủ được điền sẵn lúc build
    (biến GitHub `CHAMSOC_SERVER_URL`, xem workflow).
 3. Cập nhật về sau tự đến qua Store.
@@ -110,8 +114,8 @@ Font đồng hồ cần hiển thị được tiếng Việt có dấu; nếu th
 
 ## Thiết bị hỗ trợ (product id trong `manifest.xml`)
 
-`venu3`, `venu3s`, `venu441mm`, `venu445mm`, `vivoactive5`, `vivoactive6` — tất cả đã được
-đối chiếu với manifest của GarminHomeAssistant. Muốn thêm máy khác, dùng
+`fenix7`, `fenix7s`, `fenix7x`, `fenix7pro`, `fenix7spro`, `fenix7xpro`, `venu3`, `venu3s`,
+`venu441mm`, `venu445mm`, `vivoactive5`, `vivoactive6`. Muốn thêm máy khác, dùng
 `Monkey C: Edit Products` trong VS Code.
 
 ## Ghi chú kỹ thuật

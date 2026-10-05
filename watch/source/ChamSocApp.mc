@@ -103,7 +103,7 @@ class ChamSocApp extends Application.AppBase {
         if (!Payload.isConfigured()) {
             var p = mPairing;
             if (p != null) {
-                p.tick();
+                p.onSelect();
             }
             WatchUi.requestUpdate();
             return;

@@ -5,7 +5,9 @@
 // Chỉ chạy khi ứng dụng đang mở và đồng hồ chưa có khoá (device_key rỗng):
 //   1. POST {server_url}/api/watch/pair/start  -> {"code": "482917", "key": "...", "expires_in": 900}
 //      Đồng hồ hiện mã, giữ khoá bí mật trong Storage.
-//   2. Con cháu nhập mã trên website và chọn người thân.
+//      Nếu máy chủ trả "link", đồng hồ bật thông báo trên điện thoại (openWebPage):
+//      bấm vào là mở trang kết nối đã điền sẵn mã, hoặc gửi trang đó cho con cháu.
+//   2. Con cháu nhập mã (hoặc mở link) trên website và chọn người thân.
 //   3. Mỗi 5 giây: GET {server_url}/api/watch/pair/status (Bearer khoá)
 //      -> {"status": "paired", "elder": "Ba Hùng"}: lưu khoá vào device_key, bắt đầu gửi dữ liệu.
 //      -> 410/404: mã hết hạn, xin mã mới.
@@ -44,6 +46,23 @@ class Pairing {
             return c;
         }
         return c.substring(0, 3) + " " + c.substring(3, 6);
+    }
+
+    //! Bấm nút khi đang chờ ghép: gửi lại thông báo lên điện thoại, chưa có mã thì xin mã.
+    function onSelect() as Void {
+        if (code() != null) {
+            openLink();
+        } else {
+            tick();
+        }
+    }
+
+    //! Thông báo trên điện thoại (qua Garmin Connect) mở trang kết nối có sẵn mã.
+    function openLink() as Void {
+        var link = Storage.getValue("pair_link");
+        if ((link instanceof Lang.String) && (Communications has :openWebPage)) {
+            Communications.openWebPage(link as Lang.String, null, null);
+        }
     }
 
     //! Gọi mỗi 5 giây khi màn hình đang mở và đồng hồ chưa có khoá.
@@ -98,6 +117,13 @@ class Pairing {
                 Storage.setValue("pair_key", k as Lang.String);
                 // Trừ 30 giây để không hiện mã sắp hết hạn.
                 Storage.setValue("pair_exp", Time.now().value() + secs - 30);
+                var link = d.get("link");
+                if (link instanceof Lang.String) {
+                    Storage.setValue("pair_link", link as Lang.String);
+                    openLink();
+                } else {
+                    Storage.deleteValue("pair_link");
+                }
             }
         }
         WatchUi.requestUpdate();
@@ -129,5 +155,6 @@ class Pairing {
         Storage.deleteValue("pair_code");
         Storage.deleteValue("pair_key");
         Storage.deleteValue("pair_exp");
+        Storage.deleteValue("pair_link");
     }
 }

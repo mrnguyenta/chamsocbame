@@ -129,6 +129,7 @@ class PairStart(BaseModel):
     device: str | None = Field(default=None, max_length=64)
 
 
+DEFAULT_WEB_URL = "https://chamsocbame.vercel.app"
 PAIR_TTL_S = 15 * 60
 
 
@@ -142,7 +143,9 @@ def watch_pair_start(body: PairStart) -> dict:
         for _ in range(10):
             code = f"{secrets.randbelow(10**6):06d}"
             if db.start_pairing(conn, code, key_hash, body.device):
-                return {"code": code, "key": key, "expires_in": PAIR_TTL_S}
+                # link: đồng hồ bật thông báo trên điện thoại, bấm vào là mở trang kết nối có sẵn mã.
+                web = (s.web_url or DEFAULT_WEB_URL).rstrip("/")
+                return {"code": code, "key": key, "expires_in": PAIR_TTL_S, "link": f"{web}/d/{code}"}
     raise HTTPException(status_code=503)
 
 

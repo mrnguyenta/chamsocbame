@@ -80,7 +80,8 @@ class MainView extends WatchUi.View {
             dc.setColor(Graphics.COLOR_GREEN, Graphics.COLOR_TRANSPARENT);
             dc.drawText(cx, h * 50 / 100, Graphics.FONT_NUMBER_MEDIUM, code, center);
             dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_TRANSPARENT);
-            dc.drawText(cx, h * 70 / 100, Graphics.FONT_XTINY, str(Rez.Strings.PairHint), center);
+            dc.drawText(cx, h * 66 / 100, Graphics.FONT_XTINY, str(Rez.Strings.PairHint), center);
+            dc.drawText(cx, h * 76 / 100, Graphics.FONT_XTINY, str(Rez.Strings.PairHint2), center);
         } else if (!System.getDeviceSettings().phoneConnected) {
             dc.setColor(Graphics.COLOR_ORANGE, Graphics.COLOR_TRANSPARENT);
             dc.drawText(cx, h * 50 / 100, Graphics.FONT_SMALL, str(Rez.Strings.StatusNoPhone), center);

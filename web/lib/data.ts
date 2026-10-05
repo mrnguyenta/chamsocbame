@@ -262,3 +262,13 @@ export async function getInvite(code: string): Promise<{ familyName: string; rol
     where i.code = ${code} and i.revoked_at is null and i.expires_at > now()`;
   return r ? { familyName: r.name, role: r.role, inviter: r.inviter } : null;
 }
+
+/** Trạng thái mã 6 số đồng hồ đang hiện (trang /d/[code] mở từ thông báo trên điện thoại). */
+export async function getPairingState(code: string): Promise<"pending" | "claimed" | "expired"> {
+  if (isDemo) return "pending";
+  const [r] = await sql()`
+    select claimed_at is not null as claimed, expires_at > now() as live from watch_pairings
+    where code = ${code} order by created_at desc limit 1`;
+  if (!r) return "expired";
+  return r.claimed ? "claimed" : r.live ? "pending" : "expired";
+}

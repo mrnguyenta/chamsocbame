@@ -13,7 +13,8 @@
   <string id="StatusNoServer">Chưa có địa chỉ máy chủ</string>
 
   <string id="PairTitle">Mã kết nối</string>
-  <string id="PairHint">Nhập mã này trên website</string>
+  <string id="PairHint">Mở thông báo trên điện thoại</string>
+  <string id="PairHint2">hoặc nhập mã trên web</string>
   <string id="PairWaiting">Đang lấy mã...</string>
 
   <string id="SentAt">Gửi lúc</string>

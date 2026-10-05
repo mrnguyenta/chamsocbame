@@ -266,6 +266,7 @@ def test_pairing_with_six_digit_code(conn, family, monkeypatch):
     assert r.status_code == 200
     code, key = r.json()["code"], r.json()["key"]
     assert len(code) == 6 and code.isdigit()
+    assert r.json()["link"].endswith(f"/d/{code}")
     auth = {"Authorization": f"Bearer {key}"}
     assert client.get("/api/watch/pair/status", headers=auth).json() == {"status": "pending"}
     assert client.post("/api/watch/push", json={"ts": 1}, headers=auth).status_code == 401
