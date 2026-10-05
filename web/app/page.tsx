@@ -1,7 +1,7 @@
 import Link from "next/link";
 import AutoRefresh from "@/components/AutoRefresh";
 import ElderCard from "@/components/ElderCard";
-import { IconAlert, IconBell, IconPlus, IconUsers, IconWatch } from "@/components/icons";
+import { IconAlert, IconBell, IconChart, IconPlus, IconSparkle, IconUsers, IconWatch } from "@/components/icons";
 import { SeverityChip } from "@/components/ui";
 import { requireSession } from "@/lib/auth";
 import { getOverview } from "@/lib/data";
@@ -34,6 +34,8 @@ export default async function OverviewPage() {
     { href: "/nguoi-than#them", label: t("Thêm người thân", "Add a parent"), tile: "tile-violet", icon: <IconPlus size={22} /> },
     { href: "/canh-bao", label: t("Cảnh báo", "Alerts"), tile: "tile-coral", icon: <IconAlert size={22} /> },
     { href: "/gia-dinh", label: t("Anh chị em", "Siblings"), tile: "tile-blue", icon: <IconUsers size={22} /> },
+    { href: "/hoi-ai", label: t("Hỏi AI", "Ask AI"), tile: "tile-amber", icon: <IconSparkle size={22} /> },
+    { href: "/bao-cao", label: t("Báo cáo tuần", "Weekly report"), tile: "tile-teal", icon: <IconChart size={22} /> },
   ];
   const openBy = (id: string) => o.openAlerts.filter((a) => a.elderId === id).length;
 
@@ -82,7 +84,7 @@ export default async function OverviewPage() {
         <aside className="side-col">
           <section className="card">
             <h2>{t("Thao tác nhanh", "Quick actions")}</h2>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(0, 1fr))", gap: 10 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: "14px 10px" }}>
               {actions.map((a) => (
                 <Link key={a.href} href={a.href} style={{ display: "flex", flexDirection: "column", alignItems: "center",
                   gap: 6, textDecoration: "none", color: "var(--text-2)", fontSize: 12, fontWeight: 600, textAlign: "center" }}>

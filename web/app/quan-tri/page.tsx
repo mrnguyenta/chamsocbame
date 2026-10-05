@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { IconGear, IconTelegram, IconUsers, IconWatch } from "@/components/icons";
+import { IconBolt, IconGear, IconTelegram, IconUsers, IconWatch } from "@/components/icons";
 import { requireIdentity } from "@/lib/auth";
 import { getBot } from "@/lib/bot";
 import { getSystemAdmins, getSystemStats } from "@/lib/data";
@@ -8,7 +8,7 @@ import { makeT, type Lang } from "@/lib/i18n";
 import { getLang } from "@/lib/i18n-server";
 import { readSettings } from "@/lib/settings";
 import { setSystemAdmin } from "./actions";
-import { BotForm, ClaimForm, GeneralForm, ResetPasswordForm } from "./forms";
+import { AiKeyForm, BotForm, ClaimForm, GeneralForm, ResetPasswordForm } from "./forms";
 
 export const dynamic = "force-dynamic";
 export async function generateMetadata(): Promise<Metadata> {
@@ -76,7 +76,7 @@ export default async function AdminPage() {
   }
 
   const [bot, stats, settings, accounts, release] = await Promise.all([
-    getBot(), getSystemStats(), readSettings(["watch_app_url", "contact_email"]), getSystemAdmins(), latestRelease(),
+    getBot(), getSystemStats(), readSettings(["watch_app_url", "contact_email", "anthropic_api_key"]), getSystemAdmins(), latestRelease(),
   ]);
   const tiles: [string, number | string][] = [
     [t("Gia đình", "Families"), stats.families], [t("Ba mẹ được theo dõi", "Parents monitored"), stats.elders],
@@ -111,6 +111,21 @@ export default async function AdminPage() {
               ? <div className="banner info" style={{ marginBottom: 12 }}>{t("Đang dùng bot", "Using bot")} <b>@{bot.username}</b></div>
               : <div className="banner danger" style={{ marginBottom: 12 }}>{t("Chưa có bot. Tạo bot bằng @BotFather (/newbot) rồi dán token.", "No bot yet. Create one with @BotFather (/newbot), then paste the token.")}</div>}
             <BotForm hasBot={!!bot.token} />
+          </section>
+
+          <section className="card">
+            <Title icon={<IconBolt size={20} />} tile="tile-amber" title={t("Trợ lý AI (Claude)", "AI assistant (Claude)")}
+              sub={t("Hỏi đáp về sức khoẻ cả nhà (web và lệnh /hoi trong Telegram), nhận xét trong báo cáo tuần",
+                "Q&A about the family's health (website and /hoi in Telegram), comments in the weekly report")} />
+            {settings.anthropic_api_key
+              ? <div className="banner info" style={{ marginBottom: 12 }}>{t("Đang bật · khoá", "On · key")} …{settings.anthropic_api_key.slice(-4)}</div>
+              : <div className="banner warn" style={{ marginBottom: 12 }}>{t(
+                  "Chưa bật. Tạo khoá ở console.anthropic.com → API Keys (cần nạp tiền ở Billing), rồi dán vào đây.",
+                  "Off. Create a key at console.anthropic.com → API Keys (add credit under Billing), then paste it here.")}</div>}
+            <AiKeyForm hasKey={!!settings.anthropic_api_key} />
+            <div className="muted" style={{ fontSize: 13, marginTop: 8 }}>{t(
+              "Chi phí ước tính: vài nghìn đồng mỗi câu hỏi hoặc mỗi báo cáo tuần. Mỗi gia đình hỏi tối đa 60 câu/ngày.",
+              "Estimated cost: a few cents per question or weekly report. Each family can ask up to 60 questions a day.")}</div>
           </section>
 
           <section className="card">

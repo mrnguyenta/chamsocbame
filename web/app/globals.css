@@ -301,3 +301,21 @@ details.block > .block-body { padding: 0 18px 18px; display: flex; flex-directio
 .seg label:has(input:checked) { background: var(--surface-solid); color: var(--accent-ink); box-shadow: var(--shadow-sm); }
 .seg label:has(input:focus-visible) { outline: 3px solid color-mix(in srgb, var(--accent) 60%, transparent); outline-offset: 1px; }
 .seg label:has(input:disabled) { cursor: default; opacity: 0.7; }
+
+/* Khung chat Hỏi AI */
+.chat { display: flex; flex-direction: column; gap: 10px; }
+.chat .bubble { max-width: 88%; padding: 10px 14px; border-radius: 18px; white-space: pre-wrap; line-height: 1.5;
+  overflow-wrap: anywhere; }
+.chat .bubble.user { align-self: flex-end; background: var(--accent-strong); color: #fff; border-bottom-right-radius: 6px; }
+.chat .bubble.assistant { align-self: flex-start; background: var(--surface-2); border: 1px solid var(--border-strong);
+  border-bottom-left-radius: 6px; }
+.chat .bubble.error { background: var(--danger-bg); color: var(--danger-fg); border-color: transparent; }
+
+/* Bảng báo cáo tuần */
+.report-table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+.report-table th, .report-table td { text-align: left; padding: 9px 10px; border-bottom: 1px solid var(--border-strong); white-space: nowrap; }
+.report-table th { font-size: 13px; color: var(--muted); font-weight: 600; }
+.report-table td:first-child { white-space: normal; }
+.report-table .delta { font-size: 12px; }
+.report-table .delta.good { color: var(--accent-ink); }
+.report-table .delta.bad { color: var(--coral-ink); }

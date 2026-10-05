@@ -162,7 +162,9 @@ def test_commands_and_scheduled_reports(conn, family):
     cmd = lambda t: {"message": {"text": t, "chat": {"id": GROUP}, "from": {"id": NGUYEN}}}
 
     jobs.handle_update(conn, tg, NoopCallProvider(), cmd("/ba@ChamSocBaMe_bot"), now)
-    assert "Ba Hùng" in tg.sent[-1][1] and "Bước chân 4.820" in tg.sent[-1][1]
+    text = tg.sent[-1][1]
+    assert "Ba Hùng" in text and "4.820 bước" in text and "nghỉ 62" in text and "Ngủ đêm qua 6g40" in text
+    assert "/nguoi-than/" in text  # có link vào trang của người này
     jobs.handle_update(conn, tg, NoopCallProvider(), cmd("/tongquan"), now)
     assert "Mẹ Lan" in tg.sent[-1][1] and "Ba Hùng" in tg.sent[-1][1]
 
@@ -465,3 +467,71 @@ def test_sample_account_has_data_ticks_quietly_and_expires(conn, family):
     assert conn.execute("select count(*) as n from elders where family_id = %s", (fam,)).fetchone()["n"] == 0
     assert conn.execute("select count(*) as n from accounts where id = %s", (acc,)).fetchone()["n"] == 0
     assert conn.execute("select count(*) as n from families where id = %s", (family["family"]["id"],)).fetchone()["n"] == 1
+
+
+def test_weekly_report_table_link_and_sunday_schedule(conn, family, monkeypatch):
+    from chamsoc import ai, weekly
+
+    now = datetime(2026, 10, 4, 1, 0, tzinfo=timezone.utc)  # Chủ nhật 08:00 giờ VN
+    assert weekly.last_full_week(now.astimezone(VN).date()) == (
+        datetime(2026, 9, 27).date(), datetime(2026, 10, 3).date())
+    for i in range(1, 15):  # tuần này ngủ ít hơn tuần trước
+        day = now.astimezone(VN).date() - timedelta(days=i)
+        _metrics(conn, family["ba"], day, resting_hr=62 if i <= 7 else 60, steps=5000,
+                 sleep_seconds=5 * 3600 if i <= 7 else 7 * 3600)
+    monkeypatch.setattr(ai, "weekly_comments", lambda conn, fam, data: {
+        "overview": "Cả nhà ổn.", "people": [{"name": "Ba Hùng", "summary": "Ba ngủ ít hơn.", "suggestions": ["Nhắc ba ngủ sớm"]}]})
+
+    tg = FakeTg()
+    due = weekly.due_families(conn, now)
+    assert [str(f["id"]) for f in due] == [str(family["family"]["id"])]
+    assert weekly.due_families(conn, now + timedelta(minutes=5)) == []  # không gửi lặp
+    weekly.send(conn, tg, due[0], now)
+    text = tg.texts_to(GROUP)[-1]
+    assert "Báo cáo tuần 27/09 – 03/10" in text and "Ba ngủ ít hơn." in text and "• Nhắc ba ngủ sớm" in text
+    assert "Ngủ/đêm        5g00      7g00" in text and "/bao-cao/" in text
+    row = conn.execute("select data, ai from weekly_reports").fetchone()
+    assert row["data"]["people"][0]["this_week"]["sleep_hours"] == 5.0 and row["ai"]["overview"] == "Cả nhà ổn."
+    # Thứ Hai thì không gửi.
+    assert weekly.due_families(conn, now + timedelta(days=1)) == []
+
+
+def test_ai_ask_needs_key_counts_questions_and_sends_family_data(conn, family, monkeypatch):
+    from chamsoc import ai
+
+    now = datetime.now(timezone.utc)
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+    with pytest.raises(ai.AIUnavailable, match="chưa được bật"):
+        ai.ask(conn, family["family"], "Ba thế nào?", now)
+
+    conn.execute("insert into app_settings (key, value) values ('anthropic_api_key', 'sk-test')")
+    seen = {}
+
+    def fake_create(key, *, system, messages, max_tokens, effort, schema=None):
+        seen.update(key=key, messages=messages, effort=effort)
+        return "Ba Hùng ổn."
+
+    monkeypatch.setattr(ai, "_create", fake_create)
+    history = [{"role": "assistant", "content": "lạc"}, {"role": "user", "content": "Chào"},
+               {"role": "assistant", "content": "Chào bạn"}]
+    assert ai.ask(conn, family["family"], "Ba thế nào?", now, history) == "Ba Hùng ổn."
+    assert seen["key"] == "sk-test" and seen["messages"][0] == {"role": "user", "content": "Chào"}
+    last = seen["messages"][-1]["content"]
+    assert "<du_lieu>" in last and "Ba Hùng" in last and "Mẹ Lan" in last and last.endswith("Ba thế nào?")
+
+    monkeypatch.setattr(ai, "DAILY_QUESTION_LIMIT", 2)
+    ai.ask(conn, family["family"], "Câu 2", now)
+    with pytest.raises(ai.AIUnavailable, match="mai hỏi tiếp"):
+        ai.ask(conn, family["family"], "Câu 3", now)
+
+
+def test_hoi_command_in_group(conn, family, monkeypatch):
+    from chamsoc import ai
+
+    monkeypatch.setattr(ai, "ask", lambda conn, fam, q, now, history=None: f"Trả lời: {q} <ok>")
+    tg = FakeTg()
+    msg = lambda t: {"message": {"text": t, "chat": {"id": GROUP, "type": "group"}, "from": {"id": NGUYEN}}}
+    jobs.handle_update(conn, tg, NoopCallProvider(), msg("/hoi"), datetime.now(timezone.utc))
+    assert "/hoi Mẹ Lan" in tg.texts_to(GROUP)[-1]
+    jobs.handle_update(conn, tg, NoopCallProvider(), msg("/hoi Mẹ ngủ sao?"), datetime.now(timezone.utc))
+    assert tg.texts_to(GROUP)[-1] == "🤖 Trả lời: Mẹ ngủ sao? &lt;ok&gt;"

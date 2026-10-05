@@ -245,6 +245,21 @@ export async function updateElder(_: FormState, form: FormData): Promise<FormSta
   }
 }
 
+/** Xoá một người thân cùng toàn bộ dữ liệu (chỉ số, cảnh báo, thuốc, đồng hồ đã ghép). */
+export async function deleteElder(elderId: string): Promise<FormState> {
+  const t = await getT();
+  if (isDemo) return demo(t);
+  try {
+    const s = await admin(t);
+    const rows = await sql()`delete from elders where id = ${elderId} and family_id = ${s.familyId} returning display_name`;
+    if (!rows.length) throw new Error(t("Không tìm thấy người thân", "Family member not found"));
+    revalidatePath("/", "layout");
+    return { ok: true, message: t(`Đã xoá ${rows[0].display_name}.`, `Deleted ${rows[0].display_name}.`) };
+  } catch (e) {
+    return { ok: false, message: (e as Error).message };
+  }
+}
+
 /** Sửa tên hiển thị và số điện thoại của người chăm sóc (quản trị sửa được mọi người, ai cũng sửa được mình). */
 export async function updateMemberInfo(_: FormState, form: FormData): Promise<FormState> {
   const t = await getT();

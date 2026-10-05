@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { T } from "@/lib/i18n";
-import { IconBell, IconGear, IconHeart, IconHome, IconPlus, IconUser, IconUsers, IconWatch } from "./icons";
+import { IconBell, IconChart, IconGear, IconHeart, IconHome, IconPlus, IconSparkle, IconUser, IconUsers, IconWatch } from "./icons";
 import { LangSwitch, useT } from "./LangProvider";
 
 // Trang con của "Tài khoản": gia đình, quản trị, kết nối đồng hồ.
@@ -40,6 +40,12 @@ export function SideNav({ name, isSystemAdmin, canSignOut }: { name: string; isS
             {i.icon}<span>{i.label}</span>
           </Link>
         ))}
+        <Link href="/hoi-ai" className="item" aria-current={path.startsWith("/hoi-ai") ? "page" : undefined}>
+          <IconSparkle size={22} /><span>{t("Hỏi AI", "Ask AI")}</span>
+        </Link>
+        <Link href="/bao-cao" className="item" aria-current={path.startsWith("/bao-cao") ? "page" : undefined}>
+          <IconChart size={22} /><span>{t("Báo cáo tuần", "Weekly reports")}</span>
+        </Link>
         {isSystemAdmin && (
           <Link href="/quan-tri" className="item" aria-current={path.startsWith("/quan-tri") ? "page" : undefined}>
             <IconGear size={22} /><span>{t("Quản trị", "Admin")}</span>

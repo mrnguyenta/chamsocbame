@@ -1,12 +1,13 @@
 "use client";
 
+import { usePathname, useRouter } from "next/navigation";
 import { useActionState, useState, useTransition } from "react";
 import { IconPlus, IconTelegram } from "@/components/icons";
 import { useLang, useT } from "@/components/LangProvider";
 import type { T } from "@/lib/i18n";
 import { conditions } from "@/lib/metrics";
 import {
-  type FormState, acceptInvite, addElder, addMember, createFamily, createInvite, createLinkCode, updateElder, updateMember,
+  type FormState, acceptInvite, addElder, addMember, createFamily, createInvite, createLinkCode, deleteElder, updateElder, updateMember,
   updateMemberInfo,
 } from "./actions";
 import { useFormAction } from "@/components/useFormAction";
@@ -282,7 +283,34 @@ export function EditElderForm({ elder }: {
         <ConditionChips selected={elder.conditions} />
         <div className="row"><button className="btn primary small" type="submit" disabled={f.pending}>{t("Lưu", "Save")}</button><Msg s={f.state} /></div>
       </form>
+      <DeleteElder elder={elder} />
     </details>
+  );
+}
+
+/** Xoá người thân: hỏi lại vì mất toàn bộ dữ liệu; đang ở trang của người đó thì quay về danh sách. */
+function DeleteElder({ elder }: { elder: { id: string; name: string } }) {
+  const t = useT();
+  const router = useRouter();
+  const path = usePathname();
+  const [pending, start] = useTransition();
+  const [err, setErr] = useState("");
+  return (
+    <div className="row" style={{ marginTop: 10, gap: 8 }}>
+      <button type="button" className="btn ghost small" disabled={pending} style={{ color: "var(--coral-ink)" }}
+        onClick={() => {
+          if (!confirm(t(`Xoá ${elder.name}? Toàn bộ số liệu, cảnh báo, thuốc và đồng hồ đã ghép của người này sẽ bị xoá, không khôi phục được.`,
+            `Delete ${elder.name}? All of their readings, alerts, medicines and paired watches will be deleted and can't be restored.`))) return;
+          start(async () => {
+            const r = await deleteElder(elder.id);
+            if (!r.ok) { setErr(r.message); return; }
+            if (path.startsWith("/nguoi-than/")) router.push("/nguoi-than");
+          });
+        }}>
+        {pending ? t("Đang xoá…", "Deleting…") : t(`Xoá ${elder.name}`, `Delete ${elder.name}`)}
+      </button>
+      {err && <span role="status" className="banner danger">{err}</span>}
+    </div>
   );
 }
 

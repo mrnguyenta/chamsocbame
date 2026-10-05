@@ -2,7 +2,7 @@ import "server-only";
 import { isDemo, sql } from "./db";
 
 /** Cấu hình hệ thống sửa ở trang /quan-tri (bảng app_settings). */
-export type SettingKey = "telegram_bot_token" | "telegram_bot_username" | "watch_app_url" | "contact_email";
+export type SettingKey = "telegram_bot_token" | "telegram_bot_username" | "watch_app_url" | "contact_email" | "anthropic_api_key";
 
 export async function readSettings(keys: SettingKey[]): Promise<Partial<Record<SettingKey, string>>> {
   if (isDemo) return {};

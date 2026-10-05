@@ -4,6 +4,8 @@
 - POST /api/cron/tick        mỗi 5 phút: gửi/leo thang cảnh báo, nhắc thuốc, báo cáo
 - POST /api/telegram/webhook tin nhắn và nút bấm từ Telegram
 - POST /api/garmin/link      (Bearer INTERNAL_API_SECRET) website liên kết Garmin Connect cho một người thân
+- POST /api/ai/ask          (Bearer INTERNAL_API_SECRET) website hỏi AI về sức khoẻ cả gia đình
+- POST /api/report/weekly   (Bearer INTERNAL_API_SECRET) website tạo báo cáo tuần ngay (có thể gửi Telegram)
 - POST /api/telegram/setup   (Bearer CRON_SECRET) đăng ký webhook cho bot sau khi đặt TELEGRAM_BOT_TOKEN
 - POST /api/watch/push       ứng dụng Connect IQ trên đồng hồ gửi dữ liệu mỗi 5 phút
 - POST /api/watch/pair/start đồng hồ xin mã ghép 6 số; GET /api/watch/pair/status hỏi đã ghép chưa
@@ -85,6 +87,8 @@ def telegram_setup(request: Request, authorization: str | None = Header(default=
     if url.startswith("http://"):
         url = "https://" + url[len("http://"):]
     tg.set_webhook(url, s.telegram_webhook_secret)
+    tg.set_commands([("tongquan", "Tình hình sức khoẻ cả nhà"), ("hoi", "Hỏi AI, ví dụ: /hoi Mẹ ngủ thế nào?"),
+                     ("baocaotuan", "Báo cáo tuần (bảng + nhận xét AI)"), ("id", "Xem mã chat")])
     me = tg.get_me()
     return {"ok": True, "bot": me.get("username"), "webhook": url}
 
@@ -112,6 +116,74 @@ class GarminLink(BaseModel):
     elder_id: str
     email: str = Field(max_length=200)
     password: str = Field(max_length=200)
+
+
+class AiAsk(BaseModel):
+    family_id: str = Field(min_length=36, max_length=36)
+    question: str = Field(min_length=1, max_length=2000)
+    history: list[dict] = Field(default_factory=list, max_length=20)
+
+
+def _family(conn, family_id: str) -> dict:
+    fam = conn.execute(
+        """
+        select f.*, (select coalesce(array_agg(fc.chat_id order by fc.linked_at), '{}')
+                     from family_chats fc where fc.family_id = f.id) as chat_ids
+        from families f where f.id = %s
+        """,
+        (family_id,),
+    ).fetchone()
+    if fam is None:
+        raise HTTPException(status_code=404)
+    return fam
+
+
+def _internal(authorization: str | None) -> Settings:
+    s = _settings()
+    if not s.internal_api_secret:
+        raise HTTPException(status_code=503)
+    _check(authorization, f"Bearer {s.internal_api_secret}")
+    return s
+
+
+@app.post("/api/ai/ask")
+def ai_ask(body: AiAsk, authorization: str | None = Header(default=None)) -> dict:
+    """Website gửi câu hỏi (đã kiểm người hỏi thuộc gia đình); trả về câu trả lời hoặc lỗi dễ hiểu."""
+    from chamsoc import ai
+
+    s = _internal(authorization)
+    with db.connect(s.database_url) as conn:
+        fam = _family(conn, body.family_id)
+        try:
+            return {"ok": True, "answer": ai.ask(conn, fam, body.question, datetime.now(timezone.utc), body.history)}
+        except ai.AIUnavailable as e:
+            return {"ok": False, "answer": str(e)}
+
+
+class WeeklyNow(BaseModel):
+    family_id: str = Field(min_length=36, max_length=36)
+    send_telegram: bool = False
+
+
+@app.post("/api/report/weekly")
+def report_weekly(body: WeeklyNow, authorization: str | None = Header(default=None)) -> dict:
+    """Tạo báo cáo tuần trọn gần nhất ngay (không chờ Chủ nhật); tuỳ chọn gửi luôn vào nhóm Telegram."""
+    from chamsoc import weekly
+
+    s = _internal(authorization)
+    now = datetime.now(timezone.utc)
+    with db.connect(s.database_url) as conn:
+        fam = _family(conn, body.family_id)
+        if fam["expires_at"]:  # gia đình mẫu: chỉ tạo một lần (mỗi lần gọi AI tốn phí)
+            row = conn.execute("select id from weekly_reports where family_id = %s order by created_at desc limit 1",
+                               (body.family_id,)).fetchone()
+            if row:
+                return {"id": str(row["id"])}
+        if body.send_telegram:
+            report_id = weekly.send(conn, _tg(conn, s), fam, now)
+        else:
+            report_id, _, _ = weekly.create(conn, fam, now)
+    return {"id": report_id}
 
 
 @app.post("/api/garmin/link")

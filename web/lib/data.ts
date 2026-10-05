@@ -339,3 +339,31 @@ export async function getSystemAdmins(): Promise<{
     families: r.families,
   }));
 }
+
+/** Báo cáo tuần (bảng số liệu + nhận xét AI) đã tạo cho gia đình, mới nhất trước. */
+export interface WeeklyStats {
+  days_with_data: number; resting_hr: number | null; steps: number | null; sleep_hours: number | null;
+  deep_sleep_hours: number | null; sleep_score: number | null; spo2_lowest: number | null; body_battery: number | null;
+  stress: number | null; hrv: number | null; bp_systolic: number | null; bp_diastolic: number | null; bp_count: number;
+  glucose: number | null; alerts: number; alerts_high: number; meds: { taken: number; due: number; percent: number | null };
+}
+export interface WeeklyReport {
+  id: string; weekStart: string; weekEnd: string; createdAt: string;
+  data: { family: string; people: { id: string; name: string; birth_year: number | null; conditions: string[]; status_now: string;
+    this_week: WeeklyStats; last_week: WeeklyStats; alerts_this_week: string[]; open_alerts: string[] }[] };
+  ai: { overview: string; people: { name: string; summary: string; suggestions: string[] }[] } | null;
+}
+
+export async function getWeeklyReports(familyId: string): Promise<{ id: string; weekStart: string; weekEnd: string; hasAi: boolean }[]> {
+  if (isDemo) return [];
+  const rows = await sql()`select id, week_start::text, week_end::text, ai is not null as has_ai from weekly_reports
+                           where family_id = ${familyId} order by week_end desc limit 52`;
+  return rows.map((r) => ({ id: r.id, weekStart: r.week_start, weekEnd: r.week_end, hasAi: r.has_ai }));
+}
+
+export async function getWeeklyReport(familyId: string, id: string): Promise<WeeklyReport | null> {
+  if (isDemo || !/^[0-9a-f-]{36}$/.test(id)) return null;
+  const [r] = await sql()`select id, week_start::text, week_end::text, created_at, data, ai from weekly_reports
+                          where id = ${id} and family_id = ${familyId}`;
+  return r ? { id: r.id, weekStart: r.week_start, weekEnd: r.week_end, createdAt: iso(r.created_at)!, data: r.data, ai: r.ai } : null;
+}

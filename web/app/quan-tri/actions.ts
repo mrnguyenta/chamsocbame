@@ -109,6 +109,29 @@ export async function saveGeneral(_: AdminState, form: FormData): Promise<AdminS
   }
 }
 
+/** Khoá API Claude cho AI hỏi đáp và báo cáo tuần; chỉ lưu ở máy chủ, không gửi về trình duyệt. */
+export async function saveAiKey(_: AdminState, form: FormData): Promise<AdminState> {
+  const t = await getT();
+  if (isDemo) return noDb(t);
+  try {
+    await requireSystemAdmin(t);
+    if (form.get("remove") === "1") {
+      await writeSettings({ anthropic_api_key: null });
+      revalidatePath("/quan-tri");
+      return { ok: true, message: t("Đã tắt AI.", "AI turned off.") };
+    }
+    const key = txt(form, "api_key", 300);
+    if (!/^sk-ant-[A-Za-z0-9_-]{20,}$/.test(key)) {
+      return { ok: false, message: t("Khoá không đúng dạng (bắt đầu bằng sk-ant-).", "That doesn't look like a key (it starts with sk-ant-).") };
+    }
+    await writeSettings({ anthropic_api_key: key });
+    revalidatePath("/quan-tri");
+    return { ok: true, message: t("Đã bật AI. Thử hỏi ở trang Hỏi AI.", "AI is on. Try it on the Ask AI page.") };
+  } catch (e) {
+    return { ok: false, message: (e as Error).message };
+  }
+}
+
 /** Đặt lại mật khẩu cho một tài khoản (người dùng quên mật khẩu). */
 export async function resetPassword(_: AdminState, form: FormData): Promise<AdminState> {
   const t = await getT();

@@ -9,9 +9,9 @@ from zoneinfo import ZoneInfo
 
 from garminconnect import GarminConnectAuthenticationError
 
-from . import crypto, db, garmin_sync, rules, telegram
+from . import ai, crypto, db, facts, garmin_sync, rules, telegram, weekly
 from .calls import CallProvider
-from .config import Settings
+from .config import Settings, web_base
 from .escalation import due_steps, should_notify_now
 from .models import SEVERITY_RANK, OpenAlert, Snapshot
 
@@ -205,11 +205,8 @@ def _status(conn, elder_id: str) -> str:
 
 def family_report(conn, family: dict, now_utc: datetime, title: str) -> str:
     local_now = _local(now_utc, family["timezone"])
-    items = []
-    for e in db.elders_of_family(conn, family["id"]):
-        snap = db.snapshot_from_db(conn, e, local_now.date(), now_utc)
-        items.append((snap, _status(conn, str(e["id"]))))
-    return telegram.report_text(f"{title} {local_now:%d/%m}", items)
+    items = facts.family_facts(conn, family, now_utc)
+    return telegram.family_overview_text(f"{title} {local_now:%H:%M %d/%m}", items, web_base())
 
 
 def scheduled_reports(conn, tg: telegram.TelegramClient, now_utc: datetime) -> None:
@@ -225,6 +222,15 @@ def scheduled_reports(conn, tg: telegram.TelegramClient, now_utc: datetime) -> N
                 _to_groups(tg, f["chat_ids"], family_report(conn, f, now_utc, title))
 
 
+def weekly_reports(conn, tg: telegram.TelegramClient, now_utc: datetime) -> None:
+    """Sáng Chủ nhật: báo cáo tuần (bảng + nhận xét AI) vào nhóm Telegram, kèm link xem trên web."""
+    for f in weekly.due_families(conn, now_utc):
+        try:
+            weekly.send(conn, tg, f, now_utc)
+        except Exception:
+            log.exception("Báo cáo tuần gia đình %s lỗi", f["id"])
+
+
 def _within(local_now: datetime, at: time, grace: timedelta) -> bool:
     start = local_now.replace(hour=at.hour, minute=at.minute, second=0, microsecond=0)
     return start <= local_now < start + grace
@@ -236,7 +242,8 @@ def tick(conn, tg: telegram.TelegramClient, calls: CallProvider, now_utc: dateti
                  lambda: evaluate_all(conn, tg, now_utc),
                  lambda: process_alerts(conn, tg, calls, now_utc),
                  lambda: medication_reminders(conn, tg, now_utc),
-                 lambda: scheduled_reports(conn, tg, now_utc)):
+                 lambda: scheduled_reports(conn, tg, now_utc),
+                 lambda: weekly_reports(conn, tg, now_utc)):
         try:
             step()
         except Exception:
@@ -290,7 +297,33 @@ def handle_update(conn, tg: telegram.TelegramClient, calls: CallProvider, update
         if cmd in ("id", "start"):
             tg.send(chat_id, f"chat_id: <code>{chat_id}</code>\nuser_id: <code>{user_id}</code>\n\n"
                              "Để nối với gia đình, lấy mã 6 số trên website (trang Gia đình) rồi gõ "
-                             "<code>/ketnoi 123456</code> trong nhóm, hoặc ba mẹ nhắn <code>/toi 123456</code>.")
+                             "<code>/ketnoi 123456</code> trong nhóm, hoặc ba mẹ nhắn <code>/toi 123456</code>.\n\n"
+                             "Sau khi nối:\n<code>/tongquan</code> — tình hình cả nhà\n"
+                             "<code>/hoi câu hỏi</code> — hỏi AI, ví dụ <code>/hoi Mẹ tuần này ngủ thế nào?</code>\n"
+                             "<code>/baocaotuan</code> — báo cáo tuần ngay (tự gửi mỗi sáng Chủ nhật)")
+            return
+        if cmd in ("hoi", "ai", "baocaotuan"):
+            family = db.family_by_chat(conn, chat_id) or (db.family_by_telegram_user(conn, user_id) if user_id else None)
+            if family is None:
+                tg.send(chat_id, "Chat này chưa nối với gia đình nào. Lấy mã trên website (trang Gia đình) rồi gõ "
+                                 "<code>/ketnoi 123456</code>.")
+                return
+            if cmd == "baocaotuan":
+                tg.send(chat_id, "📊 Đang làm báo cáo tuần…")
+                report_id, data, comments = weekly.create(conn, family, now_utc)
+                tg.send(chat_id, weekly.telegram_text(report_id, data, comments, web_base()))
+                return
+            question = text.split(maxsplit=1)[1] if len(text.split(maxsplit=1)) > 1 else ""
+            if not question:
+                tg.send(chat_id, "Hỏi AI về sức khoẻ cả nhà, ví dụ:\n<code>/hoi Mẹ Lan tuần này ngủ thế nào?</code>\n"
+                                 "<code>/hoi Ba Hùng hôm nay đi bộ có đủ không?</code>")
+                return
+            tg.send(chat_id, "🤖 Đang xem số liệu…")
+            try:
+                answer = ai.ask(conn, family, question, now_utc)
+            except ai.AIUnavailable as e:
+                answer = str(e)
+            tg.send(chat_id, f"🤖 {escape(answer)}")
             return
         family = db.family_by_chat(conn, chat_id)
         if family is None:
@@ -300,9 +333,8 @@ def handle_update(conn, tg: telegram.TelegramClient, calls: CallProvider, update
             return
         for e in db.elders_of_family(conn, family["id"]):
             if e["command"] and e["command"].lower() == cmd:
-                local = _local(now_utc, family["timezone"])
-                snap = db.snapshot_from_db(conn, e, local.date(), now_utc)
-                tg.send(chat_id, telegram.snapshot_lines(snap, _status(conn, str(e["id"]))))
+                f = facts.elder_facts(conn, e, family["timezone"], now_utc)
+                tg.send(chat_id, telegram.elder_detail_text(f, web_base()))
                 return
         return
 

@@ -16,7 +16,8 @@ export function useFormAction<S extends { ok: boolean; message: string }>(fn: (s
   }, [state]);
   const onSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const fd = new FormData(e.currentTarget);
+    // Kèm giá trị của nút đã bấm (form có nhiều nút, ví dụ "Lưu" và "Tắt").
+    const fd = new FormData(e.currentTarget, (e.nativeEvent as SubmitEvent).submitter);
     startTransition(() => action(fd));
   };
   return { state, pending, ref, onSubmit };

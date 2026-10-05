@@ -4,6 +4,14 @@ import os
 from dataclasses import dataclass
 
 
+DEFAULT_WEB_URL = "https://chamsocnguoithan.vercel.app"
+
+
+def web_base() -> str:
+    """Địa chỉ website để chèn link vào tin Telegram."""
+    return (os.environ.get("WEB_URL") or DEFAULT_WEB_URL).rstrip("/")
+
+
 @dataclass(frozen=True)
 class Settings:
     database_url: str

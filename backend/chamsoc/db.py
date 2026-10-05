@@ -340,6 +340,21 @@ def elder_by_telegram(conn, telegram_user_id: int) -> dict | None:
     ).fetchone()
 
 
+def family_by_telegram_user(conn, telegram_user_id: int) -> dict | None:
+    """Gia đình của người chăm sóc hoặc ba mẹ đã nối Telegram riêng (nhắn bot trong chat riêng)."""
+    return conn.execute(
+        """
+        select f.*, (select coalesce(array_agg(fc.chat_id order by fc.linked_at), '{}')
+                     from family_chats fc where fc.family_id = f.id) as chat_ids
+        from families f
+        where f.id in (select family_id from caregivers where telegram_user_id = %s
+                       union all select family_id from elders where telegram_user_id = %s)
+        order by f.created_at limit 1
+        """,
+        (telegram_user_id, telegram_user_id),
+    ).fetchone()
+
+
 def caregiver_by_telegram(conn, family_id: str, telegram_user_id: int) -> dict | None:
     return conn.execute(
         "select * from caregivers where family_id = %s and telegram_user_id = %s",
