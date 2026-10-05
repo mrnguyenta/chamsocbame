@@ -4,12 +4,18 @@
 #
 # Khoá ký: nếu có secret CIQ_DEVELOPER_KEY (file key.der mã hoá base64) thì dùng nó, nếu không thì tạo khoá
 # tạm. Khoá tạm đủ để cài thử qua USB; muốn đưa lên Store và cập nhật về sau thì phải dùng một khoá cố định.
+#
+# Mỗi lần build xong, các file được đăng lên GitHub Release "watch-latest" để tải thẳng (kể cả trên iPhone):
+#   https://github.com/<owner>/<repo>/releases/download/watch-latest/chamsoc-beta.iq
 name: watch-app
 
 on:
   push:
     paths: ["watch/**", ".github/workflows/watch-app.yml"]
   workflow_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
   build:
@@ -68,7 +74,32 @@ jobs:
       - name: Build gói .iq (Connect IQ Store)
         run: monkeyc -f monkey.jungle -e -r -o bin/chamsoc.iq -y /tmp/key.der -w
 
+      # Bản Beta trên Store là một ứng dụng riêng (chỉ tài khoản nhà phát triển cài được),
+      # nên dùng mã ứng dụng khác để không đụng bản phát hành chính thức.
+      - name: Build gói .iq Beta
+        run: |
+          sed "s/446e5af5-d06c-401c-a181-5600ec61a835/630e5063-4e63-4e70-962a-0d5bbd952775/" manifest.xml > /tmp/manifest-beta.xml
+          cp manifest.xml /tmp/manifest-main.xml && cp /tmp/manifest-beta.xml manifest.xml
+          monkeyc -f monkey.jungle -e -r -o bin/chamsoc-beta.iq -y /tmp/key.der -w
+          cp /tmp/manifest-main.xml manifest.xml
+
       - uses: actions/upload-artifact@v4
         with:
           name: chamsoc-watch-app
           path: watch/bin/
+
+      - name: Đăng lên Release "watch-latest" (link tải thẳng)
+        if: github.event_name != 'pull_request'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: watch-latest
+          name: Ứng dụng đồng hồ (bản mới nhất)
+          prerelease: true
+          body: |
+            Bản build tự động từ ${{ github.sha }}.
+            - chamsoc-beta.iq: tải lên Connect IQ Store dạng Beta (cài qua Garmin Connect trên điện thoại).
+            - chamsoc.iq: bản phát hành chính thức trên Store.
+            - chamsoc-<đồng hồ>.prg: chép qua cáp vào GARMIN/APPS.
+          files: |
+            watch/bin/*.iq
+            watch/bin/*.prg

@@ -15,12 +15,30 @@ base64 -w0 developer_key.der    # macOS: base64 -i developer_key.der
 
 Dán chuỗi base64 vào GitHub → repo → Settings → Secrets and variables → Actions →
 **New repository secret**, tên `CIQ_DEVELOPER_KEY`. Cất file `.der` ở nơi an toàn, không commit.
-Sau đó chạy lại workflow **watch-app** (Actions → watch-app → Run workflow), tải `chamsoc.iq`.
+Sau đó chạy lại workflow **watch-app** (Actions → watch-app → Run workflow). File mới có ở
+https://github.com/mrnguyenta/chamsocbame/releases/tag/watch-latest
 
-## 2. Tải lên
+## 2a. Bản Beta (thử ngay trên đồng hồ của chính bạn, làm được hoàn toàn trên iPhone)
+
+Beta chỉ cài được lên đồng hồ thuộc **tài khoản Garmin của người tải lên**. Đồng hồ của người khác
+cần bản chính thức (mục 2).
+
+1. Tải `chamsoc-beta.iq`:
+   https://github.com/mrnguyenta/chamsocbame/releases/download/watch-latest/chamsoc-beta.iq
+   (Safari → Tải về → nằm trong app Tệp, thư mục Tải về).
+2. Mở https://apps.developer.garmin.com, đăng nhập tài khoản Garmin (cùng tài khoản đang dùng Garmin Connect).
+   Lần đầu: đồng ý điều khoản nhà phát triển.
+3. **Upload an App** → chọn file `chamsoc-beta.iq` → **đánh dấu "Beta App"** → điền tên
+   "Chăm Sóc Ba Mẹ", mô tả (mục 3), danh mục Health & Fitness → gửi.
+4. Trên iPhone: **Garmin Connect** → biểu tượng thiết bị → chọn đồng hồ → **Ứng dụng Connect IQ**
+   (hoặc app **Connect IQ Store**) → tìm "Chăm Sóc Ba Mẹ" (hoặc mục Ứng dụng của tôi) → **Cài đặt**.
+5. Bản mới: tải `chamsoc-beta.iq` mới về, vào trang ứng dụng trên apps.developer.garmin.com →
+   **Upload a new version**. Đồng hồ tự cập nhật qua Garmin Connect.
+
+## 2. Tải lên bản chính thức (cho mọi người)
 
 1. Đăng nhập https://apps.developer.garmin.com bằng tài khoản Garmin (miễn phí).
-2. **Upload an App** → chọn `chamsoc.iq`.
+2. **Upload an App** → chọn `chamsoc.iq` (không đánh dấu Beta).
 3. Điền thông tin theo mục 3, thêm ảnh chụp màn hình đồng hồ (chụp từ chính Fenix 7 hoặc trình giả lập).
 4. Gửi duyệt. Garmin thường duyệt trong vài ngày làm việc.
 5. Khi được duyệt, copy link trang ứng dụng (dạng `https://apps.garmin.com/apps/<id>`) gửi cho
