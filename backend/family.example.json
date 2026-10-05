@@ -1,0 +1,30 @@
+{
+  "name": "Gia đình chăm Ba Mẹ",
+  "telegram_chat_id": -1001234567890,
+  "timezone": "Asia/Ho_Chi_Minh",
+  "caregivers": [
+    {"name": "Nguyên", "telegram_user_id": 111111111, "phone": "+84900000001", "role": "admin", "escalation_order": 2},
+    {"name": "Chị Hạnh", "telegram_user_id": 222222222, "phone": "+84900000002", "role": "alerts", "escalation_order": 1},
+    {"name": "Anh Tú", "telegram_user_id": 333333333, "role": "reports"}
+  ],
+  "elders": [
+    {
+      "name": "Ba Hùng",
+      "command": "ba",
+      "birth_year": 1955,
+      "conditions": ["tang_huyet_ap", "tieu_duong"],
+      "telegram_user_id": 444444444,
+      "medications": [
+        {"name": "Amlodipine 5mg", "note": "huyết áp, sau ăn sáng", "times": ["07:00"]},
+        {"name": "Metformin 500mg", "note": "sau ăn", "times": ["07:00", "19:00"]}
+      ]
+    },
+    {
+      "name": "Mẹ Lan",
+      "command": "me",
+      "birth_year": 1959,
+      "conditions": ["tim_mach"],
+      "telegram_user_id": 555555555
+    }
+  ]
+}

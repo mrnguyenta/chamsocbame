@@ -1,106 +1,125 @@
 # Chăm Sóc Ba Mẹ
 
-Website giúp con cháu theo dõi sức khoẻ ba mẹ, ông bà qua đồng hồ **Garmin**, và gửi báo cáo, cảnh báo vào **Telegram** cho cả gia đình.
+Theo dõi sức khoẻ ba mẹ, ông bà qua đồng hồ **Garmin**, gửi báo cáo, cảnh báo và nhắc thuốc qua **Telegram** cho cả gia đình.
 
-> Trạng thái: giai đoạn ý tưởng. Repo hiện có tài liệu nghiên cứu và kế hoạch, chưa có code.
-> Mockup giao diện (riêng tư, chủ tài khoản cần bấm Share để người khác xem): https://claude.ai/artifact/AzgWZm9uc1T6t729DMVdwK
-> Gồm 7 màn: web tổng quan, chi tiết một người, cài đặt cảnh báo, Telegram báo cáo sáng, Telegram cảnh báo, thêm người thân, tổng quan trên điện thoại.
+Mockup giao diện (riêng tư, chủ tài khoản bấm Share để người khác xem): https://claude.ai/artifact/AzgWZm9uc1T6t729DMVdwK
 
-## 1. Đọc dữ liệu Garmin Connect: các lựa chọn trên GitHub
+## Đã chốt
 
-| Thư viện | Ngôn ngữ | Tình trạng (10/2026) | Ghi chú |
-|---|---|---|---|
-| [cyberjunky/python-garminconnect](https://github.com/cyberjunky/python-garminconnect) | Python ≥ 3.12 | **Đang được bảo trì**, ~3.1k sao, bản 0.3.17 | Hơn 150 hàm: nhịp tim, giấc ngủ, stress, Body Battery, SpO2, HRV, nhịp thở, huyết áp, cân nặng, hoạt động, thiết bị. Từ 0.3.0 dùng luồng đăng nhập SSO của app Android + `curl_cffi` (vượt chặn TLS của Cloudflare). **Khuyến nghị dùng cái này.** |
-| [matin/garth](https://github.com/matin/garth) | Python | **Đã ngừng (deprecated)** | Garmin đổi cơ chế đăng nhập tháng 3/2026 nên garth không còn chạy. |
-| [Pythe1337N/garmin-connect](https://github.com/Pythe1337N/garmin-connect) | TypeScript/Node | Ít cập nhật, 37 issue mở | Dễ bị chặn bởi Cloudflare TLS fingerprinting; không nên dùng cho sản phẩm. |
-| [tcgoetz/GarminDB](https://github.com/tcgoetz/GarminDB) | Python | Đang bảo trì | Tải dữ liệu về SQLite để phân tích; hợp cho báo cáo lịch sử, không hợp cho cảnh báo gần thời gian thực. |
-| [Nicolasvegam/garmin-connect-mcp](https://github.com/Nicolasvegam/garmin-connect-mcp) | TypeScript | Mới (2026) | MCP server cho trợ lý AI; tham khảo được nếu muốn có chatbot hỏi đáp về sức khoẻ. |
-| Garmin Connect Developer Program (Health API) | REST/webhook, chính thức | Cần đăng ký doanh nghiệp và được Garmin duyệt | Garmin **chủ động đẩy** dữ liệu qua webhook, ổn định và hợp pháp. Nên chuyển sang khi sản phẩm có nhiều người dùng. |
+| Câu hỏi | Quyết định |
+|---|---|
+| Phạm vi | Dùng cho gia đình mình trước, mở cho người khác sau, chưa thu phí → dùng thư viện không chính thức `python-garminconnect`. Khi mở rộng thì đăng ký Garmin Health API. |
+| Điện thoại ba mẹ | Luôn bật Bluetooth và mạng → dữ liệu trễ khoảng 15–30 phút. |
+| Telegram | Cả ba mẹ và con cháu đều dùng → ba mẹ nhận nhắc thuốc và tự nhắn chỉ số (`130/85`, `đường 7.2`). |
+| Bệnh nền | Có → bật sẵn ngưỡng huyết áp, đường huyết, tim mạch theo bệnh của từng người. |
+| Gọi điện tự động | Để sẵn giao diện (`backend/chamsoc/calls.py`), bật khi cần. |
+| Hạ tầng | Đám mây: **Vercel** (backend Python, sau này web Next.js) + **Supabase** (PostgreSQL, lịch chạy pg_cron). |
 
-Các hàm của `python-garminconnect` sẽ dùng:
+## Tư vấn thiết bị
 
-```python
-from garminconnect import Garmin
+### Đồng hồ (chưa mua)
 
-g = Garmin(email, password, prompt_mfa=lambda: input("MFA: "))
-g.login("~/.garminconnect/<nguoi_than_id>")   # lưu token, lần sau không cần mật khẩu
+| Mẫu | Phù hợp khi | Điểm chính |
+|---|---|---|
+| **Garmin Venu 4** (khoảng 549 USD) | Ba/mẹ có bệnh tim mạch, cần đầy đủ nhất | Có **ECG** (đo điện tim; tuỳ quốc gia có được bật hay không), nhiệt độ da, **phát hiện té ngã cả ngày** (Garmin tự nhắn vị trí cho người thân), màn hình lớn, pin ~11 ngày, có cỡ 41 mm và 45 mm. |
+| **Garmin vívoactive 6** (khoảng 299 USD) | Tiết kiệm hơn, nhẹ (36 g) | Đủ nhịp tim, SpO2, giấc ngủ, stress, Body Battery, pin ~11 ngày. **Không có ECG và nhiệt độ da.** |
 
-today = "2026-10-05"
-g.get_user_summary(today)       # bước chân, calo, nhịp tim nghỉ, stress TB, Body Battery
-g.get_heart_rates(today)        # nhịp tim theo từng thời điểm
-g.get_sleep_data(today)         # giấc ngủ: sâu / nhẹ / REM / thức, điểm ngủ
-g.get_spo2_data(today)          # SpO2
-g.get_stress_data(today)        # stress
-g.get_body_battery(today)       # Body Battery
-g.get_respiration_data(today)   # nhịp thở
-g.get_hrv_data(today)           # HRV
-g.get_blood_pressure(today)     # huyết áp (nếu nhập vào Garmin Connect)
-g.get_devices()                 # thiết bị, dùng để biết đồng hồ nào
-g.get_device_last_used()        # lần đồng bộ cuối, phát hiện "mất kết nối"
+Gợi ý: người có bệnh tim mạch dùng Venu 4; người còn lại có thể dùng vívoactive 6. Chọn cỡ mặt lớn cho dễ đọc.
+
+Lưu ý: **cảnh báo té ngã của Garmin không đi qua API**. Hãy cài số điện thoại của con cháu làm liên hệ khẩn cấp ngay trong app Garmin Connect của ba mẹ. ECG cũng chỉ xem trong app Garmin, hệ thống này không đọc được.
+
+### Máy đo huyết áp: Omron có kết nối được không?
+
+- **Omron không gửi được trực tiếp vào Garmin Connect.** App OMRON connect chỉ đồng bộ với Apple Health / Google Health Connect, không có API mở cho mình đọc.
+- Có các dự án cộng đồng như [export2garmin](https://github.com/RobertWojtowicz/export2garmin), nhưng cần một máy Raspberry Pi đặt cạnh máy đo, đọc qua Bluetooth rồi đẩy lên Garmin. Hơi phức tạp với ba mẹ.
+- **Phương án 1 (khuyên dùng, rẻ):** máy Omron nào cũng được. Đo xong ba mẹ **nhắn số vào Telegram** (ví dụ `132/84`), hệ thống đã làm sẵn phần này.
+- **Phương án 2 (tự động):** **Garmin Index BPM** (khoảng 150 USD). Máy tự đồng bộ qua Wi‑Fi vào Garmin Connect, hệ thống đọc được bằng `get_blood_pressure` mà không cần nhắn tay. Cần kiểm tra nơi bán ở Việt Nam.
+
+### Đường huyết (tiểu đường)
+
+- Máy đo đầu ngón tay thông thường: ba mẹ nhắn `đường 7.2` vào Telegram.
+- Nếu sau này dùng cảm biến liên tục (Libre/Dexcom), có thể tích hợp riêng ở giai đoạn sau.
+
+### Cân
+
+- **Garmin Index S2** đồng bộ thẳng vào Garmin Connect (có bán ở Việt Nam, ví dụ FPT Shop).
+- Cân Xiaomi cần cầu nối như [ble-scale-sync](https://github.com/KristianP26/ble-scale-sync). Đơn giản nhất là nhắn `cân 58` vào Telegram.
+
+## Thư viện Garmin đã chọn
+
+[cyberjunky/python-garminconnect](https://github.com/cyberjunky/python-garminconnect) bản ≥ 0.3.17 (Python ≥ 3.12). Đây là thư viện đang được bảo trì, đã chuyển sang cách đăng nhập mới sau khi Garmin đổi hồi 3/2026. `garth` đã ngừng phát triển, đừng dùng.
+
+Giới hạn:
+- Dữ liệu không đến ngay lập tức. Đường đi là đồng hồ → điện thoại → máy chủ Garmin → hệ thống này.
+- Đây là thư viện không chính thức, Garmin có thể đổi cách đăng nhập bất cứ lúc nào. Khi đó hệ thống báo "Mất kết nối Garmin" vào nhóm, và việc cần làm là cập nhật thư viện rồi kết nối lại.
+- Đăng nhập lần đầu cần mã MFA, nên chạy script `link_garmin` trên máy tính cá nhân. Sau đó token được mã hoá lưu trong Supabase và tự làm mới.
+- Hệ thống không phải thiết bị y tế; mọi cảnh báo chỉ để tham khảo.
+
+## Kiến trúc
+
+```
+Đồng hồ Garmin ─BT─▶ App Garmin Connect (điện thoại ba mẹ) ─▶ Máy chủ Garmin
+                                                                  ▲
+Supabase pg_cron ── mỗi 15 phút ─▶ POST /api/cron/sync ───────────┘ (python-garminconnect)
+                 ── mỗi 5 phút  ─▶ POST /api/cron/tick: gửi/leo thang cảnh báo,
+                                   nhắc thuốc, báo cáo sáng/tối
+Telegram ──────── webhook ──────▶ POST /api/telegram/webhook: nút "Tôi xử lý",
+                                   "Đã uống", lệnh /ba /me /tongquan, ba mẹ nhắn chỉ số
+                 Vercel (Python, FastAPI)  ◀──▶  Supabase PostgreSQL
 ```
 
-### Những giới hạn cần biết trước
+Vì sao không dùng cron của Vercel: gói miễn phí (Hobby) chỉ chạy cron 1 lần/ngày, nên dùng pg_cron của Supabase gọi sang Vercel.
 
-1. **Không phải thời gian thực.** Đồng hồ → app Garmin Connect trên điện thoại của ba mẹ (Bluetooth) → máy chủ Garmin → hệ thống mình đọc. Thường trễ 10–60 phút, có khi vài giờ nếu điện thoại tắt Bluetooth/mạng.
-2. **Không lấy được cảnh báo té ngã / sự cố.** Tính năng Incident Detection của Garmin chỉ gửi SMS tới số liên hệ khẩn cấp cài trong app Garmin; API không trả về. → Hãy cài số của con cái làm liên hệ khẩn cấp trong app Garmin Connect của ba mẹ, song song với hệ thống này.
-3. **Thư viện không chính thức.** Garmin có thể đổi đăng nhập bất kỳ lúc nào (như tháng 3/2026). Cần theo dõi bản cập nhật thư viện và có cảnh báo "mất kết nối Garmin" cho quản trị.
-4. **MFA.** Nếu tài khoản bật xác thực 2 lớp, lần đầu phải nhập mã; token lưu lại dùng được lâu, khi hết hạn phải đăng nhập lại (giao diện đã có bước này).
-5. **Không phải thiết bị y tế.** Mọi cảnh báo chỉ mang tính tham khảo; ghi rõ trên giao diện và tin nhắn.
-6. **Đọc vừa phải.** Mỗi tài khoản đọc khoảng 15 phút/lần để tránh bị Garmin chặn.
+Leo thang cảnh báo (mức Cao/Khẩn cấp): gửi nhóm ngay → sau 10 phút chưa ai bấm "Tôi xử lý" thì nhắn riêng người ở gần nhất → sau 20 phút thì gọi điện (khi đã bật nhà cung cấp gọi). Giờ yên lặng 22:00–06:00 chỉ gửi cảnh báo Khẩn cấp.
 
-## 2. Kiến trúc đề xuất
+## Cấu trúc mã nguồn
 
 ```
-Đồng hồ Garmin ──BT──▶ App Garmin Connect (điện thoại ba mẹ) ──▶ Máy chủ Garmin
-                                                                    │
-                                     (mỗi 15 phút, python-garminconnect)
-                                                                    ▼
-┌──────────────── Backend (Python, FastAPI) ────────────────────────────────┐
-│ Worker đồng bộ  ─▶  PostgreSQL (người thân, chỉ số, cảnh báo, token mã hoá)│
-│ Bộ quy tắc cảnh báo ─▶ Telegram Bot API (nhóm gia đình + nhắn riêng)       │
-│ Lịch báo cáo (sáng / tối / tuần) · Tóm tắt AI (tuỳ chọn)                   │
-└────────────────────────────────────────────────────────────────────────────┘
-                                   ▲
-                         Website (Next.js) cho con cháu
+backend/
+  api/index.py            FastAPI cho Vercel (cron + webhook Telegram)
+  chamsoc/
+    garmin_sync.py        đọc Garmin → Snapshot
+    rules.py              ngưỡng cảnh báo + bộ ngưỡng mặc định theo bệnh nền
+    escalation.py         giờ yên lặng, leo thang
+    telegram.py           gửi tin, định dạng, đọc "130/85", "đường 7.2", "cân 58"
+    calls.py              giao diện gọi điện (chưa bật)
+    jobs.py               đồng bộ, tick, xử lý tin nhắn
+    db.py                 truy vấn PostgreSQL
+    link_garmin.py        CLI kết nối tài khoản Garmin (nhập MFA)
+    setup_family.py       CLI tạo gia đình từ file JSON
+  tests/                  kiểm thử (logic + luồng đầy đủ trên PostgreSQL thật)
+supabase/
+  migrations/…_init.sql   lược đồ
+  cron.sql                lịch pg_cron
 ```
 
-- **Backend:** Python 3.12 + FastAPI, vì thư viện Garmin tốt nhất là Python.
-- **Hàng đợi / lịch:** APScheduler (nhỏ) hoặc Celery + Redis (nhiều người dùng).
-- **Cơ sở dữ liệu:** PostgreSQL (Supabase cũng được). Token Garmin mã hoá bằng khoá riêng, không lưu mật khẩu.
-- **Telegram:** `python-telegram-bot`; bot thêm vào nhóm gia đình, nút bấm inline ("Tôi xử lý", "Tắt 2 giờ", "Biểu đồ").
-- **Website:** Next.js, đăng nhập bằng Telegram Login hoặc Google.
-- **Triển khai:** một VPS nhỏ (Docker Compose) là đủ cho vài chục gia đình.
+## Cài đặt (khi đã có đồng hồ)
 
-## 3. Tính năng
+1. **Supabase:** tạo project (chọn vùng Singapore), chạy `supabase/migrations/20261005000000_init.sql` trong SQL Editor.
+2. **Telegram:** tạo bot với @BotFather, thêm bot vào nhóm gia đình. Gõ `/id` trong nhóm và trong tin riêng với bot để lấy `chat_id`/`user_id` của từng người. Ba mẹ cần bấm Start với bot một lần.
+3. **Vercel:** import repo, chọn Root Directory là `backend`, rồi điền biến môi trường theo `backend/.env.example`.
+4. **Webhook Telegram:**
+   `https://api.telegram.org/bot<TOKEN>/setWebhook?url=https://<app>.vercel.app/api/telegram/webhook&secret_token=<TELEGRAM_WEBHOOK_SECRET>`
+5. **Gia đình:** sao chép `backend/family.example.json` thành `family.json`, sửa lại cho đúng, rồi chạy:
+   ```bash
+   cd backend && pip install -e . && export DATABASE_URL=...
+   python -m chamsoc.setup_family ../family.json
+   TOKEN_ENCRYPTION_KEY=... python -m chamsoc.link_garmin --elder <id in ra ở bước trên>
+   ```
+6. **Lịch chạy:** làm theo `supabase/cron.sql`.
 
-### Bản đầu tiên (MVP)
-- Quản lý nhiều người thân, mỗi người một tài khoản Garmin.
-- Đồng bộ dữ liệu 15 phút/lần, hiển thị tổng quan và chi tiết.
-- Bộ ngưỡng cảnh báo riêng cho từng người: nhịp tim nghỉ cao/thấp, SpO2 thấp, mất kết nối quá X giờ, ngủ quá ít, ít vận động, pin đồng hồ yếu.
-- Telegram: báo cáo sáng, cảnh báo tức thì, lệnh `/tongquan`, `/ba`, `/me`.
-- Nhiều người chăm sóc cùng lúc, phân quyền (quản trị / nhận cảnh báo / chỉ xem báo cáo).
+## Chạy kiểm thử
 
-### Gợi ý thêm
-- **Phân công xử lý cảnh báo:** nút "Tôi xử lý" để anh chị em biết ai đang lo, tránh cả nhà cùng gọi hoặc không ai gọi.
-- **Leo thang:** sau 10 phút chưa ai nhận thì nhắn riêng người ở gần; sau 20 phút gọi điện tự động (dịch vụ như Twilio/Stringee).
-- **Ngưỡng cá nhân hoá:** tính đường nền 14 ngày của từng người, cảnh báo khi lệch bất thường thay vì một con số cố định.
-- **Phát hiện "im lặng bất thường":** đồng hồ đang đeo nhưng gần như không có bước chân đến trưa.
-- **Nhắc uống thuốc và nhắc sạc pin** gửi thẳng cho ba mẹ qua Telegram, ba mẹ bấm "Đã uống".
-- **Nhập tay** huyết áp, đường huyết, cân nặng; ghi chú, lịch tái khám dùng chung.
-- **Báo cáo tuần kèm biểu đồ** (ảnh PNG gửi vào Telegram) và **tóm tắt bằng AI** dễ hiểu.
-- **Xuất PDF** để mang theo khi đi khám bác sĩ.
-- **Giờ yên lặng** ban đêm, chỉ gửi cảnh báo khẩn cấp.
-- Giai đoạn sau: hỗ trợ thêm Apple Watch, Xiaomi, Samsung; chuyển sang Garmin Health API chính thức.
+```bash
+uv venv -p 3.12 .venv && uv pip install -p .venv -e "backend[dev]"
+cd backend && ../.venv/bin/pytest                                   # kiểm thử logic
+TEST_DATABASE_URL=postgresql://localhost/chamsoc_test ../.venv/bin/pytest   # thêm luồng DB (xoá sạch DB đó)
+```
 
-## 4. Câu hỏi cần chủ dự án trả lời
+## Việc tiếp theo
 
-1. Dùng cho riêng gia đình mình hay làm thành dịch vụ cho nhiều gia đình (có thu phí)? Quyết định việc đi đường thư viện không chính thức hay đăng ký Garmin Health API.
-2. Ba mẹ đang đeo dòng đồng hồ Garmin nào? (Venu, vívoactive, Forerunner, vívosmart… mỗi dòng đo được chỉ số khác nhau, ví dụ SpO2 ban đêm, ECG.)
-3. Ba mẹ có dùng điện thoại thông minh luôn bật Bluetooth và mạng không? Nếu không, dữ liệu sẽ trễ nhiều.
-4. Tài khoản Garmin của ba mẹ có bật xác thực 2 lớp (MFA) không? Ai giữ email nhận mã?
-5. Ba mẹ có tự dùng Telegram không, hay chỉ con cháu dùng? (Quyết định có gửi nhắc thuốc / nhắc sạc pin thẳng cho ba mẹ hay không.)
-6. Cảnh báo quan trọng nhất với gia đình là gì? Ví dụ bệnh nền: tim mạch, huyết áp, tiểu đường, COPD.
-7. Có cần gọi điện tự động khi không ai phản hồi cảnh báo không? (Tốn phí dịch vụ gọi.)
-8. Bạn muốn tự host trên VPS hay dùng dịch vụ đám mây (Vercel + Supabase…)? Bạn quen ngôn ngữ lập trình nào?
-9. Có cần tóm tắt bằng AI không?
-10. Ngoài Garmin, có thiết bị nào khác cần nối vào (máy đo huyết áp Omron, cân Xiaomi…)?
+- [ ] Website Next.js theo mockup (đăng nhập bằng Telegram, xem biểu đồ, chỉnh ngưỡng).
+- [ ] Báo cáo tuần kèm ảnh biểu đồ, tóm tắt bằng AI.
+- [ ] Ngưỡng cá nhân hoá theo đường nền 14 ngày.
+- [ ] Tích hợp nhà cung cấp gọi điện (Stringee hoặc Twilio) vào `calls.py`.
+- [ ] Thử với đồng hồ thật, chỉnh lại tên trường dữ liệu Garmin nếu khác.
