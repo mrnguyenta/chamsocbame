@@ -253,7 +253,9 @@ def handle_update(conn, tg: telegram.TelegramClient, calls: CallProvider, update
         arg = parts[1] if len(parts) > 1 else ""
         chat_type = (msg.get("chat") or {}).get("type", "private")
         if cmd in ("start", "ketnoi", "toi") and arg:
-            _link_with_code(conn, tg, arg, chat_id, chat_type, user_id)
+            sender = msg.get("from") or {}
+            name = " ".join(filter(None, [sender.get("first_name"), sender.get("last_name")])) or sender.get("username")
+            _link_with_code(conn, tg, arg, chat_id, chat_type, user_id, name)
             return
         if cmd in ("id", "start"):
             tg.send(chat_id, f"chat_id: <code>{chat_id}</code>\nuser_id: <code>{user_id}</code>\n\n"
@@ -295,10 +297,10 @@ def handle_update(conn, tg: telegram.TelegramClient, calls: CallProvider, update
 
 
 def _link_with_code(conn, tg: telegram.TelegramClient, code: str, chat_id: int, chat_type: str,
-                    user_id: int | None) -> None:
-    """Nối nhóm Telegram với gia đình, hoặc tài khoản Telegram của ba mẹ với hồ sơ của họ."""
+                    user_id: int | None, user_name: str | None = None) -> None:
+    """Nối nhóm Telegram với gia đình, hoặc Telegram riêng của ba mẹ / người chăm sóc với hồ sơ của họ."""
     is_group = chat_type in ("group", "supergroup")
-    link = db.consume_link_code(conn, code.strip(), "group" if is_group else "elder")
+    link = db.consume_link_code(conn, code.strip(), ("group",) if is_group else ("elder", "caregiver"))
     if link is None:
         tg.send(chat_id, "Mã không đúng hoặc đã hết hạn. Lấy mã mới trên website, trang Gia đình."
                 + ("" if is_group else " (Mã nối nhóm phải gõ trong nhóm gia đình.)"))
@@ -307,6 +309,10 @@ def _link_with_code(conn, tg: telegram.TelegramClient, code: str, chat_id: int, 
         db.set_family_chat(conn, str(link["family_id"]), chat_id)
         tg.send(chat_id, f"Đã nối nhóm này với <b>{escape(link['family_name'])}</b>. "
                          "Báo cáo và cảnh báo sẽ gửi vào đây. Gõ /tongquan để xem tình hình.")
+    elif user_id and link["kind"] == "caregiver":
+        db.set_caregiver_telegram(conn, str(link["caregiver_id"]), user_id, user_name)
+        tg.send(chat_id, f"Chào <b>{escape(link['caregiver_name'])}</b>! Đã nối Telegram của bạn với "
+                         f"<b>{escape(link['family_name'])}</b>. Cảnh báo cần bạn xử lý sẽ gửi riêng ở đây.")
     elif user_id:
         db.set_elder_telegram(conn, str(link["elder_id"]), user_id)
         tg.send(chat_id, f"Chào <b>{escape(link['elder_name'])}</b>! Từ giờ bot sẽ nhắc uống thuốc ở đây. "

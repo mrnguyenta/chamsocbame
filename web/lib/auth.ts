@@ -1,18 +1,20 @@
 import "server-only";
-import { createHash, createHmac, timingSafeEqual } from "node:crypto";
+import { createHmac } from "node:crypto";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { isDemo, sql } from "./db";
+import { safeEqual } from "./password";
 
 const COOKIE = "csbm_session";
 const FAMILY_COOKIE = "csbm_family";
 const MAX_AGE_S = 30 * 24 * 3600;
-const TELEGRAM_FIELDS = ["id", "first_name", "last_name", "username", "photo_url", "auth_date"];
 
-/** Người đã đăng nhập bằng Telegram (có thể chưa thuộc gia đình nào). */
+/** Người đã đăng nhập bằng email (có thể chưa thuộc gia đình nào). */
 export interface Identity {
-  tgId: number;
+  accountId: string;
   name: string;
+  email: string;
+  isSystemAdmin: boolean;
 }
 
 export interface Session extends Identity {
@@ -31,29 +33,11 @@ function secret(): string {
 
 const sign = (payload: string) => createHmac("sha256", secret()).update(payload).digest("base64url");
 
-function safeEqual(a: string, b: string): boolean {
-  const ab = Buffer.from(a);
-  const bb = Buffer.from(b);
-  return ab.length === bb.length && timingSafeEqual(ab, bb);
-}
+const cookieOpts = { httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "lax" as const, maxAge: MAX_AGE_S, path: "/" };
 
-/** Kiểm tra dữ liệu Telegram Login Widget (https://core.telegram.org/widgets/login). */
-export function verifyTelegramLogin(data: Record<string, string>, botToken: string, nowS: number): boolean {
-  const hash = data.hash;
-  if (!hash) return false;
-  const check = TELEGRAM_FIELDS.filter((k) => data[k] !== undefined).sort().map((k) => `${k}=${data[k]}`).join("\n");
-  const key = createHash("sha256").update(botToken).digest();
-  const expected = createHmac("sha256", key).update(check).digest("hex");
-  const authDate = Number(data.auth_date);
-  return safeEqual(expected, hash) && Number.isFinite(authDate) && nowS - authDate < 24 * 3600;
-}
-
-export async function startSession(tgId: number, name: string): Promise<void> {
-  const payload = Buffer.from(JSON.stringify({ tg: tgId, n: name, exp: Math.floor(Date.now() / 1000) + MAX_AGE_S }))
-    .toString("base64url");
-  (await cookies()).set(COOKIE, `${payload}.${sign(payload)}`, {
-    httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "lax", maxAge: MAX_AGE_S, path: "/",
-  });
+export async function startSession(accountId: string): Promise<void> {
+  const payload = Buffer.from(JSON.stringify({ a: accountId, exp: Math.floor(Date.now() / 1000) + MAX_AGE_S })).toString("base64url");
+  (await cookies()).set(COOKIE, `${payload}.${sign(payload)}`, cookieOpts);
 }
 
 export async function endSession(): Promise<void> {
@@ -64,21 +48,21 @@ export async function endSession(): Promise<void> {
 
 /** Chọn gia đình đang xem (người theo dõi nhiều gia đình). Quyền được kiểm lại mỗi lần đọc phiên. */
 export async function selectFamily(familyId: string): Promise<void> {
-  (await cookies()).set(FAMILY_COOKIE, familyId, {
-    httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "lax", maxAge: MAX_AGE_S, path: "/",
-  });
+  (await cookies()).set(FAMILY_COOKIE, familyId, cookieOpts);
 }
 
+/** Tài khoản đang đăng nhập; đọc lại từ cơ sở dữ liệu mỗi lần để tài khoản bị xoá mất quyền ngay. */
 export async function getIdentity(): Promise<Identity | null> {
-  if (isDemo) return { tgId: 0, name: "Khách (demo)" };
+  if (isDemo) return { accountId: "demo", name: "Khách (demo)", email: "demo@example.com", isSystemAdmin: true };
   const raw = (await cookies()).get(COOKIE)?.value;
   if (!raw) return null;
   const [payload, sig] = raw.split(".");
   if (!payload || !sig || !safeEqual(sign(payload), sig)) return null;
   try {
-    const { tg, n, exp } = JSON.parse(Buffer.from(payload, "base64url").toString()) as { tg: number; n: string; exp: number };
-    if (!tg || exp < Date.now() / 1000) return null;
-    return { tgId: tg, name: n };
+    const { a, exp } = JSON.parse(Buffer.from(payload, "base64url").toString()) as { a?: string; exp: number };
+    if (!a || exp < Date.now() / 1000) return null;
+    const [r] = await sql()`select id, name, email, is_system_admin from accounts where id = ${a}`;
+    return r ? { accountId: r.id, name: r.name, email: r.email, isSystemAdmin: r.is_system_admin } : null;
   } catch {
     return null;
   }
@@ -94,7 +78,7 @@ export async function getSession(): Promise<Session | null> {
   const rows = await sql()<{ id: string; family_id: string; role: string; family_name: string; display_name: string }[]>`
     select c.id, c.family_id, c.role, c.display_name, f.name as family_name
     from caregivers c join families f on f.id = c.family_id
-    where c.telegram_user_id = ${id.tgId} order by c.created_at`;
+    where c.account_id = ${id.accountId} order by c.created_at`;
   if (!rows.length) return null;
   const wanted = (await cookies()).get(FAMILY_COOKIE)?.value;
   const c = rows.find((r) => r.family_id === wanted) ?? rows[0];
@@ -115,4 +99,10 @@ export async function requireIdentity(next?: string): Promise<Identity> {
   const id = await getIdentity();
   if (!id) redirect(next ? `/dang-nhap?next=${encodeURIComponent(next)}` : "/dang-nhap");
   return id;
+}
+
+/** Đường dẫn quay lại sau đăng nhập: chỉ nhận đường dẫn trong website. */
+export function safeNext(next: unknown): string | null {
+  const n = typeof next === "string" ? next : "";
+  return n.startsWith("/") && !n.startsWith("//") && !n.startsWith("/\\") ? n : null;
 }

@@ -309,6 +309,18 @@ def test_link_group_and_parent_telegram_with_codes(conn, family):
     assert conn.execute("select telegram_user_id from elders where id = %s", (me["id"],)).fetchone()["telegram_user_id"] == 66
     assert "Mẹ Lan" in tg.sent[-1][1]
 
+    # Người chăm sóc (đăng nhập bằng email) nối Telegram riêng bằng mã 6 số
+    cg = conn.execute("insert into caregivers (family_id, display_name, role) values (%s, 'Anh Nhất', 'alerts') "
+                      "returning id", (fid,)).fetchone()["id"]
+    conn.execute("insert into link_codes (code, family_id, kind, caregiver_id) values ('333333', %s, 'caregiver', %s)",
+                 (fid, cg))
+    update = msg("/start 333333", 88, "private", 88)
+    update["message"]["from"]["first_name"] = "Nhất"
+    jobs.handle_update(conn, tg, NoopCallProvider(), update, now)
+    row = conn.execute("select telegram_user_id, telegram_name from caregivers where id = %s", (cg,)).fetchone()
+    assert (row["telegram_user_id"], row["telegram_name"]) == (88, "Nhất")
+    assert "Anh Nhất" in tg.sent[-1][1]
+
 
 def test_sql_default_rules_match_python(conn, family):
     e = conn.execute("insert into elders (family_id, display_name) values (%s, 'Ông') returning id",

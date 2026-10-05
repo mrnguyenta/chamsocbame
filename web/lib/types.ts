@@ -140,7 +140,10 @@ export interface SettingsData {
 export interface FamilyAdmin {
   name: string;
   hasTelegramGroup: boolean;
-  members: { id: string; name: string; role: "admin" | "alerts" | "reports"; hasTelegram: boolean; phone: string | null; isMe: boolean }[];
+  members: {
+    id: string; name: string; role: "admin" | "alerts" | "reports"; hasTelegram: boolean; phone: string | null; isMe: boolean;
+    email: string | null; hasAccount: boolean;
+  }[];
   invites: { id: string; code: string; role: string; expiresAt: string }[];
   elders: { id: string; name: string; birthYear: number | null; conditions: string[]; hasTelegram: boolean; command: string | null }[];
 }

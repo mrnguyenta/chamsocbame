@@ -6,6 +6,7 @@ import { redirect } from "next/navigation";
 import { getIdentity, requireSession, selectFamily } from "@/lib/auth";
 import { isDemo, sql } from "@/lib/db";
 import { CONDITIONS } from "@/lib/metrics";
+import { EMAIL, hashPassword, normEmail, passwordProblem } from "@/lib/password";
 
 export interface FormState { ok: boolean; message: string; value?: string }
 
@@ -34,8 +35,8 @@ export async function createFamily(_: FormState, form: FormData): Promise<FormSt
   const phone = txt(form, "phone", 20) || null;
   const famId = await sql().begin(async (tx) => {
     const [f] = await tx`insert into families (name) values (${familyName}) returning id`;
-    await tx`insert into caregivers (family_id, display_name, telegram_user_id, telegram_name, phone, role, escalation_order)
-             values (${f.id}, ${myName}, ${id.tgId}, ${id.name}, ${phone}, 'admin', 1)`;
+    await tx`insert into caregivers (family_id, display_name, account_id, email, phone, role, escalation_order)
+             values (${f.id}, ${myName}, ${id.accountId}, ${id.email}, ${phone}, 'admin', 1)`;
     return f.id as string;
   });
   await selectFamily(famId);
@@ -54,9 +55,9 @@ export async function acceptInvite(_: FormState, form: FormData): Promise<FormSt
     select family_id, role from invites where code = ${code} and revoked_at is null and expires_at > now()`;
   if (!inv) return { ok: false, message: "Lời mời không đúng hoặc đã hết hạn. Xin người mời gửi link mới." };
   await sql()`
-    insert into caregivers (family_id, display_name, telegram_user_id, telegram_name, phone, role)
-    values (${inv.family_id}, ${myName}, ${id.tgId}, ${id.name}, ${phone}, ${inv.role})
-    on conflict (family_id, telegram_user_id) do nothing`;
+    insert into caregivers (family_id, display_name, account_id, email, phone, role)
+    values (${inv.family_id}, ${myName}, ${id.accountId}, ${id.email}, ${phone}, ${inv.role})
+    on conflict (family_id, account_id) do nothing`;
   await selectFamily(inv.family_id);
   redirect("/");
 }
@@ -130,13 +131,16 @@ export async function addElder(_: FormState, form: FormData): Promise<FormState>
   }
 }
 
-/** Mã 6 số để nối nhóm Telegram (/ketnoi) hoặc Telegram của ba mẹ (/toi), hiệu lực 30 phút. */
+/** Mã 6 số để nối nhóm Telegram (/ketnoi), Telegram của ba mẹ hoặc Telegram riêng của mình (/start), hiệu lực 30 phút. */
 export async function createLinkCode(_: FormState, form: FormData): Promise<FormState> {
   if (isDemo) return { ok: true, message: "Mã mẫu (demo)", value: "123456" };
   try {
-    const s = await admin();
-    const kind = String(form.get("kind")) === "elder" ? "elder" : "group";
+    const raw = String(form.get("kind"));
+    const kind = raw === "elder" ? "elder" : raw === "caregiver" ? "caregiver" : "group";
+    // Ai cũng nối được Telegram của chính mình; nối nhóm và nối ba mẹ cần quyền quản trị.
+    const s = kind === "caregiver" ? await requireSession() : await admin();
     const elderId = kind === "elder" ? String(form.get("elder_id")) : null;
+    const caregiverId = kind === "caregiver" ? s.caregiverId : null;
     if (elderId) {
       const [e] = await sql()`select id from elders where id = ${elderId} and family_id = ${s.familyId}`;
       if (!e) throw new Error("Không tìm thấy người thân");
@@ -145,11 +149,55 @@ export async function createLinkCode(_: FormState, form: FormData): Promise<Form
     for (let i = 0; i < 10; i++) {
       const code = String(randomInt(0, 1_000_000)).padStart(6, "0");
       const rows = await sql()`
-        insert into link_codes (code, family_id, kind, elder_id) values (${code}, ${s.familyId}, ${kind}, ${elderId})
+        insert into link_codes (code, family_id, kind, elder_id, caregiver_id)
+        values (${code}, ${s.familyId}, ${kind}, ${elderId}, ${caregiverId})
         on conflict (code) do nothing returning code`;
       if (rows.length) return { ok: true, message: "Mã dùng được trong 30 phút.", value: code };
     }
     throw new Error("Không tạo được mã, thử lại");
+  } catch (e) {
+    return { ok: false, message: (e as Error).message };
+  }
+}
+
+/**
+ * Quản trị thêm anh chị em bằng email. Email chưa có tài khoản: tạo tài khoản với mật khẩu ban đầu
+ * (gửi cho người đó, họ đổi sau). Email đã có tài khoản: chỉ thêm vào gia đình.
+ */
+export async function addMember(_: FormState, form: FormData): Promise<FormState> {
+  if (isDemo) return DEMO;
+  try {
+    const s = await admin();
+    const name = txt(form, "name");
+    const email = normEmail(form.get("email"));
+    const role = String(form.get("role"));
+    const pw = String(form.get("password") ?? "");
+    if (!name) throw new Error("Nhập tên người cần thêm.");
+    if (!EMAIL.test(email)) throw new Error("Email không hợp lệ.");
+    if (!ROLES.includes(role)) throw new Error("Quyền không hợp lệ");
+    const [existing] = await sql()`select id from accounts where email = ${email}`;
+    let accountId: string = existing?.id;
+    let created = false;
+    if (!accountId) {
+      const err = passwordProblem(pw);
+      if (err) throw new Error(`Email này chưa có tài khoản, cần đặt mật khẩu ban đầu. ${err}`);
+      const [a] = await sql()`
+        insert into accounts (name, email, password_hash) values (${name}, ${email}, ${await hashPassword(pw)}) returning id`;
+      accountId = a.id;
+      created = true;
+    }
+    const rows = await sql()`
+      insert into caregivers (family_id, display_name, account_id, email, role)
+      values (${s.familyId}, ${name}, ${accountId}, ${email}, ${role})
+      on conflict (family_id, account_id) do nothing returning id`;
+    if (!rows.length) throw new Error("Người này đã ở trong gia đình.");
+    revalidatePath("/gia-dinh");
+    return {
+      ok: true,
+      message: created
+        ? `Đã thêm ${name}. Gửi cho ${name}: đăng nhập bằng ${email} với mật khẩu bạn vừa đặt.`
+        : `Đã thêm ${name} (dùng tài khoản ${email} có sẵn).`,
+    };
   } catch (e) {
     return { ok: false, message: (e as Error).message };
   }

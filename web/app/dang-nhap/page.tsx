@@ -1,24 +1,19 @@
 import { redirect } from "next/navigation";
-import { HeartArt, IconBell, IconTelegram, IconUsers, IconWatch } from "@/components/icons";
-import TelegramLogin from "@/components/TelegramLogin";
-import { getIdentity, getSession } from "@/lib/auth";
-import { getBot } from "@/lib/bot";
+import Link from "next/link";
+import { HeartArt, IconBell, IconUsers, IconWatch } from "@/components/icons";
+import { getIdentity, getSession, safeNext as cleanNext } from "@/lib/auth";
+import { LoginForm } from "./forms";
 
 export const dynamic = "force-dynamic";
 
-const ERRORS: Record<string, string> = {
-  invalid: "Không xác minh được đăng nhập Telegram. Thử lại nhé.",
-};
-
-export default async function LoginPage({ searchParams }: { searchParams: Promise<{ loi?: string; next?: string }> }) {
-  const { loi, next } = await searchParams;
-  const safeNext = next && next.startsWith("/") && !next.startsWith("//") ? next : undefined;
+export default async function LoginPage({ searchParams }: { searchParams: Promise<{ next?: string }> }) {
+  const { next } = await searchParams;
+  const safeNext = cleanNext(next) ?? undefined;
   if (await getSession()) redirect(safeNext ?? "/");
   if (await getIdentity()) redirect(safeNext ?? "/bat-dau");
-  const bot = (await getBot()).username;
   const points = [
     { icon: <IconWatch size={20} />, tile: "tile-teal", text: "Xem nhịp tim, giấc ngủ, bước chân của ba mẹ từ đồng hồ Garmin" },
-    { icon: <IconBell size={20} />, tile: "tile-coral", text: "Cảnh báo ngay vào nhóm Telegram khi có chỉ số bất thường" },
+    { icon: <IconBell size={20} />, tile: "tile-coral", text: "Bot Telegram báo ngay cho cả nhà khi có chỉ số bất thường" },
     { icon: <IconUsers size={20} />, tile: "tile-violet", text: "Anh chị em cùng theo dõi, phân công ai gọi hỏi thăm" },
   ];
   return (
@@ -27,12 +22,13 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
         <HeartArt size={84} />
         <div>
           <h1 style={{ fontSize: 28 }}>Chăm sóc ba mẹ<br />từ xa, yên tâm hơn</h1>
-          <p className="muted" style={{ fontSize: 15, margin: "8px 0 0" }}>Đăng nhập bằng Telegram để bắt đầu. Miễn phí cho gia đình.</p>
+          <p className="muted" style={{ fontSize: 15, margin: "8px 0 0" }}>Đăng nhập bằng email. Miễn phí cho gia đình.</p>
         </div>
-        {loi && <div className="banner danger" style={{ width: "100%" }}>{ERRORS[loi] ?? "Đăng nhập lỗi."}</div>}
-        {bot ? <TelegramLogin bot={bot} next={safeNext} /> : (
-          <div className="banner info" style={{ width: "100%" }}><IconTelegram size={18} /> Chưa cấu hình bot Telegram cho website.</div>
-        )}
+        <LoginForm next={safeNext} />
+        <div style={{ fontSize: 14 }}>
+          Chưa có tài khoản? <Link href={safeNext ? `/dang-ky?next=${encodeURIComponent(safeNext)}` : "/dang-ky"}><b>Đăng ký</b></Link>
+          <div className="muted" style={{ fontSize: 13, marginTop: 4 }}>Quên mật khẩu: nhờ người quản trị đặt lại.</div>
+        </div>
         <ul className="list" style={{ width: "100%", textAlign: "left" }}>
           {points.map((p) => (
             <li key={p.text} className="list-row" style={{ minHeight: 0 }}>

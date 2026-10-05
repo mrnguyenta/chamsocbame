@@ -2,6 +2,7 @@ import Link from "next/link";
 import QRCode from "qrcode";
 import { getSession, requireIdentity } from "@/lib/auth";
 import { getSettings } from "@/lib/data";
+import { getWatchAppUrl } from "@/lib/settings";
 import ClaimForm from "./ClaimForm";
 
 export const dynamic = "force-dynamic";
@@ -37,7 +38,7 @@ export default async function PairPage({ searchParams }: { searchParams: Promise
     );
   }
 
-  const storeUrl = process.env.NEXT_PUBLIC_WATCH_APP_URL;
+  const storeUrl = await getWatchAppUrl();
   const qr = storeUrl ? await QRCode.toString(storeUrl, { type: "svg", margin: 1, width: 180 }) : null;
 
   return (
@@ -64,8 +65,8 @@ export default async function PairPage({ searchParams }: { searchParams: Promise
             </div>
           ) : (
             <p className="muted" style={{ margin: 0 }}>
-              Ứng dụng chưa phát hành trên Connect IQ Store. Tạm thời cài bằng cáp USB theo hướng dẫn trong
-              <code> watch/README.md</code>. Khi phát hành, đặt NEXT_PUBLIC_WATCH_APP_URL để trang này hiện mã QR.
+              Ứng dụng đang chờ Garmin duyệt trên Connect IQ Store. Khi được duyệt, quản trị dán link Store ở trang
+              Quản trị hệ thống để trang này hiện mã QR và nút cài.
             </p>
           )}
         </div>

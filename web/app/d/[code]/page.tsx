@@ -2,9 +2,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { HeartArt } from "@/components/icons";
 import ShareLink from "@/components/ShareLink";
-import TelegramLogin from "@/components/TelegramLogin";
 import { getIdentity } from "@/lib/auth";
-import { getBot } from "@/lib/bot";
 import { getPairingState } from "@/lib/data";
 
 export const dynamic = "force-dynamic";
@@ -20,7 +18,6 @@ export default async function WatchLinkPage({ params }: { params: Promise<{ code
   const target = `/ket-noi-dong-ho?ma=${code}`;
   const state = await getPairingState(code);
   if (state === "pending" && (await getIdentity())) redirect(target);
-  const bot = (await getBot()).username;
   const pretty = `${code.slice(0, 3)} ${code.slice(3)}`;
 
   return (
@@ -41,8 +38,8 @@ export default async function WatchLinkPage({ params }: { params: Promise<{ code
             </div>
             <div style={{ width: "100%", display: "flex", flexDirection: "column", gap: 10, alignItems: "center" }}>
               <h2 style={{ fontSize: 17 }}>Bạn là con cháu?</h2>
-              <p className="muted" style={{ fontSize: 14, margin: 0 }}>Đăng nhập bằng Telegram, rồi chọn người đeo đồng hồ.</p>
-              {bot ? <TelegramLogin bot={bot} next={target} /> : <Link className="btn primary" href={target}>Tiếp tục</Link>}
+              <p className="muted" style={{ fontSize: 14, margin: 0 }}>Đăng nhập bằng email (chưa có thì đăng ký), rồi chọn người đeo đồng hồ.</p>
+              <Link className="btn primary" href={`/dang-nhap?next=${encodeURIComponent(target)}`}>Đăng nhập để kết nối</Link>
             </div>
           </>
         ) : state === "claimed" ? (

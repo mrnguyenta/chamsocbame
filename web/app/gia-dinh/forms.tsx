@@ -4,8 +4,9 @@ import { useActionState, useState } from "react";
 import { IconPlus, IconTelegram } from "@/components/icons";
 import { CONDITIONS } from "@/lib/metrics";
 import {
-  type FormState, acceptInvite, addElder, createFamily, createInvite, createLinkCode,
+  type FormState, acceptInvite, addElder, addMember, createFamily, createInvite, createLinkCode,
 } from "./actions";
+import { useFormAction } from "@/components/useFormAction";
 
 const INIT: FormState = { ok: false, message: "" };
 
@@ -131,7 +132,7 @@ export function AddElderForm() {
 }
 
 /** Mã 6 số nối nhóm Telegram gia đình (kind=group) hoặc Telegram của ba mẹ (kind=elder). */
-export function LinkCodeForm({ kind, elderId, label, bot }: { kind: "group" | "elder"; elderId?: string; label: string; bot?: string | null }) {
+export function LinkCodeForm({ kind, elderId, label, bot }: { kind: "group" | "elder" | "caregiver"; elderId?: string; label: string; bot?: string | null }) {
   const BOT = bot ?? null;
   const [state, action, pending] = useActionState(createLinkCode, INIT);
   const code = state.value;
@@ -148,15 +149,47 @@ export function LinkCodeForm({ kind, elderId, label, bot }: { kind: "group" | "e
           <div className="muted" style={{ fontSize: 14 }}>
             {kind === "group"
               ? <>Thêm bot{BOT ? <> <b>@{BOT}</b></> : ""} vào nhóm Telegram của gia đình, rồi gõ trong nhóm: <code>/ketnoi {code}</code></>
-              : <>Ba/mẹ mở Telegram, tìm bot{BOT ? <> <b>@{BOT}</b></> : ""} và nhắn: <code>/toi {code}</code></>}
+              : kind === "caregiver"
+                ? <>Mở Telegram của bạn, tìm bot{BOT ? <> <b>@{BOT}</b></> : ""} và nhắn: <code>/start {code}</code></>
+                : <>Ba/mẹ mở Telegram, tìm bot{BOT ? <> <b>@{BOT}</b></> : ""} và nhắn: <code>/toi {code}</code></>}
           </div>
           {deep && (
             <a className="btn primary small" href={deep} target="_blank" rel="noreferrer">
-              <IconTelegram size={16} /> {kind === "group" ? "Mở Telegram, chọn nhóm" : "Mở Telegram trên máy ba mẹ"}
+              <IconTelegram size={16} /> {kind === "group" ? "Mở Telegram, chọn nhóm" : kind === "caregiver" ? "Mở Telegram" : "Mở Telegram trên máy ba mẹ"}
             </a>
           )}
         </div>
       )}
     </form>
+  );
+}
+
+/** Quản trị thêm anh chị em bằng email (tạo tài khoản nếu email chưa có). */
+export function AddMemberForm() {
+  const f = useFormAction(addMember, INIT);
+  return (
+    <details className="more">
+      <summary className="btn primary small"><IconPlus size={16} /> Thêm anh chị em bằng email</summary>
+      <form ref={f.ref} onSubmit={f.onSubmit} className="rule" style={{ marginTop: 10 }}>
+        <div className="row" style={{ gap: 10 }}>
+          <label className="field" style={{ flex: "1 1 160px" }}>Tên<input type="text" name="name" placeholder="Anh Nhất" required /></label>
+          <label className="field" style={{ flex: "2 1 220px" }}>Email<input type="email" name="email" autoCapitalize="none" placeholder="nhat@gmail.com" required /></label>
+        </div>
+        <div className="row" style={{ gap: 10 }}>
+          <label className="field" style={{ flex: "1 1 160px" }}>Quyền
+            <select name="role" defaultValue="alerts">
+              <option value="alerts">Nhận cảnh báo</option>
+              <option value="reports">Chỉ nhận báo cáo</option>
+              <option value="admin">Quản trị</option>
+            </select>
+          </label>
+          <label className="field" style={{ flex: "2 1 220px" }}>Mật khẩu ban đầu (nếu email chưa có tài khoản)
+            <input type="password" name="password" autoComplete="new-password" placeholder="ít nhất 8 ký tự" />
+          </label>
+        </div>
+        <div className="row"><button className="btn primary small" type="submit" disabled={f.pending}>Thêm</button></div>
+        <Msg s={f.state} />
+      </form>
+    </details>
   );
 }

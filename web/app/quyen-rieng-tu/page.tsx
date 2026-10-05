@@ -1,11 +1,13 @@
 import type { Metadata } from "next";
+import { getContactEmail } from "@/lib/settings";
 
 export const metadata: Metadata = { title: "Quyền riêng tư · Chăm Sóc Ba Mẹ" };
 
-const CONTACT = process.env.NEXT_PUBLIC_CONTACT_EMAIL;
+export const dynamic = "force-dynamic";
 
 /** Chính sách quyền riêng tư (công khai, dùng cho trang Connect IQ Store). Tiếng Việt và tiếng Anh. */
-export default function PrivacyPage() {
+export default async function PrivacyPage() {
+  const CONTACT = await getContactEmail();
   return (
     <main className="container" style={{ maxWidth: 760 }}>
       <section className="card" style={{ display: "flex", flexDirection: "column", gap: 10 }}>
@@ -20,7 +22,8 @@ export default function PrivacyPage() {
         <ul>
           <li><strong>Từ đồng hồ</strong> (chỉ sau khi đã kết nối bằng mã 6 số): nhịp tim, bước chân, SpO2, mức căng thẳng,
             Body Battery, nhịp thở, mức pin đồng hồ, thời điểm đo, mẫu đồng hồ.</li>
-          <li><strong>Từ Telegram khi đăng nhập</strong>: mã người dùng và tên hiển thị Telegram.</li>
+          <li><strong>Tài khoản</strong>: email, tên và mật khẩu đã mã hoá (không ai đọc được mật khẩu).</li>
+          <li><strong>Từ Telegram khi nối bot</strong>: mã người dùng và tên hiển thị Telegram, để gửi cảnh báo.</li>
           <li><strong>Do gia đình nhập</strong>: tên người thân, năm sinh, bệnh nền, lịch uống thuốc, chỉ số huyết áp, đường huyết, cân nặng.</li>
           <li><strong>Nếu gia đình tự liên kết Garmin Connect</strong>: mã truy cập (được mã hoá) để đọc giấc ngủ và SpO2 ban đêm.</li>
         </ul>
@@ -46,8 +49,8 @@ export default function PrivacyPage() {
             and Telegram. <strong>It is not a medical device</strong>; it does not diagnose anything and does not replace a
             doctor or emergency services.</p>
           <p><strong>Data collected.</strong> From the watch, only after it is paired with a 6-digit code: heart rate, steps,
-            SpO2, stress, Body Battery, respiration, watch battery, timestamps and the watch model. From Telegram login: the
-            Telegram user id and display name. Entered by the family: names, birth year, conditions, medication schedules,
+            SpO2, stress, Body Battery, respiration, watch battery, timestamps and the watch model. Account: email, name and a hashed password.
+            When linking the Telegram bot: the Telegram user id and display name, used to deliver alerts. Entered by the family: names, birth year, conditions, medication schedules,
             blood pressure, glucose and weight readings. Optionally, encrypted Garmin Connect tokens if the family links an
             account. No location, contacts, messages or advertising. Data is never sold or shared with third parties.</p>
           <p><strong>Access.</strong> Only members invited into that family by its administrator. Alerts go to the family’s

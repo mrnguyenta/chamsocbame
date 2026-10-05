@@ -38,8 +38,8 @@ export async function connectWatch(_: ClaimState, form: FormData): Promise<Claim
       let familyId = session?.familyId ?? null;
       if (!familyId) {
         const [f] = await tx`insert into families (name) values (${`Gia đình ${id.name}`}) returning id`;
-        await tx`insert into caregivers (family_id, display_name, telegram_user_id, telegram_name, role, escalation_order)
-                 values (${f.id}, ${id.name}, ${id.tgId}, ${id.name}, 'admin', 1)`;
+        await tx`insert into caregivers (family_id, display_name, account_id, email, role, escalation_order)
+                 values (${f.id}, ${id.name}, ${id.accountId}, ${id.email}, 'admin', 1)`;
         familyId = f.id as string;
       }
 

@@ -145,7 +145,8 @@ table { width: 100%; border-collapse: collapse; font-size: 14px; }
 th { text-align: left; color: var(--muted); font-size: 12px; font-weight: 600; padding: 8px 6px; text-transform: none; }
 td { padding: 12px 6px; border-top: 1px solid var(--grid); vertical-align: middle; }
 
-input[type="text"], input[type="number"], input[type="time"], input[inputmode], select {
+input[type="text"], input[type="number"], input[type="time"], input[type="password"], input[type="url"],
+input[type="email"], input[inputmode], select {
   min-height: 42px; border-radius: 12px; border: 1px solid var(--border-strong); padding: 0 12px; background: var(--surface-solid);
 }
 label.field { display: flex; flex-direction: column; gap: 6px; font-size: 13px; color: var(--muted); }
@@ -224,3 +225,7 @@ label.field { display: flex; flex-direction: column; gap: 6px; font-size: 13px; 
 .card-title h2 { margin: 0; }
 details.more > summary { list-style: none; cursor: pointer; }
 details.more > summary::-webkit-details-marker { display: none; }
+
+/* Ẩn trên điện thoại (header hẹp) */
+.hide-sm { display: none !important; }
+@media (min-width: 640px) { .hide-sm { display: inline-flex !important; } }

@@ -7,7 +7,7 @@ import { getFamilyAdmin } from "@/lib/data";
 import { age } from "@/lib/format";
 import { CONDITIONS } from "@/lib/metrics";
 import { revokeInvite, switchFamily, updateMember } from "./actions";
-import { AddElderForm, InviteForm, LinkCodeForm } from "./forms";
+import { AddElderForm, AddMemberForm, InviteForm, LinkCodeForm } from "./forms";
 
 export const dynamic = "force-dynamic";
 
@@ -93,8 +93,12 @@ export default async function FamilyPage({ searchParams }: { searchParams: Promi
                   <Avatar name={m.name} small />
                   <span className="grow">
                     <span className="title" style={{ display: "block" }}>{m.name}{m.isMe ? " (bạn)" : ""}</span>
-                    <span className="muted">{ROLE[m.role]}{m.phone ? " · có số gọi khẩn" : ""}</span>
+                    <span className="muted">{[ROLE[m.role], m.email, m.phone ? "có số gọi khẩn" : null].filter(Boolean).join(" · ")}</span>
                   </span>
+                  <span className={`chip ${m.hasTelegram ? "tone-ok" : "tone-neutral"}`}>{m.hasTelegram ? "Đã nối Telegram" : "Chưa nối Telegram"}</span>
+                  {m.isMe && !m.hasTelegram && (
+                    <div style={{ width: "100%" }}><LinkCodeForm bot={bot} kind="caregiver" label="Nối Telegram của tôi (nhận cảnh báo riêng)" /></div>
+                  )}
                   {admin && !m.isMe && (
                     <form action={updateMember} className="row" style={{ gap: 6 }}>
                       <input type="hidden" name="caregiver_id" value={m.id} />
@@ -110,9 +114,10 @@ export default async function FamilyPage({ searchParams }: { searchParams: Promi
                 </li>
               ))}
             </ul>
+            {admin && <div style={{ marginTop: 12 }}><AddMemberForm /></div>}
             {admin && (
               <div style={{ marginTop: 16 }}>
-                <div className="section-title" style={{ margin: "0 0 8px" }}>Mời thêm người</div>
+                <div className="section-title" style={{ margin: "0 0 8px" }}>Hoặc gửi link mời (họ tự đăng ký)</div>
                 <InviteForm />
                 {f.invites.length > 0 && (
                   <ul className="list" style={{ marginTop: 10 }}>
@@ -153,7 +158,7 @@ export default async function FamilyPage({ searchParams }: { searchParams: Promi
             <ol style={{ margin: 0, paddingLeft: 20, display: "flex", flexDirection: "column", gap: 6, fontSize: 14 }}>
               <li>Thêm ba mẹ, chọn bệnh nền</li>
               <li>Nối nhóm Telegram gia đình</li>
-              <li>Mời anh chị em bằng link</li>
+              <li>Thêm anh chị em bằng email, mỗi người tự nối Telegram</li>
               <li><Link href="/ket-noi-dong-ho">Kết nối đồng hồ Garmin</Link> bằng mã 6 số</li>
               <li>Nối Telegram của ba mẹ để nhắc thuốc</li>
             </ol>

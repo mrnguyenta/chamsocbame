@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from "next";
 import Link from "next/link";
 import { IconHeart } from "@/components/icons";
 import { BottomNav, TopNav } from "@/components/Nav";
-import { getSession } from "@/lib/auth";
+import { getIdentity, getSession } from "@/lib/auth";
 import { isDemo } from "@/lib/db";
 import "./globals.css";
 
@@ -14,7 +14,7 @@ export const metadata: Metadata = {
 export const viewport: Viewport = { width: "device-width", initialScale: 1, themeColor: "#dff3ef" };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  const session = await getSession();
+  const [session, identity] = await Promise.all([getSession(), getIdentity()]);
   return (
     <html lang="vi">
       <head>
@@ -28,17 +28,21 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       <body>
         <header className="topbar">
           <div className="row" style={{ maxWidth: 1200, margin: "0 auto", padding: "10px 16px", gap: "10px 24px", flexWrap: "nowrap" }}>
-            <Link href="/" className="row" style={{ gap: 10, textDecoration: "none", color: "var(--text)", flexWrap: "nowrap" }}>
+            <Link href="/" className="row" style={{ gap: 10, textDecoration: "none", color: "var(--text)", flexWrap: "nowrap", minWidth: 0 }}>
               <span aria-hidden className="icon-tile" style={{ background: "var(--accent-strong)", color: "#fff", borderRadius: 12 }}>
                 <IconHeart size={20} />
               </span>
-              <strong style={{ fontSize: 17, whiteSpace: "nowrap" }}>Chăm Sóc Ba Mẹ</strong>
+              <strong style={{ fontSize: 17, whiteSpace: "nowrap", minWidth: 0, overflow: "hidden", textOverflow: "ellipsis" }}>Chăm Sóc Ba Mẹ</strong>
             </Link>
             {session && <TopNav />}
             <div style={{ flex: 1 }} />
-            {session && !isDemo && (
+            {identity && !isDemo && (
               <form action="/api/auth/logout" method="post" className="row" style={{ gap: 8, flexWrap: "nowrap" }}>
-                <span className="muted" style={{ whiteSpace: "nowrap" }}>{session.name}</span>
+                {identity.isSystemAdmin && <Link className="btn ghost small hide-sm" href="/quan-tri">Quản trị</Link>}
+                <Link className="muted" href="/tai-khoan" title="Tài khoản"
+                  style={{ whiteSpace: "nowrap", textDecoration: "none", maxWidth: 90, overflow: "hidden", textOverflow: "ellipsis" }}>
+                  {session?.name ?? identity.name}
+                </Link>
                 <button className="btn small" type="submit">Đăng xuất</button>
               </form>
             )}

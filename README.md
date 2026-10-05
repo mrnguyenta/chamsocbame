@@ -62,20 +62,24 @@ Giới hạn:
 ## Cổng cho người chăm sóc (tự phục vụ)
 
 **Cách nhanh nhất (đã cài app lên đồng hồ):** mở app trên đồng hồ → điện thoại nhận thông báo → bấm vào
-→ đăng nhập Telegram → gõ tên người đeo → **Kết nối đồng hồ**. Gia đình, người thân và ngưỡng cảnh báo
+→ đăng nhập bằng email → gõ tên người đeo → **Kết nối đồng hồ**. Gia đình, người thân và ngưỡng cảnh báo
 được tạo tự động. Nếu thông báo hiện trên điện thoại của ba mẹ, trang đó có nút gửi link cho con cháu
 qua Zalo/Messenger/Telegram. Đưa app lên Connect IQ Store: xem `watch/STORE.md`.
 
-**Bot Telegram:** dán token BotFather ở trang `/quan-tri` (cần mã quản trị `ADMIN_SETUP_KEY` đặt trên Vercel).
-Trang kiểm tra token với Telegram, lưu vào bảng `app_settings` và tự đăng ký webhook cho máy chủ; website và
-máy chủ đọc token từ đó (biến `TELEGRAM_BOT_TOKEN` chỉ còn là dự phòng). Sau đó gõ `/setdomain` trong BotFather.
+**Đăng nhập bằng email + mật khẩu** (bảng `accounts`). Telegram chỉ dùng để bot gửi cảnh báo, báo cáo, nhắc thuốc.
 
-Đầy đủ, không cần quản trị viên tạo sẵn:
-1. Vào website → **Đăng nhập bằng Telegram**.
+**Quản trị hệ thống** (`/quan-tri`, tài khoản có `is_system_admin`): tài khoản đầu tiên nhận quyền bằng mã
+`ADMIN_SETUP_KEY` đặt trên Vercel. Ở đây dán token bot (kiểm tra với Telegram, lưu vào `app_settings`, tự đăng ký
+webhook cho máy chủ; biến `TELEGRAM_BOT_TOKEN` chỉ còn là dự phòng), link Store của app đồng hồ, email liên hệ,
+xem danh sách tài khoản, đặt lại mật khẩu khi ai đó quên, cấp quyền quản trị.
+
+Người chăm sóc:
+1. Vào website → **Đăng ký** bằng email (hoặc được quản trị gia đình thêm sẵn).
 2. Lần đầu: **Tạo gia đình** (bạn là quản trị) hoặc mở **link mời** anh chị em gửi.
-3. Trang **Gia đình**: thêm ba mẹ (ngưỡng cảnh báo tự tạo theo bệnh nền), tạo **link mời** cho người khác
-   (quyền: quản trị / nhận cảnh báo / chỉ nhận báo cáo), lấy **mã 6 số** để nối nhóm Telegram (`/ketnoi 123456`)
-   và Telegram của ba mẹ (`/toi 123456`).
+3. Trang **Gia đình**: thêm ba mẹ (ngưỡng cảnh báo tự tạo theo bệnh nền); **thêm anh chị em bằng email**
+   (email chưa có tài khoản thì đặt mật khẩu ban đầu) hoặc gửi **link mời**; quyền: quản trị / nhận cảnh báo /
+   chỉ nhận báo cáo. Lấy **mã 6 số** để nối nhóm Telegram (`/ketnoi 123456`), Telegram của ba mẹ (`/toi 123456`)
+   và Telegram riêng của từng người (`/start 123456`, để nhận leo thang cảnh báo và bấm "Tôi xử lý").
 4. Một người có thể ở nhiều gia đình (bên nội, bên ngoại) và chuyển qua lại. Mỗi gia đình chỉ thấy dữ liệu của mình.
 
 Đang chạy: website https://chamsocbame.vercel.app · máy chủ https://chamsocbame-api.vercel.app · cơ sở dữ liệu Supabase `chamsocbame` (Singapore).
@@ -144,9 +148,8 @@ supabase/
 3. **Vercel:** tạo **2 project** từ cùng repo:
    - Root Directory `backend` (máy chủ Python), biến môi trường theo `backend/.env.example`.
    - Root Directory `web` (website), biến môi trường theo `web/.env.example`. Để trống `DATABASE_URL` thì website chạy **chế độ demo** với dữ liệu mẫu, tiện để trình bày.
-   - Đặt domain website cho bot: @BotFather → `/setdomain` (cần cho nút "Đăng nhập bằng Telegram").
-4. **Webhook Telegram:**
-   `https://api.telegram.org/bot<TOKEN>/setWebhook?url=https://<app>.vercel.app/api/telegram/webhook&secret_token=<TELEGRAM_WEBHOOK_SECRET>`
+4. **Bot Telegram:** đăng ký tài khoản trên website, vào `/quan-tri`, nhập `ADMIN_SETUP_KEY`, rồi dán token bot.
+   Webhook được đăng ký tự động.
 5. **Gia đình:** sao chép `backend/family.example.json` thành `family.json`, sửa lại cho đúng, rồi chạy:
    ```bash
    cd backend && pip install -e . && export DATABASE_URL=...

@@ -228,7 +228,8 @@ export async function getFamilyAdmin(familyId: string, caregiverId: string): Pro
     const o = demoOverview();
     return {
       name: o.familyName, hasTelegramGroup: true,
-      members: o.carers.map((c, i) => ({ id: c.id, name: c.name, role: c.role, hasTelegram: c.hasTelegram, phone: c.phone, isMe: i === 0 })),
+      members: o.carers.map((c, i) => ({ id: c.id, name: c.name, role: c.role, hasTelegram: c.hasTelegram, phone: c.phone, isMe: i === 0,
+        email: null, hasAccount: true })),
       invites: [{ id: "i1", code: "demo123abc", role: "alerts", expiresAt: new Date(Date.now() + 5 * 864e5).toISOString() }],
       elders: o.elders.map((e) => ({ id: e.id, name: e.name, birthYear: e.birthYear, conditions: e.conditions, hasTelegram: e.id !== "demo-ba-ngoai", command: null })),
     };
@@ -236,7 +237,7 @@ export async function getFamilyAdmin(familyId: string, caregiverId: string): Pro
   const db = sql();
   const [[f], members, invites, elders] = await Promise.all([
     db`select name, telegram_chat_id from families where id = ${familyId}`,
-    db`select id, display_name, role, telegram_user_id, phone from caregivers where family_id = ${familyId}
+    db`select id, display_name, role, telegram_user_id, phone, email, account_id from caregivers where family_id = ${familyId}
        order by (role = 'admin') desc, created_at`,
     db`select id, code, role, expires_at from invites where family_id = ${familyId} and revoked_at is null
        and expires_at > now() order by created_at desc`,
@@ -247,7 +248,7 @@ export async function getFamilyAdmin(familyId: string, caregiverId: string): Pro
     name: f?.name ?? "Gia đình",
     hasTelegramGroup: f?.telegram_chat_id != null,
     members: members.map((m) => ({ id: m.id, name: m.display_name, role: m.role, hasTelegram: m.telegram_user_id != null,
-      phone: m.phone, isMe: m.id === caregiverId })),
+      phone: m.phone, isMe: m.id === caregiverId, email: m.email ?? null, hasAccount: m.account_id != null })),
     invites: invites.map((i) => ({ id: i.id, code: i.code, role: i.role, expiresAt: iso(i.expires_at)! })),
     elders: elders.map((e) => ({ id: e.id, name: e.display_name, birthYear: e.birth_year, conditions: e.conditions ?? [],
       hasTelegram: e.telegram_user_id != null, command: e.command })),
@@ -271,4 +272,40 @@ export async function getPairingState(code: string): Promise<"pending" | "claime
     where code = ${code} order by created_at desc limit 1`;
   if (!r) return "expired";
   return r.claimed ? "claimed" : r.live ? "pending" : "expired";
+}
+
+/** Số liệu tổng quan cho trang quản trị hệ thống. */
+export async function getSystemStats(): Promise<{
+  families: number; elders: number; caregivers: number; watches: number; lastWatchAt: string | null; openAlerts: number;
+}> {
+  if (isDemo) return { families: 1, elders: 2, caregivers: 3, watches: 1, lastWatchAt: null, openAlerts: 0 };
+  const [r] = await sql()`
+    select (select count(*) from families)::int as families,
+           (select count(*) from elders)::int as elders,
+           (select count(*) from caregivers)::int as caregivers,
+           (select count(*) from watch_devices)::int as watches,
+           (select max(last_seen_at) from watch_devices) as last_watch_at,
+           (select count(*) from alerts where resolved_at is null)::int as open_alerts`;
+  return {
+    families: r.families, elders: r.elders, caregivers: r.caregivers, watches: r.watches,
+    lastWatchAt: iso(r.last_watch_at), openAlerts: r.open_alerts,
+  };
+}
+
+/** Danh sách tài khoản cho trang quản trị hệ thống. */
+export async function getSystemAdmins(): Promise<{
+  id: string; name: string; email: string; isSystemAdmin: boolean; lastLoginAt: string | null; families: string[];
+}[]> {
+  if (isDemo) return [];
+  const rows = await sql()`
+    select a.id, a.name, a.email, a.is_system_admin, a.last_login_at,
+           coalesce(array_agg(f.name order by f.name) filter (where f.id is not null), '{}') as families
+    from accounts a
+    left join caregivers c on c.account_id = a.id
+    left join families f on f.id = c.family_id
+    group by a.id order by a.is_system_admin desc, a.created_at`;
+  return rows.map((r) => ({
+    id: r.id, name: r.name, email: r.email, isSystemAdmin: r.is_system_admin, lastLoginAt: iso(r.last_login_at),
+    families: r.families,
+  }));
 }
