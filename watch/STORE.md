@@ -81,18 +81,18 @@ every 5 minutes, and the whole family gets Telegram alerts when something looks 
 - Background, Communications: gửi dữ liệu định kỳ lên máy chủ của gia đình qua điện thoại.
 - SensorHistory, UserProfile: đọc nhịp tim, SpO2, stress, Body Battery gần nhất, nhịp tim nghỉ.
 
-**Chính sách riêng tư (Privacy policy URL):** https://chamsocbame.vercel.app/quyen-rieng-tu
+**Chính sách riêng tư (Privacy policy URL):** https://chamsocnguoithan.vercel.app/quyen-rieng-tu
 
 **Ngôn ngữ:** đồng hồ để Tiếng Việt thì giao diện tiếng Việt, ngôn ngữ khác thì tiếng Anh.
 
 ## 4. Ghi chú cho người duyệt (dán vào ô "Notes to reviewer", tiếng Anh)
 
 ```
-This is a companion app for a family health dashboard (https://chamsocbame.vercel.app).
+This is a companion app for a family health dashboard (https://chamsocnguoithan.vercel.app).
 
 How it works:
 1. On first launch the watch requests a 6-digit pairing code from our server
-   (chamsocbame-api.vercel.app) through the phone and shows it on screen. The phone also
+   (chamsocnguoithan-api.vercel.app) through the phone and shows it on screen. The phone also
    receives a notification (Communications.openWebPage) that opens the pairing page.
 2. A family member signs in on the website (email and password) and enters the code.
    The watch then shows "Connected" with the current heart rate.
@@ -108,7 +108,7 @@ so devices without a sensor send null.
 Permissions: Background + Communications (periodic upload via the phone),
 SensorHistory + UserProfile (read recent heart rate, SpO2, stress, Body Battery).
 
-Not a medical device. Privacy policy: https://chamsocbame.vercel.app/quyen-rieng-tu
+Not a medical device. Privacy policy: https://chamsocnguoithan.vercel.app/quyen-rieng-tu
 ```
 
 ## 5. Trước khi nộp, kiểm tra

@@ -184,7 +184,7 @@ class PairStart(BaseModel):
     device: str | None = Field(default=None, max_length=64)
 
 
-DEFAULT_WEB_URL = "https://chamsocbame.vercel.app"
+DEFAULT_WEB_URL = "https://chamsocnguoithan.vercel.app"
 PAIR_TTL_S = 15 * 60
 
 

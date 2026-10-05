@@ -87,7 +87,8 @@ Người chăm sóc:
    và Telegram riêng của từng người (`/start 123456`, để nhận leo thang cảnh báo và bấm "Tôi xử lý").
 4. Một người có thể ở nhiều gia đình (bên nội, bên ngoại) và chuyển qua lại. Mỗi gia đình chỉ thấy dữ liệu của mình.
 
-Đang chạy: website https://chamsocbame.vercel.app · máy chủ https://chamsocbame-api.vercel.app · cơ sở dữ liệu Supabase `chamsocbame` (Singapore).
+Đang chạy: website https://chamsocnguoithan.vercel.app · máy chủ https://chamsocnguoithan-api.vercel.app
+(tên miền cũ chamsocbame.vercel.app tự chuyển sang tên mới; chamsocbame-api.vercel.app vẫn nhận dữ liệu từ đồng hồ đã cài bản cũ) · cơ sở dữ liệu Supabase `chamsocbame` (Singapore).
 
 ## Hai đường lấy dữ liệu
 

@@ -2,7 +2,7 @@ import "server-only";
 import { getSession } from "./auth";
 import { isDemo, sql } from "./db";
 
-export const API_URL = (process.env.API_URL || "https://chamsocbame-api.vercel.app").replace(/\/$/, "");
+export const API_URL = (process.env.API_URL || "https://chamsocnguoithan-api.vercel.app").replace(/\/$/, "");
 
 /** Quản trị gia đình đang đăng nhập và người thân thuộc gia đình đó; null nếu không đủ quyền. */
 export async function adminOfElder(elderId: string): Promise<{ familyId: string } | null> {

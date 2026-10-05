@@ -47,9 +47,9 @@ def test_telegram_setup_registers_webhook(monkeypatch):
 
     monkeypatch.setattr(api.db, "connect", fake_connect)
     monkeypatch.setattr(api.db, "get_setting", lambda conn, key: None)
-    client = TestClient(api.app, base_url="https://chamsocbame-api.vercel.app")
+    client = TestClient(api.app, base_url="https://chamsocnguoithan-api.vercel.app")
     assert client.post("/api/telegram/setup").status_code == 401
     r = client.post("/api/telegram/setup", headers={"Authorization": "Bearer c"})
-    assert r.json() == {"ok": True, "bot": "chamsoc_bot", "webhook": "https://chamsocbame-api.vercel.app/api/telegram/webhook"}
-    assert calls[0] == ("setWebhook", {"url": "https://chamsocbame-api.vercel.app/api/telegram/webhook", "secret_token": "h",
+    assert r.json() == {"ok": True, "bot": "chamsoc_bot", "webhook": "https://chamsocnguoithan-api.vercel.app/api/telegram/webhook"}
+    assert calls[0] == ("setWebhook", {"url": "https://chamsocnguoithan-api.vercel.app/api/telegram/webhook", "secret_token": "h",
                                        "allowed_updates": ["message", "callback_query", "my_chat_member"], "drop_pending_updates": True})

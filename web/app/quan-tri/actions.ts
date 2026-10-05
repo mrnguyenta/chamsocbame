@@ -8,7 +8,7 @@ import { writeSettings } from "@/lib/settings";
 
 export interface AdminState { ok: boolean; message: string; username?: string }
 
-const API_URL = (process.env.API_URL || "https://chamsocbame-api.vercel.app").replace(/\/$/, "");
+const API_URL = (process.env.API_URL || "https://chamsocnguoithan-api.vercel.app").replace(/\/$/, "");
 const NO_DB: AdminState = { ok: false, message: "Website chưa nối cơ sở dữ liệu." };
 const txt = (f: FormData, k: string, max = 300) => String(f.get(k) ?? "").trim().slice(0, max);
 
