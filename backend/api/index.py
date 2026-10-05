@@ -84,9 +84,10 @@ async def telegram_webhook(
 class WatchPush(BaseModel):
     v: int = 1
     ts: int | None = None
-    hr: int | None = Field(default=None, ge=0, le=250)
+    # Giá trị ngoài 20–250 bị bỏ khi lưu; không từ chối cả lần gửi vì một số đo lạ.
+    hr: int | None = Field(default=None, ge=0, le=255)
     hr_samples: list[tuple[int, int]] = Field(default_factory=list, max_length=200)
-    resting_hr: int | None = Field(default=None, ge=0, le=250)
+    resting_hr: int | None = Field(default=None, ge=0, le=255)
     steps: int | None = Field(default=None, ge=0)
     stress: int | None = Field(default=None, ge=-2, le=100)
     body_battery: int | None = Field(default=None, ge=0, le=100)

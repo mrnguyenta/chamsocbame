@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<settings>
+  <setting
+    propertyKey="@Properties.server_url"
+    title="@Strings.SettingServerUrl"
+    prompt="https://xxx.vercel.app"
+  >
+    <settingConfig type="alphaNumeric" required="true" />
+  </setting>
+
+  <setting
+    propertyKey="@Properties.device_key"
+    title="@Strings.SettingDeviceKey"
+    prompt="@Strings.SettingDeviceKeyPrompt"
+  >
+    <settingConfig type="alphaNumeric" required="true" />
+  </setting>
+
+  <setting
+    propertyKey="@Properties.interval_min"
+    title="@Strings.SettingInterval"
+  >
+    <settingConfig type="numeric" min="5" />
+  </setting>
+</settings>

@@ -1,0 +1,7 @@
+# Chăm Sóc Ba Mẹ - Connect IQ build file
+# Reference: https://developer.garmin.com/connect-iq/reference-guides/jungle-reference/
+
+project.manifest = manifest.xml
+
+base.sourcePath = source
+base.resourcePath = resources

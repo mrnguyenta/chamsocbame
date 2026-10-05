@@ -130,6 +130,7 @@ def merge_recent_readings(conn, s: Snapshot, since: datetime) -> Snapshot:
 
 READINGS_LOOKBACK = timedelta(hours=24)
 LIVE_WINDOW = timedelta(minutes=10)
+MIN_HR_SAMPLES = 3  # cần vài số đo để không báo vì một lần đo lẻ
 ACTIVE_STEPS = 300  # số bước trong 10 phút để coi là đang đi lại
 
 
@@ -170,6 +171,10 @@ def create_watch_device(conn, elder_id: str, key_hash: str, label: str | None) -
     return str(row["id"])
 
 
+def _bpm(v: int | None) -> int | None:
+    return v if v is not None and 20 <= v <= 250 else None
+
+
 def save_live_push(conn, device_id: str, elder_id: str, p: dict, measured_at: datetime) -> None:
     conn.execute(
         """
@@ -184,7 +189,7 @@ def save_live_push(conn, device_id: str, elder_id: str, p: dict, measured_at: da
           charging = excluded.charging
         where live_status.measured_at <= excluded.measured_at
         """,
-        (elder_id, measured_at, p.get("hr"), p.get("resting_hr"), p.get("steps"),
+        (elder_id, measured_at, _bpm(p.get("hr")), _bpm(p.get("resting_hr")), p.get("steps"),
          p.get("stress"), p.get("body_battery"), p.get("spo2"), p.get("respiration"),
          p.get("battery"), p.get("charging")),
     )
@@ -221,7 +226,7 @@ def merge_live(conn, s: Snapshot, now_utc: datetime) -> Snapshot:
         """,
         (s.elder_id, now_utc - LIVE_WINDOW),
     ).fetchone()
-    if bpm["n"] >= 3:
+    if bpm["n"] >= MIN_HR_SAMPLES:
         s.hr_now = bpm["median"]
     steps = conn.execute(
         """
