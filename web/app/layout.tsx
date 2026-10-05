@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from "next";
 import Link from "next/link";
 import { IconHeart } from "@/components/icons";
 import { LangProvider, LangSwitch } from "@/components/LangProvider";
-import { BottomNav, TopNav } from "@/components/Nav";
+import { BottomNav, SideNav } from "@/components/Nav";
 import { getIdentity, getSession } from "@/lib/auth";
 import { isDemo } from "@/lib/db";
 import { getLang } from "@/lib/i18n-server";
@@ -35,7 +35,11 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       </head>
       <body>
         <LangProvider lang={lang}>
-        <header className="topbar">
+        <div className={session ? "shell" : undefined}>
+        {session && <SideNav name={session.name} isSystemAdmin={identity?.isSystemAdmin ?? false} canSignOut={!isDemo} />}
+        <div className="shell-main">
+        {/* Máy tính: menu bên trái thay cho đầu trang; điện thoại: đầu trang gọn + menu dưới. */}
+        <header className={session ? "topbar has-side" : "topbar"}>
           <div className="row" style={{ maxWidth: 1200, margin: "0 auto", padding: "10px 16px", gap: "10px 24px", flexWrap: "nowrap" }}>
             <Link href="/" className="row" style={{ gap: 10, textDecoration: "none", color: "var(--text)", flexWrap: "nowrap", minWidth: 0 }}>
               <span aria-hidden className="icon-tile" style={{ background: "var(--accent-strong)", color: "#fff", borderRadius: 12 }}>
@@ -43,7 +47,6 @@ export default async function RootLayout({ children }: { children: React.ReactNo
               </span>
               <strong style={{ fontSize: 17, whiteSpace: "nowrap", minWidth: 0, overflow: "hidden", textOverflow: "ellipsis" }}>{t("Chăm Sóc Người Thân", "Family Care")}</strong>
             </Link>
-            {session && <TopNav />}
             <div style={{ flex: 1 }} />
             <LangSwitch />
             {identity && !isDemo && (
@@ -76,6 +79,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           </form>
         )}
         {children}
+        </div>
+        </div>
         {session && <BottomNav />}
         </LangProvider>
       </body>

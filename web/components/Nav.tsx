@@ -3,8 +3,8 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { T } from "@/lib/i18n";
-import { IconBell, IconHome, IconPlus, IconUser, IconUsers } from "./icons";
-import { useT } from "./LangProvider";
+import { IconBell, IconGear, IconHeart, IconHome, IconPlus, IconUser, IconUsers, IconWatch } from "./icons";
+import { LangSwitch, useT } from "./LangProvider";
 
 // Trang con của "Tài khoản": gia đình, quản trị, kết nối đồng hồ.
 const ACCOUNT = ["/tai-khoan", "/gia-dinh", "/quan-tri", "/cai-dat"];
@@ -22,16 +22,48 @@ const items = (t: T) => [
   { href: "/tai-khoan", label: t("Tài khoản", "Account"), icon: <IconUser size={22} /> },
 ];
 
-export function TopNav() {
+/** Menu bên trái trên máy tính (từ 900px): đủ chỗ cho nhãn tiếng Việt dài, không bị xuống dòng. */
+export function SideNav({ name, isSystemAdmin, canSignOut }: { name: string; isSystemAdmin: boolean; canSignOut: boolean }) {
   const path = usePathname();
   const t = useT();
   return (
-    <nav className="topnav" aria-label={t("Điều hướng chính", "Main navigation")} style={{ gap: 4, flex: "1 1 auto" }}>
-      {items(t).map((i) => (
-        <Link key={i.href} href={i.href} aria-current={isActive(path, i.href) ? "page" : undefined}>{i.label}</Link>
-      ))}
-      <Link href="/ket-noi-dong-ho" aria-current={path.startsWith("/ket-noi-dong-ho") ? "page" : undefined}>{t("Kết nối đồng hồ", "Connect watch")}</Link>
-    </nav>
+    <aside className="sidenav">
+      <Link href="/" className="brand">
+        <span aria-hidden className="icon-tile" style={{ background: "var(--accent-strong)", color: "#fff", borderRadius: 12 }}>
+          <IconHeart size={20} />
+        </span>
+        <strong>{t("Chăm Sóc Người Thân", "Family Care")}</strong>
+      </Link>
+      <nav aria-label={t("Điều hướng chính", "Main navigation")}>
+        {items(t).map((i) => (
+          <Link key={i.href} href={i.href} className="item" aria-current={isActive(path, i.href) ? "page" : undefined}>
+            {i.icon}<span>{i.label}</span>
+          </Link>
+        ))}
+        {isSystemAdmin && (
+          <Link href="/quan-tri" className="item" aria-current={path.startsWith("/quan-tri") ? "page" : undefined}>
+            <IconGear size={22} /><span>{t("Quản trị", "Admin")}</span>
+          </Link>
+        )}
+      </nav>
+      <Link href="/ket-noi-dong-ho" className="btn primary" style={{ marginTop: 8 }}>
+        <IconWatch size={18} />{t("Kết nối đồng hồ", "Connect watch")}
+      </Link>
+      <div style={{ flex: 1 }} />
+      <div className="side-foot">
+        <Link href="/tai-khoan" className="who" title={t("Tài khoản", "Account")}>
+          <IconUser size={18} /><span>{name}</span>
+        </Link>
+        <div className="row" style={{ gap: 8, flexWrap: "nowrap" }}>
+          <LangSwitch className="btn small" />
+          {canSignOut && (
+            <form action="/api/auth/logout" method="post" style={{ flex: 1 }}>
+              <button className="btn small" type="submit" style={{ width: "100%" }}>{t("Đăng xuất", "Sign out")}</button>
+            </form>
+          )}
+        </div>
+      </div>
+    </aside>
   );
 }
 
