@@ -44,10 +44,10 @@ jobs:
           SERVER_URL: ${{ vars.CHAMSOC_SERVER_URL }}
         run: |
           if [ -n "$SERVER_URL" ]; then
-            sed -i "s|<property id=\"server_url\" type=\"string\"></property>|<property id=\"server_url\" type=\"string\">$SERVER_URL</property>|" resources/properties.xml
+            sed -i -E "s#(<property id=\"server_url\" type=\"string\">)[^<]*(</property>)#\\1$SERVER_URL\\2#" resources/properties.xml
             grep server_url resources/properties.xml
           else
-            echo "::warning::Chưa đặt biến CHAMSOC_SERVER_URL: người dùng phải tự nhập địa chỉ máy chủ."
+            echo "Dùng địa chỉ mặc định trong resources/properties.xml"
           fi
 
       - name: Thông tin SDK và thiết bị
