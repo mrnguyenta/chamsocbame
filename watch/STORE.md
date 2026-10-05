@@ -79,7 +79,7 @@ every 5 minutes, and the whole family gets Telegram alerts when something looks 
 
 **Quyền ứng dụng (giải thích cho người duyệt):**
 - Background, Communications: gửi dữ liệu định kỳ lên máy chủ của gia đình qua điện thoại.
-- SensorHistory, UserProfile: đọc nhịp tim, SpO2, stress, Body Battery gần nhất.
+- SensorHistory, UserProfile: đọc nhịp tim, SpO2, stress, Body Battery gần nhất, nhịp tim nghỉ.
 
 **Chính sách riêng tư (Privacy policy URL):** https://chamsocbame.vercel.app/quyen-rieng-tu
 
@@ -94,10 +94,11 @@ How it works:
 1. On first launch the watch requests a 6-digit pairing code from our server
    (chamsocbame-api.vercel.app) through the phone and shows it on screen. The phone also
    receives a notification (Communications.openWebPage) that opens the pairing page.
-2. A family member signs in on the website (Telegram login) and enters the code.
+2. A family member signs in on the website (email and password) and enters the code.
    The watch then shows "Connected" with the current heart rate.
 3. A background temporal event (every 5 minutes, the minimum) sends heart rate, steps,
-   SpO2, stress, Body Battery, respiration and battery level to the family's server.
+   calories, distance, floors, active minutes, stress, Body Battery, respiration, SpO2
+   and battery level to the family's server. Alerts are sent to the family's Telegram group.
    Pressing START sends immediately.
 
 Without a family account the app stays on the pairing screen; this is expected.
