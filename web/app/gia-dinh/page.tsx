@@ -8,7 +8,7 @@ import { age } from "@/lib/format";
 import type { T } from "@/lib/i18n";
 import { getLang, getT } from "@/lib/i18n-server";
 import { conditions } from "@/lib/metrics";
-import { revokeInvite, switchFamily, unlinkGroup, updateMember } from "./actions";
+import { revokeInvite, switchFamily, unlinkGroup } from "./actions";
 import { AddElderForm, AddMemberForm, EditElderForm, EditMemberForm, InviteForm, LinkCodeForm } from "./forms";
 
 export const dynamic = "force-dynamic";
@@ -111,19 +111,7 @@ export default async function FamilyPage({ searchParams }: { searchParams: Promi
                   {m.isMe && !m.hasTelegram && (
                     <div style={{ width: "100%" }}><LinkCodeForm bot={bot} kind="caregiver" label={t("Nối Telegram của tôi (nhận cảnh báo riêng)", "Connect my Telegram (personal alerts)")} /></div>
                   )}
-                  {(admin || m.isMe) && <EditMemberForm member={m} />}
-                  {admin && !m.isMe && (
-                    <form action={updateMember} className="row" style={{ gap: 6 }}>
-                      <input type="hidden" name="caregiver_id" value={m.id} />
-                      <select name="action" defaultValue={m.role} aria-label={t(`Quyền của ${m.name}`, `${m.name}'s role`)}>
-                        <option value="admin">{t("Quản trị", "Admin")}</option>
-                        <option value="alerts">{t("Nhận cảnh báo", "Gets alerts")}</option>
-                        <option value="reports">{t("Chỉ nhận báo cáo", "Reports only")}</option>
-                        <option value="remove">{t("Xoá khỏi gia đình", "Remove from family")}</option>
-                      </select>
-                      <button className="btn small" type="submit">{t("Lưu", "Save")}</button>
-                    </form>
-                  )}
+                  {(admin || m.isMe) && <EditMemberForm member={m} manage={admin && !m.isMe} />}
                 </li>
               ))}
             </ul>

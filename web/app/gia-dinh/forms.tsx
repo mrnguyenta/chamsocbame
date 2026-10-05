@@ -1,15 +1,51 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useState, useTransition } from "react";
 import { IconPlus, IconTelegram } from "@/components/icons";
 import { useLang, useT } from "@/components/LangProvider";
+import type { T } from "@/lib/i18n";
 import { conditions } from "@/lib/metrics";
 import {
-  type FormState, acceptInvite, addElder, addMember, createFamily, createInvite, createLinkCode, updateElder, updateMemberInfo,
+  type FormState, acceptInvite, addElder, addMember, createFamily, createInvite, createLinkCode, updateElder, updateMember,
+  updateMemberInfo,
 } from "./actions";
 import { useFormAction } from "@/components/useFormAction";
 
 const INIT: FormState = { ok: false, message: "" };
+
+const roleOptions = (t: T) => [
+  { v: "admin", label: t("Quản trị", "Admin"),
+    desc: t("Xem tất cả, được gọi khi có cảnh báo, và sửa được người thân, ngưỡng, thuốc, đồng hồ.",
+      "Sees everything, is contacted on alerts, and can edit relatives, thresholds, medicines and watches.") },
+  { v: "alerts", label: t("Nhận cảnh báo", "Gets alerts"),
+    desc: t("Xem tất cả và được bot nhắn riêng (gọi điện nếu bật) khi cảnh báo chưa ai nhận.",
+      "Sees everything and gets a personal message (or call, if enabled) when nobody has taken an alert.") },
+  { v: "reports", label: t("Chỉ báo cáo", "Reports only"),
+    desc: t("Chỉ xem trên web và tin trong nhóm Telegram; không bị nhắn riêng hay gọi.",
+      "Only sees the website and the Telegram group; never messaged personally or called.") },
+];
+
+/** Chọn quyền dạng 3 ô bấm (thay cho danh sách thả xuống), kèm một dòng giải thích. */
+function RolePicker({ name, value, onChange, disabled }: {
+  name: string; value: string; onChange: (v: string) => void; disabled?: boolean;
+}) {
+  const t = useT();
+  const opts = roleOptions(t);
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 6, width: "100%" }}>
+      <div className="seg" role="radiogroup" aria-label={t("Quyền", "Role")}>
+        {opts.map((o) => (
+          <label key={o.v}>
+            <input type="radio" name={name} value={o.v} checked={value === o.v} disabled={disabled}
+              onChange={() => onChange(o.v)} />
+            <span>{o.label}</span>
+          </label>
+        ))}
+      </div>
+      <div className="muted" style={{ fontSize: 13, fontWeight: 400 }}>{opts.find((o) => o.v === value)?.desc}</div>
+    </div>
+  );
+}
 
 function Msg({ s }: { s: FormState }) {
   if (!s.message) return null;
@@ -71,23 +107,15 @@ export function JoinByCodeForm() {
 
 export function InviteForm() {
   const [state, action, pending] = useActionState(createInvite, INIT);
+  const [role, setRole] = useState("alerts");
   const t = useT();
   const link = state.value ? `${typeof window !== "undefined" ? window.location.origin : ""}/moi/${state.value}` : "";
   const shareText = t(`Mời bạn cùng theo dõi sức khoẻ người thân trên Chăm Sóc Người Thân: ${link}`,
     `Join me in looking after our family's health on Family Care: ${link}`);
   return (
     <form action={action} style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-      <div className="row" style={{ gap: 8 }}>
-        <label className="input-group">
-          <span className="muted">{t("Quyền", "Role")}</span>
-          <select name="role" defaultValue="alerts" style={{ border: "none", background: "transparent", minHeight: 38, padding: 0, fontWeight: 600 }}>
-            <option value="alerts">{t("Nhận cảnh báo", "Gets alerts")}</option>
-            <option value="reports">{t("Chỉ nhận báo cáo", "Reports only")}</option>
-            <option value="admin">{t("Quản trị", "Admin")}</option>
-          </select>
-        </label>
-        <button className="btn primary small" type="submit" disabled={pending}><IconPlus size={16} /> {t("Tạo link mời", "Create invite link")}</button>
-      </div>
+      <RolePicker name="role" value={role} onChange={setRole} />
+      <div className="row"><button className="btn primary small" type="submit" disabled={pending}><IconPlus size={16} /> {t("Tạo link mời", "Create invite link")}</button></div>
       <Msg s={state} />
       {link && (
         <div className="rule" style={{ gap: 8 }}>
@@ -188,6 +216,7 @@ export function LinkCodeForm({ kind, elderId, label, bot }: { kind: "group" | "e
 /** Quản trị thêm anh chị em bằng email (tạo tài khoản nếu email chưa có). */
 export function AddMemberForm() {
   const f = useFormAction(addMember, INIT);
+  const [role, setRole] = useState("alerts");
   const t = useT();
   return (
     <details className="more">
@@ -198,17 +227,11 @@ export function AddMemberForm() {
           <label className="field" style={{ flex: "2 1 220px" }}>Email<input type="email" name="email" autoCapitalize="none" placeholder={t("nhat@gmail.com", "john@gmail.com")} required /></label>
         </div>
         <div className="row" style={{ gap: 10 }}>
-          <label className="field" style={{ flex: "1 1 160px" }}>{t("Quyền", "Role")}
-            <select name="role" defaultValue="alerts">
-              <option value="alerts">{t("Nhận cảnh báo", "Gets alerts")}</option>
-              <option value="reports">{t("Chỉ nhận báo cáo", "Reports only")}</option>
-              <option value="admin">{t("Quản trị", "Admin")}</option>
-            </select>
-          </label>
           <label className="field" style={{ flex: "2 1 220px" }}>{t("Mật khẩu ban đầu (nếu email chưa có tài khoản)", "Initial password (if the email has no account)")}
             <input type="password" name="password" autoComplete="new-password" placeholder={t("ít nhất 8 ký tự", "at least 8 characters")} />
           </label>
         </div>
+        <div className="field">{t("Quyền", "Role")}<RolePicker name="role" value={role} onChange={setRole} /></div>
         <div className="row"><button className="btn primary small" type="submit" disabled={f.pending}>{t("Thêm", "Add")}</button></div>
         <Msg s={f.state} />
       </form>
@@ -264,7 +287,11 @@ export function EditElderForm({ elder }: {
 }
 
 /** Sửa tên và số điện thoại của người chăm sóc. */
-export function EditMemberForm({ member }: { member: { id: string; name: string; phone: string | null } }) {
+export function EditMemberForm({ member, manage }: {
+  member: { id: string; name: string; phone: string | null; role: string };
+  /** Quản trị sửa người khác: thêm đổi quyền và xoá khỏi gia đình. */
+  manage?: boolean;
+}) {
   const f = useFormAction(updateMemberInfo, INIT);
   const t = useT();
   return (
@@ -279,6 +306,39 @@ export function EditMemberForm({ member }: { member: { id: string; name: string;
         </div>
         <div className="row"><button className="btn primary small" type="submit" disabled={f.pending}>{t("Lưu", "Save")}</button><Msg s={f.state} /></div>
       </form>
+      {manage && <MemberRole member={member} />}
     </details>
+  );
+}
+
+/** Đổi quyền (lưu ngay khi bấm) và xoá khỏi gia đình (có hỏi lại). */
+function MemberRole({ member }: { member: { id: string; name: string; role: string } }) {
+  const t = useT();
+  const [role, setRole] = useState(member.role);
+  const [pending, start] = useTransition();
+  const [saved, setSaved] = useState(false);
+  const send = (action: string) => start(async () => {
+    const fd = new FormData();
+    fd.set("caregiver_id", member.id);
+    fd.set("action", action);
+    await updateMember(fd);
+    setSaved(action !== "remove");
+  });
+  return (
+    <div className="rule" style={{ marginTop: 10, gap: 10 }}>
+      <div className="field">
+        <span>{t("Quyền", "Role")}{pending ? <span className="muted">{t(" · đang lưu…", " · saving…")}</span>
+          : saved ? <span style={{ color: "var(--accent-ink)" }}>{t(" · đã lưu ✓", " · saved ✓")}</span> : null}</span>
+        <RolePicker name={`role-${member.id}`} value={role} disabled={pending}
+          onChange={(v) => { setRole(v); setSaved(false); send(v); }} />
+      </div>
+      <div className="row">
+        <button type="button" className="btn ghost small" disabled={pending} style={{ color: "var(--coral-ink)" }}
+          onClick={() => { if (confirm(t(`Xoá ${member.name} khỏi gia đình? Người này sẽ không xem được nữa.`,
+            `Remove ${member.name} from the family? They will no longer be able to see anything.`))) send("remove"); }}>
+          {t("Xoá khỏi gia đình", "Remove from family")}
+        </button>
+      </div>
+    </div>
   );
 }

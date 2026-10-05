@@ -290,3 +290,14 @@ details.block[open] > summary .chev { transform: rotate(90deg); }
 details.block > .block-body { padding: 0 18px 18px; display: flex; flex-direction: column; gap: 12px; }
 @media (prefers-reduced-motion: reduce) { details.block > summary .chev { transition: none; } }
 .banner.warn { background: var(--amber-soft); color: var(--amber-ink); }
+
+/* Chọn một trong vài lựa chọn (thay danh sách thả xuống) */
+.seg { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; padding: 4px; border-radius: 14px;
+  background: var(--surface-2); border: 1px solid var(--border-strong); }
+.seg label { position: relative; display: flex; align-items: center; justify-content: center; text-align: center;
+  min-height: 42px; padding: 4px 8px; border-radius: 10px; font-weight: 600; font-size: 14px; line-height: 1.2;
+  color: var(--text-2); cursor: pointer; }
+.seg input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.seg label:has(input:checked) { background: var(--surface-solid); color: var(--accent-ink); box-shadow: var(--shadow-sm); }
+.seg label:has(input:focus-visible) { outline: 3px solid color-mix(in srgb, var(--accent) 60%, transparent); outline-offset: 1px; }
+.seg label:has(input:disabled) { cursor: default; opacity: 0.7; }
