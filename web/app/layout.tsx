@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import Link from "next/link";
 import { IconHeart } from "@/components/icons";
+import AIWidget from "@/components/AIWidget";
 import { LangProvider, LangSwitch } from "@/components/LangProvider";
 import { BottomNav, SideNav } from "@/components/Nav";
 import { getIdentity, getSession } from "@/lib/auth";
@@ -82,6 +83,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         </div>
         </div>
         {session && <BottomNav />}
+        {session && !isDemo && <AIWidget />}
         </LangProvider>
       </body>
     </html>

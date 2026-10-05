@@ -22,7 +22,7 @@ import { alertText, conditions, ruleGroups } from "@/lib/metrics";
 import GarminLinkForm from "@/components/GarminLinkForm";
 import { deleteDevice, deleteGarmin, deleteMed } from "../../cai-dat/actions";
 import { AddMedForm, AddRuleForm, RuleForm, WatchKeyForm } from "../../cai-dat/forms";
-import { EditElderForm, LinkCodeForm } from "../../gia-dinh/forms";
+import { DeleteElder, EditElderForm, LinkCodeForm } from "../../gia-dinh/forms";
 
 const garminStatuses = (t: T): Record<string, { label: string; tone: string }> => ({
   ok: { label: t("Đang kết nối", "Connected"), tone: "tone-ok" },
@@ -372,6 +372,7 @@ export default async function ElderPage({ params }: { params: Promise<{ id: stri
           sub={[age(e.birthYear, lang), e.conditions.map((c) => CONDITIONS[c] ?? c).join(", ") || t("chưa có bệnh nền", "no health conditions"),
             info?.hasTelegram ? t("đã nối Telegram", "Telegram linked") : t("chưa nối Telegram", "Telegram not linked")].filter(Boolean).join(" · ")}>
           {info && canEdit && <EditElderForm elder={info} />}
+          {info && canEdit && <DeleteElder elder={info} />}
           <div className="list-row" style={{ minHeight: 0 }}>
             <span className="icon-tile tile-blue"><IconTelegram size={20} /></span>
             <span className="grow">

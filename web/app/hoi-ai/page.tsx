@@ -2,7 +2,7 @@ import { requireSession } from "@/lib/auth";
 import { isDemo, sql } from "@/lib/db";
 import { makeT } from "@/lib/i18n";
 import { getLang } from "@/lib/i18n-server";
-import AskAI from "./AskAI";
+import AIChat from "@/components/AIChat";
 
 export const dynamic = "force-dynamic";
 
@@ -26,7 +26,7 @@ export default async function AskAIPage() {
           "AI đọc số liệu đồng hồ, huyết áp, thuốc và cảnh báo của cả nhà để trả lời. Chỉ để tham khảo, không thay bác sĩ.",
           "The AI reads the family's watch data, blood pressure, medicines and alerts to answer. For reference only, not a doctor.")}</p>
       </div>
-      <AskAI suggestions={suggestions} />
+      <section className="card"><AIChat suggestions={suggestions} /></section>
       <p className="muted" style={{ fontSize: 13 }}>{t(
         "Trong nhóm Telegram cũng hỏi được: gõ /hoi rồi câu hỏi, ví dụ “/hoi Mẹ tuần này ngủ thế nào?”.",
         "You can also ask in the Telegram group: type /hoi followed by your question.")}</p>

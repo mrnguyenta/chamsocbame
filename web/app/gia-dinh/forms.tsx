@@ -283,21 +283,21 @@ export function EditElderForm({ elder }: {
         <ConditionChips selected={elder.conditions} />
         <div className="row"><button className="btn primary small" type="submit" disabled={f.pending}>{t("Lưu", "Save")}</button><Msg s={f.state} /></div>
       </form>
-      <DeleteElder elder={elder} />
     </details>
   );
 }
 
 /** Xoá người thân: hỏi lại vì mất toàn bộ dữ liệu; đang ở trang của người đó thì quay về danh sách. */
-function DeleteElder({ elder }: { elder: { id: string; name: string } }) {
+export function DeleteElder({ elder, short = false }: { elder: { id: string; name: string }; short?: boolean }) {
   const t = useT();
   const router = useRouter();
   const path = usePathname();
   const [pending, start] = useTransition();
   const [err, setErr] = useState("");
   return (
-    <div className="row" style={{ marginTop: 10, gap: 8 }}>
+    <div className="row" style={{ gap: 8 }}>
       <button type="button" className="btn ghost small" disabled={pending} style={{ color: "var(--coral-ink)" }}
+        title={t(`Xoá ${elder.name}`, `Delete ${elder.name}`)}
         onClick={() => {
           if (!confirm(t(`Xoá ${elder.name}? Toàn bộ số liệu, cảnh báo, thuốc và đồng hồ đã ghép của người này sẽ bị xoá, không khôi phục được.`,
             `Delete ${elder.name}? All of their readings, alerts, medicines and paired watches will be deleted and can't be restored.`))) return;
@@ -307,7 +307,9 @@ function DeleteElder({ elder }: { elder: { id: string; name: string } }) {
             if (path.startsWith("/nguoi-than/")) router.push("/nguoi-than");
           });
         }}>
-        {pending ? t("Đang xoá…", "Deleting…") : t(`Xoá ${elder.name}`, `Delete ${elder.name}`)}
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden>
+          <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6M10 11v6M14 11v6" /></svg>
+        {pending ? t("Đang xoá…", "Deleting…") : short ? t("Xoá", "Delete") : t(`Xoá ${elder.name} khỏi gia đình`, `Remove ${elder.name} from the family`)}
       </button>
       {err && <span role="status" className="banner danger">{err}</span>}
     </div>

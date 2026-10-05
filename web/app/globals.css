@@ -302,7 +302,8 @@ details.block > .block-body { padding: 0 18px 18px; display: flex; flex-directio
 .seg label:has(input:focus-visible) { outline: 3px solid color-mix(in srgb, var(--accent) 60%, transparent); outline-offset: 1px; }
 .seg label:has(input:disabled) { cursor: default; opacity: 0.7; }
 
-/* Khung chat Hỏi AI */
+/* Khung chat AI (trang Hỏi AI và nút chat nổi) */
+.ai-chat { display: flex; flex-direction: column; gap: 12px; min-height: 0; }
 .chat { display: flex; flex-direction: column; gap: 10px; }
 .chat .bubble { max-width: 88%; padding: 10px 14px; border-radius: 18px; white-space: pre-wrap; line-height: 1.5;
   overflow-wrap: anywhere; }
@@ -310,12 +311,48 @@ details.block > .block-body { padding: 0 18px 18px; display: flex; flex-directio
 .chat .bubble.assistant { align-self: flex-start; background: var(--surface-2); border: 1px solid var(--border-strong);
   border-bottom-left-radius: 6px; }
 .chat .bubble.error { background: var(--danger-bg); color: var(--danger-fg); border-color: transparent; }
+.chat .suggest { display: flex; flex-wrap: wrap; gap: 8px; }
+.chat .suggest .btn { text-align: left; height: auto; min-height: 36px; padding: 6px 12px; }
+.chat .typing { display: inline-flex; gap: 5px; align-items: center; min-height: 40px; }
+.chat .typing span { width: 7px; height: 7px; border-radius: 50%; background: var(--muted); animation: ai-dot 1.2s infinite ease-in-out; }
+.chat .typing span:nth-child(2) { animation-delay: 0.15s; }
+.chat .typing span:nth-child(3) { animation-delay: 0.3s; }
+@keyframes ai-dot { 0%, 80%, 100% { opacity: 0.3; transform: translateY(0); } 40% { opacity: 1; transform: translateY(-3px); } }
+@media (prefers-reduced-motion: reduce) { .chat .typing span { animation: none; } }
+.chat-input { display: flex; gap: 8px; align-items: flex-end; }
+.chat-input textarea { flex: 1; min-height: 46px; max-height: 140px; font-size: 16px; resize: vertical; border-radius: 16px; }
+.chat-input .btn { width: 46px; height: 46px; min-height: 46px; padding: 0; justify-content: center; flex: none; }
+.ai-chat .clear { align-self: center; background: none; border: 0; cursor: pointer; font: inherit; font-size: 13px; color: var(--muted); }
 
-/* Bảng báo cáo tuần */
-.report-table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
-.report-table th, .report-table td { text-align: left; padding: 9px 10px; border-bottom: 1px solid var(--border-strong); white-space: nowrap; }
-.report-table th { font-size: 13px; color: var(--muted); font-weight: 600; }
-.report-table td:first-child { white-space: normal; }
-.report-table .delta { font-size: 12px; }
-.report-table .delta.good { color: var(--accent-ink); }
-.report-table .delta.bad { color: var(--coral-ink); }
+/* Nút chat nổi: linh vật trợ lý */
+.ai-fab { position: fixed; right: 14px; bottom: 96px; z-index: 30; width: 68px; height: 68px; padding: 0; border: 0;
+  border-radius: 26px; cursor: pointer; background: transparent; display: grid; place-items: center;
+  filter: drop-shadow(0 10px 18px color-mix(in srgb, var(--accent-strong) 35%, transparent)); transition: transform 0.18s ease; }
+.ai-fab:hover { transform: translateY(-2px) scale(1.04); }
+.ai-fab:focus-visible { outline: 3px solid color-mix(in srgb, var(--accent) 60%, transparent); outline-offset: 2px; }
+.ai-fab .mascot { width: 68px; height: 68px; animation: mascot-float 3.2s ease-in-out infinite; }
+.mascot .eyes { transform-origin: 32px 33px; animation: mascot-blink 4.5s infinite; }
+.mascot .spark { transform-origin: 51px 13px; animation: mascot-spark 2.4s ease-in-out infinite; }
+.ai-fab.open .mascot { animation: none; }
+.ai-fab-tip { position: absolute; right: 74px; top: 50%; transform: translateY(-50%); white-space: nowrap;
+  background: var(--surface-solid); color: var(--accent-ink); font-weight: 700; font-size: 13px; padding: 7px 12px;
+  border-radius: 14px 14px 4px 14px; box-shadow: var(--shadow-sm); border: 1px solid var(--border-strong); pointer-events: none; }
+@media (max-width: 899px) { .ai-fab-tip { display: none; } }
+@media (min-width: 900px) { .ai-fab { bottom: 24px; right: 24px; width: 76px; height: 76px; } .ai-fab .mascot { width: 76px; height: 76px; } }
+@keyframes mascot-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
+@keyframes mascot-blink { 0%, 92%, 100% { transform: scaleY(1); } 95% { transform: scaleY(0.1); } }
+@keyframes mascot-spark { 0%, 100% { transform: rotate(0) scale(1); } 50% { transform: rotate(45deg) scale(1.15); } }
+@media (prefers-reduced-motion: reduce) { .ai-fab .mascot, .mascot .eyes, .mascot .spark { animation: none; } }
+.ai-avatar { width: 40px; height: 40px; flex: none; display: grid; place-items: center; }
+.ai-avatar .mascot { width: 40px; height: 40px; }
+
+/* Khung chat nổi: điện thoại toàn màn hình, máy tính một khung ở góc */
+.ai-panel { position: fixed; z-index: 40; inset: 0; display: flex; flex-direction: column; gap: 12px; padding: 14px 14px 16px;
+  background: var(--surface-solid); }
+.ai-panel .ai-chat { flex: 1; overflow: hidden; }
+.ai-panel .chat { flex: 1; overflow-y: auto; padding-right: 2px; }
+.ai-panel-head { display: flex; align-items: center; gap: 10px; padding-bottom: 10px; border-bottom: 1px solid var(--border-strong); }
+@media (min-width: 900px) {
+  .ai-panel { inset: auto 24px 92px auto; width: 400px; height: min(620px, calc(100vh - 120px)); border-radius: 24px;
+    box-shadow: 0 24px 60px rgba(16, 92, 86, 0.22); border: 1px solid var(--border-strong); }
+}

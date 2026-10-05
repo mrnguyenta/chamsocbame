@@ -1,3 +1,4 @@
+import Link from "next/link";
 import ElderCard from "@/components/ElderCard";
 import { requireSession } from "@/lib/auth";
 import { getOverview } from "@/lib/data";
@@ -25,6 +26,13 @@ export default async function PeoplePage() {
           <ElderCard key={e.id} e={e} openAlerts={o.openAlerts.filter((a) => a.elderId === e.id).length} />
         ))}
       </div>
+      {o.elders.length > 0 && session.isAdmin && (
+        <div className="muted" style={{ fontSize: 14 }}>
+          {t("Muốn sửa hoặc xoá người thân: ", "To edit or delete someone: ")}
+          <Link href="/gia-dinh">{t("vào trang Gia đình", "go to the Family page")}</Link>
+          {t(", hoặc mở trang của người đó, mục Thông tin.", ", or open their page, Info section.")}
+        </div>
+      )}
       {o.elders.length === 0 && <div className="card">{t("Chưa có người thân nào.", "No family members yet.")}</div>
 }
       {session.isAdmin && <section id="them" className="card"><AddElderForm /></section>}

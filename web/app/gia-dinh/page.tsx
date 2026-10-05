@@ -9,7 +9,7 @@ import type { T } from "@/lib/i18n";
 import { getLang, getT } from "@/lib/i18n-server";
 import { conditions } from "@/lib/metrics";
 import { revokeInvite, switchFamily, unlinkGroup } from "./actions";
-import { AddElderForm, AddMemberForm, EditElderForm, EditMemberForm, InviteForm, LinkCodeForm } from "./forms";
+import { AddElderForm, AddMemberForm, DeleteElder, EditElderForm, EditMemberForm, InviteForm, LinkCodeForm } from "./forms";
 
 export const dynamic = "force-dynamic";
 
@@ -86,6 +86,7 @@ export default async function FamilyPage({ searchParams }: { searchParams: Promi
                   </span>
                   <span className={`chip ${e.hasTelegram ? "tone-ok" : "tone-neutral"}`}>{e.hasTelegram ? t("Đã nối Telegram", "Telegram connected") : t("Chưa nối Telegram", "Telegram not connected")}</span>
                   <Link className="btn ghost small" href={`/nguoi-than/${e.id}`}>{t("Mở trang", "Open page")} <IconChevron size={14} /></Link>
+                  {admin && <DeleteElder elder={e} short />}
                   {admin && !e.hasTelegram && (
                     <div style={{ width: "100%" }}><LinkCodeForm bot={bot} kind="elder" elderId={e.id} label={t(`Nối Telegram của ${e.name} (nhắc thuốc, nhập huyết áp)`, `Connect ${e.name}'s Telegram (medication reminders, blood pressure entry)`)} /></div>
                   )}
