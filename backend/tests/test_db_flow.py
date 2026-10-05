@@ -373,3 +373,14 @@ def test_family_with_two_groups_gets_reports_in_both(conn, family, monkeypatch):
     jobs.handle_update(conn, tg, NoopCallProvider(), {"my_chat_member": {
         "chat": {"id": -100777, "type": "supergroup"}, "new_chat_member": {"status": "kicked"}}}, now)
     assert db.family_by_chat(conn, -100777) is None
+
+
+def test_missing_group_titles_are_filled_from_telegram(conn, family):
+    conn.execute("insert into family_chats (chat_id, family_id) values (-888, %s)", (family["family"]["id"],))
+
+    class Tg(FakeTg):
+        def get_chat(self, chat_id):
+            return {"id": chat_id, "title": "Nhóm cũ"}
+
+    jobs.fill_chat_titles(conn, Tg())
+    assert conn.execute("select title from family_chats where chat_id = -888").fetchone()["title"] == "Nhóm cũ"

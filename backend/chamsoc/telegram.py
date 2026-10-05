@@ -54,6 +54,9 @@ class TelegramClient:
             "allowed_updates": ["message", "callback_query", "my_chat_member"], "drop_pending_updates": True,
         })
 
+    def get_chat(self, chat_id: int) -> dict:
+        return self._call("getChat", {"chat_id": chat_id})
+
     def get_me(self) -> dict:
         return self._call("getMe", {})
 

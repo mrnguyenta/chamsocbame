@@ -232,7 +232,8 @@ def _within(local_now: datetime, at: time, grace: timedelta) -> bool:
 
 def tick(conn, tg: telegram.TelegramClient, calls: CallProvider, now_utc: datetime) -> None:
     """Chạy mỗi 5 phút: kiểm ngưỡng, gửi/leo thang cảnh báo, nhắc thuốc, báo cáo định kỳ."""
-    for step in (lambda: evaluate_all(conn, tg, now_utc),
+    for step in (lambda: fill_chat_titles(conn, tg),
+                 lambda: evaluate_all(conn, tg, now_utc),
                  lambda: process_alerts(conn, tg, calls, now_utc),
                  lambda: medication_reminders(conn, tg, now_utc),
                  lambda: scheduled_reports(conn, tg, now_utc)):
@@ -240,6 +241,15 @@ def tick(conn, tg: telegram.TelegramClient, calls: CallProvider, now_utc: dateti
             step()
         except Exception:
             log.exception("Lỗi trong tick")
+
+
+def fill_chat_titles(conn, tg: telegram.TelegramClient) -> None:
+    """Nhóm nối từ trước khi lưu tên (hoặc chưa ai nhắn gì): hỏi Telegram tên nhóm để hiện trên website."""
+    for chat_id in db.chats_without_title(conn):
+        try:
+            db.update_chat_title(conn, chat_id, tg.get_chat(chat_id).get("title"))
+        except Exception:
+            log.warning("Không lấy được tên nhóm %s", chat_id)
 
 
 # ---------- Tin nhắn Telegram ----------

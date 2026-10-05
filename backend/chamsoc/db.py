@@ -378,6 +378,10 @@ def update_chat_title(conn, chat_id: int, title: str | None) -> None:
                      (title, chat_id, title))
 
 
+def chats_without_title(conn) -> list[int]:
+    return [r["chat_id"] for r in conn.execute("select chat_id from family_chats where title is null").fetchall()]
+
+
 def move_chat(conn, old_chat_id: int, new_chat_id: int) -> None:
     """Nhóm thường được Telegram nâng lên siêu nhóm thì đổi chat_id."""
     conn.execute("update family_chats set chat_id = %s where chat_id = %s", (new_chat_id, old_chat_id))
