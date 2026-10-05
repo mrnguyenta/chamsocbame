@@ -8,6 +8,7 @@ import { Avatar } from "@/components/ui";
 import { getSession, requireIdentity } from "@/lib/auth";
 import { getBot } from "@/lib/bot";
 import { getFamilyAdmin, getSettings } from "@/lib/data";
+import { getT } from "@/lib/i18n-server";
 import { FamilyForm } from "../cai-dat/forms";
 import { switchFamily } from "../gia-dinh/actions";
 import { LinkCodeForm } from "../gia-dinh/forms";
@@ -31,6 +32,7 @@ function Row({ href, icon, tile, title, sub }: { href: string; icon: React.React
 /** Tài khoản là trung tâm: hồ sơ, Telegram của tôi, gia đình, báo cáo, đồng hồ, quản trị. */
 export default async function AccountPage() {
   const me = await requireIdentity("/tai-khoan");
+  const t = await getT();
   const session = await getSession();
   const [fam, settings, bot] = session
     ? await Promise.all([getFamilyAdmin(session.familyId, session.caregiverId), getSettings(session.familyId), getBot()])
@@ -46,22 +48,23 @@ export default async function AccountPage() {
           <h1 style={{ fontSize: 22, margin: 0 }}>{session?.name ?? me.name}</h1>
           <div className="muted" style={{ overflow: "hidden", textOverflow: "ellipsis" }}>{me.email}</div>
         </div>
-        <form action="/api/auth/logout" method="post"><button className="btn small" type="submit">Đăng xuất</button></form>
+        <form action="/api/auth/logout" method="post"><button className="btn small" type="submit">{t("Đăng xuất", "Sign out")}</button></form>
       </section>
 
       {!session && (
         <section className="card">
-          <p style={{ marginTop: 0 }}>Bạn chưa ở trong gia đình nào.</p>
-          <Link className="btn primary" href="/bat-dau">Tạo gia đình hoặc vào bằng link mời</Link>
+          <p style={{ marginTop: 0 }}>{t("Bạn chưa ở trong gia đình nào.", "You aren't in a family yet.")}</p>
+          <Link className="btn primary" href="/bat-dau">{t("Tạo gia đình hoặc vào bằng link mời", "Create a family or join with an invite link")}</Link>
         </section>
       )}
 
       {session && fam && settings && (
         <>
-          <Block id="gia-dinh" icon={<IconUsers size={20} />} tile="tile-violet" title={`Gia đình · ${fam.name}`}
-            sub={`${fam.elders.length} người thân · ${fam.members.length} người chăm sóc · ${fam.groups.length} nhóm Telegram`} open>
+          <Block id="gia-dinh" icon={<IconUsers size={20} />} tile="tile-violet" title={`${t("Gia đình", "Family")} · ${fam.name}`}
+            sub={t(`${fam.elders.length} người thân · ${fam.members.length} người chăm sóc · ${fam.groups.length} nhóm Telegram`,
+              `${fam.elders.length} loved ones · ${fam.members.length} caregivers · ${fam.groups.length} Telegram groups`)} open>
             {session.families.length > 1 && (
-              <nav className="pills" aria-label="Chọn gia đình">
+              <nav className="pills" aria-label={t("Chọn gia đình", "Choose family")}>
                 {session.families.map((f) => (
                   <form key={f.id} action={switchFamily}>
                     <input type="hidden" name="family_id" value={f.id} />
@@ -72,43 +75,46 @@ export default async function AccountPage() {
               </nav>
             )}
             <ul className="list">
-              <li><Row href="/nguoi-than" icon={<IconUser size={20} />} tile="tile-coral" title="Ba mẹ & người thân"
-                sub={fam.elders.map((e) => e.name).join(", ") || "Chưa có ai"} /></li>
-              <li><Row href="/gia-dinh" icon={<IconUsers size={20} />} tile="tile-violet" title="Anh chị em & lời mời"
-                sub={`${fam.members.length} người · thêm bằng email hoặc gửi link mời`} /></li>
-              <li><Row href="/gia-dinh#telegram" icon={<IconTelegram size={20} />} tile="tile-blue" title="Nhóm Telegram gia đình"
-                sub={fam.groups.map((g) => g.title ?? "Nhóm Telegram").join(", ") || "Chưa nối nhóm nào"} /></li>
-              <li><Row href="/bat-dau" icon={<IconUsers size={20} />} tile="tile-teal" title="Gia đình khác"
-                sub="Tạo thêm (bên nội / bên ngoại) hoặc vào bằng link mời" /></li>
+              <li><Row href="/nguoi-than" icon={<IconUser size={20} />} tile="tile-coral" title={t("Ba mẹ & người thân", "Parents & loved ones")}
+                sub={fam.elders.map((e) => e.name).join(", ") || t("Chưa có ai", "No one yet")} /></li>
+              <li><Row href="/gia-dinh" icon={<IconUsers size={20} />} tile="tile-violet" title={t("Anh chị em & lời mời", "Siblings & invites")}
+                sub={t(`${fam.members.length} người · thêm bằng email hoặc gửi link mời`, `${fam.members.length} people · add by email or send an invite link`)} /></li>
+              <li><Row href="/gia-dinh#telegram" icon={<IconTelegram size={20} />} tile="tile-blue" title={t("Nhóm Telegram gia đình", "Family Telegram group")}
+                sub={fam.groups.map((g) => g.title ?? t("Nhóm Telegram", "Telegram group")).join(", ") || t("Chưa nối nhóm nào", "No group connected yet")} /></li>
+              <li><Row href="/bat-dau" icon={<IconUsers size={20} />} tile="tile-teal" title={t("Gia đình khác", "Other families")}
+                sub={t("Tạo thêm (bên nội / bên ngoại) hoặc vào bằng link mời", "Create another (e.g. the other side of the family) or join with an invite link")} /></li>
             </ul>
           </Block>
 
-          <Block id="telegram" icon={<IconTelegram size={20} />} tile="tile-blue" title="Telegram của tôi"
-            sub={mine?.hasTelegram ? "Đã nối · nhận cảnh báo riêng và bấm “Tôi xử lý”" : "Chưa nối · nối để nhận cảnh báo riêng"}
+          <Block id="telegram" icon={<IconTelegram size={20} />} tile="tile-blue" title={t("Telegram của tôi", "My Telegram")}
+            sub={mine?.hasTelegram
+              ? t("Đã nối · nhận cảnh báo riêng và bấm “Tôi xử lý”", "Connected · get personal alerts and tap “Tôi xử lý” (I'll handle it) in Telegram")
+              : t("Chưa nối · nối để nhận cảnh báo riêng", "Not connected · connect to get personal alerts")}
             open={!mine?.hasTelegram}>
             <p className="muted" style={{ margin: 0 }}>
-              Cảnh báo luôn gửi vào nhóm gia đình. Nối Telegram riêng để bot nhắn thẳng cho bạn khi chưa ai nhận xử lý.
+              {t("Cảnh báo luôn gửi vào nhóm gia đình. Nối Telegram riêng để bot nhắn thẳng cho bạn khi chưa ai nhận xử lý.",
+                "Alerts always go to the family group. Connect your own Telegram so the bot messages you directly when no one has taken an alert yet.")}
             </p>
-            <LinkCodeForm bot={bot?.username} kind="caregiver" label={mine?.hasTelegram ? "Nối lại Telegram của tôi" : "Nối Telegram của tôi"} />
+            <LinkCodeForm bot={bot?.username} kind="caregiver" label={mine?.hasTelegram ? t("Nối lại Telegram của tôi", "Reconnect my Telegram") : t("Nối Telegram của tôi", "Connect my Telegram")} />
           </Block>
 
-          <Block id="bao-cao" icon={<IconBell size={20} />} tile="tile-amber" title="Báo cáo & giờ yên lặng"
-            sub={`Báo cáo ${settings.family.morningReportAt}${settings.family.eveningReportAt ? ` và ${settings.family.eveningReportAt}` : ""} · yên lặng ${settings.family.quietStart}–${settings.family.quietEnd}`}>
+          <Block id="bao-cao" icon={<IconBell size={20} />} tile="tile-amber" title={t("Báo cáo & giờ yên lặng", "Reports & quiet hours")}
+            sub={`${t("Báo cáo", "Reports at")} ${settings.family.morningReportAt}${settings.family.eveningReportAt ? ` ${t("và", "and")} ${settings.family.eveningReportAt}` : ""} · ${t("yên lặng", "quiet")} ${settings.family.quietStart}–${settings.family.quietEnd}`}>
             <FamilyForm f={settings.family} canEdit={session.isAdmin} />
           </Block>
 
-          <Block id="dong-ho" icon={<IconWatch size={20} />} tile="tile-teal" title="Đồng hồ"
-            sub="Kết nối đồng hồ Garmin cho ba mẹ bằng mã 6 số">
+          <Block id="dong-ho" icon={<IconWatch size={20} />} tile="tile-teal" title={t("Đồng hồ", "Watch")}
+            sub={t("Kết nối đồng hồ Garmin cho ba mẹ bằng mã 6 số", "Connect your parent's Garmin watch with a 6-digit code")}>
             <Link className="btn primary small" href="/ket-noi-dong-ho" style={{ alignSelf: "flex-start" }}>
-              Kết nối đồng hồ <span className="arrow"><IconChevron size={16} /></span>
+              {t("Kết nối đồng hồ", "Connect watch")} <span className="arrow"><IconChevron size={16} /></span>
             </Link>
           </Block>
         </>
       )}
 
-      <Block id="ho-so" icon={<IconUser size={20} />} tile="tile-teal" title="Hồ sơ & mật khẩu" sub="Đổi tên hiển thị, đổi mật khẩu">
+      <Block id="ho-so" icon={<IconUser size={20} />} tile="tile-teal" title={t("Hồ sơ & mật khẩu", "Profile & password")} sub={t("Đổi tên hiển thị, đổi mật khẩu", "Change display name, change password")}>
         <NameForm name={me.name} />
-        <div className="section-title" style={{ margin: "6px 0 0" }}>Đổi mật khẩu</div>
+        <div className="section-title" style={{ margin: "6px 0 0" }}>{t("Đổi mật khẩu", "Change password")}</div>
         <PasswordForm />
       </Block>
 
@@ -116,8 +122,8 @@ export default async function AccountPage() {
         <Link href="/quan-tri" className="card row" style={{ gap: 12, textDecoration: "none", color: "var(--text)", flexWrap: "nowrap" }}>
           <span className="icon-tile tile-blue"><IconGear size={20} /></span>
           <span style={{ flex: 1 }}>
-            <strong>Quản trị hệ thống</strong>
-            <div className="muted" style={{ fontSize: 13 }}>Bot Telegram, file cài app đồng hồ, tài khoản, đặt lại mật khẩu</div>
+            <strong>{t("Quản trị hệ thống", "System administration")}</strong>
+            <div className="muted" style={{ fontSize: 13 }}>{t("Bot Telegram, file cài app đồng hồ, tài khoản, đặt lại mật khẩu", "Telegram bot, watch app install file, accounts, password resets")}</div>
           </span>
           <IconChevron size={18} />
         </Link>

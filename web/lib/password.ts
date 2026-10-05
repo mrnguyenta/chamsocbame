@@ -1,6 +1,7 @@
 import "server-only";
 import { randomBytes, scrypt, timingSafeEqual } from "node:crypto";
 import { promisify } from "node:util";
+import { makeT, type T } from "./i18n";
 
 const scryptAsync = promisify(scrypt) as (pw: string, salt: Buffer, len: number) => Promise<Buffer>;
 
@@ -27,9 +28,9 @@ export const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 export const normEmail = (v: unknown) => String(v ?? "").trim().toLowerCase().slice(0, 120);
 
 /** Lỗi mật khẩu mới, hoặc null nếu hợp lệ. */
-export function passwordProblem(pw: string, again?: string): string | null {
-  if (pw.length < 8) return "Mật khẩu cần ít nhất 8 ký tự.";
-  if (again !== undefined && pw !== again) return "Hai lần nhập mật khẩu không giống nhau.";
+export function passwordProblem(pw: string, again?: string, t: T = makeT("vi")): string | null {
+  if (pw.length < 8) return t("Mật khẩu cần ít nhất 8 ký tự.", "The password needs at least 8 characters.");
+  if (again !== undefined && pw !== again) return t("Hai lần nhập mật khẩu không giống nhau.", "The two passwords don't match.");
   return null;
 }
 

@@ -49,6 +49,10 @@ export interface AlertRow {
   metric: string;
   severity: Severity;
   message: string;
+  /** Để dựng lại câu cảnh báo tiếng Anh (lib/metrics.ts alertText). */
+  value?: number | null;
+  comparator?: string | null;
+  threshold?: number | null;
   openedAt: string;
   ackedBy: string | null;
   ackedAt: string | null;

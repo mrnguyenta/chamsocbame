@@ -1,20 +1,25 @@
 "use client";
 
 import { useState } from "react";
+import { useLang } from "@/components/LangProvider";
+import { makeT, type Lang } from "@/lib/i18n";
 
 interface Point { ts: string; bpm: number }
 
 const TZ = "Asia/Ho_Chi_Minh";
-const hm = (ts: string) =>
-  new Date(ts).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit", timeZone: TZ });
+const hm = (ts: string, lang: Lang) =>
+  new Date(ts).toLocaleTimeString(lang === "en" ? "en-GB" : "vi-VN", { hour: "2-digit", minute: "2-digit", timeZone: TZ });
 
 /** Nhịp tim theo thời gian: một đường 2px, ngưỡng nét đứt, rê chuột để xem giá trị. */
 export default function HrChart({
-  data, threshold, height = 180, compact = false, label = "Nhịp tim",
+  data, threshold, height = 180, compact = false, label,
 }: { data: Point[]; threshold?: number; height?: number; compact?: boolean; label?: string }) {
   const [hover, setHover] = useState<number | null>(null);
+  const lang = useLang();
+  const t = makeT(lang);
   if (data.length < 2) {
-    return <div className="muted" style={{ height, display: "flex", alignItems: "center" }}>Chưa có dữ liệu nhịp tim 24 giờ qua.</div>;
+    return <div className="muted" style={{ height, display: "flex", alignItems: "center" }}>
+      {t("Chưa có dữ liệu nhịp tim 24 giờ qua.", "No heart rate data in the last 24 hours.")}</div>;
   }
   const W = 1000;
   const t0 = new Date(data[0].ts).getTime();
@@ -47,7 +52,8 @@ export default function HrChart({
         onPointerMove={onMove}
         onPointerLeave={() => setHover(null)}
         role="img"
-        aria-label={`${label}: thấp nhất ${Math.min(...vals)}, cao nhất ${Math.max(...vals)} nhịp mỗi phút`}
+        aria-label={t(`${label ?? "Nhịp tim"}: thấp nhất ${Math.min(...vals)}, cao nhất ${Math.max(...vals)} nhịp mỗi phút`,
+          `${label ?? "Heart rate"}: low ${Math.min(...vals)}, high ${Math.max(...vals)} beats per minute`)}
       >
         <svg viewBox={`0 0 ${W} ${height}`} preserveAspectRatio="none" width="100%" height={height} style={{ display: "block", overflow: "visible" }}>
           {!compact && [0.25, 0.5, 0.75].map((f) => (
@@ -62,7 +68,7 @@ export default function HrChart({
         </svg>
         {threshold !== undefined && !compact && (
           <span className="muted" style={{ position: "absolute", right: 0, top: y(threshold) - 20, fontSize: 11,
-            background: "var(--surface)", padding: "0 4px", color: "var(--warn-fg)" }}>ngưỡng {threshold}</span>
+            background: "var(--surface)", padding: "0 4px", color: "var(--warn-fg)" }}>{t("ngưỡng", "threshold")} {threshold}</span>
         )}
         {p && (
           <>
@@ -70,14 +76,15 @@ export default function HrChart({
             <div style={{ position: "absolute", left: `${(x(p.ts) / W) * 100}%`, top: y(p.bpm), width: 10, height: 10,
               borderRadius: "50%", background: "var(--series-hr)", border: "2px solid var(--surface)", transform: "translate(-50%,-50%)" }} />
             <div className="chart-tip" style={{ left: `${(x(p.ts) / W) * 100}%`, top: Math.max(18, y(p.bpm) - 8) }}>
-              {hm(p.ts)} · <strong>{p.bpm}</strong> bpm
+              {hm(p.ts, lang)} · <strong>{p.bpm}</strong> bpm
             </div>
           </>
         )}
       </div>
       {!compact && (
         <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, color: "var(--muted)", marginTop: 6 }}>
-          {ticks.map((t) => <span key={t}>{hm(t)}</span>)}
+          {ticks.map((tk) => <span key={tk}>{hm(tk, lang)}</span>)}
+
         </div>
       )}
     </figure>

@@ -1,13 +1,17 @@
 import { HeartArt } from "./icons";
+import { getT } from "@/lib/i18n-server";
 
 /** Vòng đo nhịp tim: cung màu theo vị trí trên thang 40–160 bpm, trái tim ở giữa. */
-export default function HeartRing({ bpm, size = 168 }: { bpm: number | null; size?: number }) {
+export default async function HeartRing({ bpm, size = 168 }: { bpm: number | null; size?: number }) {
+  const t = await getT();
   const r = 70;
   const c = 2 * Math.PI * r;
   const frac = bpm == null ? 0 : Math.min(1, Math.max(0.04, (bpm - 40) / 120));
   return (
     <div style={{ position: "relative", width: size, height: size, flex: "none" }}
-      role="img" aria-label={bpm == null ? "Chưa có nhịp tim" : `Nhịp tim ${bpm} nhịp mỗi phút`}>
+      role="img" aria-label={bpm == null ? t("Chưa có nhịp tim", "No heart rate yet")
+        : t(`Nhịp tim ${bpm} nhịp mỗi phút`, `Heart rate ${bpm} beats per minute`)}>
+
       <svg width={size} height={size} viewBox="0 0 180 180" style={{ transform: "rotate(-90deg)" }} aria-hidden>
         <defs>
           <linearGradient id="ring" x1="0" y1="0" x2="1" y2="1">

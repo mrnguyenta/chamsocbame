@@ -3,6 +3,8 @@ import { createHmac } from "node:crypto";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { isDemo, sql } from "./db";
+import type { T } from "./i18n";
+import { getT } from "./i18n-server";
 import { safeEqual } from "./password";
 
 const COOKIE = "csbm_session";
@@ -20,7 +22,7 @@ export interface Identity {
 }
 
 /** Lời báo khi tài khoản mẫu bấm vào việc chỉ tài khoản thật làm được. */
-export const SAMPLE_BLOCKED = "Tài khoản mẫu không làm được việc này. Hãy đăng ký tài khoản thật (miễn phí).";
+export const sampleBlocked = (t: T) => t("Tài khoản mẫu không làm được việc này. Hãy đăng ký tài khoản thật (miễn phí).", "The demo account can't do this. Please sign up for a real account (free).");
 
 export interface Session extends Identity {
   caregiverId: string;
@@ -58,7 +60,7 @@ export async function selectFamily(familyId: string): Promise<void> {
 
 /** Tài khoản đang đăng nhập; đọc lại từ cơ sở dữ liệu mỗi lần để tài khoản bị xoá mất quyền ngay. */
 export async function getIdentity(): Promise<Identity | null> {
-  if (isDemo) return { accountId: "demo", name: "Khách (demo)", email: "demo@example.com", isSystemAdmin: true, isSample: false };
+  if (isDemo) return { accountId: "demo", name: (await getT())("Khách (demo)", "Guest (demo)"), email: "demo@example.com", isSystemAdmin: true, isSample: false };
   const raw = (await cookies()).get(COOKIE)?.value;
   if (!raw) return null;
   const [payload, sig] = raw.split(".");
@@ -77,8 +79,9 @@ export async function getSession(): Promise<Session | null> {
   const id = await getIdentity();
   if (!id) return null;
   if (isDemo) {
-    return { ...id, caregiverId: "demo", familyId: "demo", familyName: "Gia đình (dữ liệu mẫu)", isAdmin: true,
-      families: [{ id: "demo", name: "Gia đình (dữ liệu mẫu)" }] };
+    const familyName = (await getT())("Gia đình (dữ liệu mẫu)", "Family (sample data)");
+    return { ...id, caregiverId: "demo", familyId: "demo", familyName, isAdmin: true,
+      families: [{ id: "demo", name: familyName }] };
   }
   const rows = await sql()<{ id: string; family_id: string; role: string; family_name: string; display_name: string }[]>`
     select c.id, c.family_id, c.role, c.display_name, f.name as family_name

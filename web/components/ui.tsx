@@ -1,13 +1,16 @@
-import { SEVERITY, STATUS } from "@/lib/metrics";
+"use client";
+
+import { severities, statuses } from "@/lib/metrics";
+import { useLang } from "./LangProvider";
 import type { Severity, Status } from "@/lib/types";
 
 export function StatusChip({ status }: { status: Status }) {
-  const s = STATUS[status];
+  const s = statuses(useLang())[status];
   return <span className={`chip tone-${s.tone}`}>{s.label}</span>;
 }
 
 export function SeverityChip({ severity }: { severity: Severity }) {
-  const s = SEVERITY[severity];
+  const s = severities(useLang())[severity];
   return <span className={`chip tone-${s.tone}`}>{s.label}</span>;
 }
 

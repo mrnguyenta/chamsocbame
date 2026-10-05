@@ -1,5 +1,6 @@
 "use client";
 
+import { useLang, useT } from "@/components/LangProvider";
 import { useFormAction } from "@/components/useFormAction";
 import { type AuthState, login, register, startSample } from "./actions";
 
@@ -13,17 +14,18 @@ function Msg({ s }: { s: AuthState }) {
 
 export function LoginForm({ next }: { next?: string }) {
   const f = useFormAction(login, INIT);
+  const t = useT();
   return (
     <form ref={f.ref} onSubmit={f.onSubmit} style={COL}>
       {next && <input type="hidden" name="next" value={next} />}
       <label className="field" htmlFor="email">Email
         <input id="email" name="email" type="email" autoComplete="email" autoCapitalize="none" required style={BIG} />
       </label>
-      <label className="field" htmlFor="password">Mật khẩu
+      <label className="field" htmlFor="password">{t("Mật khẩu", "Password")}
         <input id="password" name="password" type="password" autoComplete="current-password" required style={BIG} />
       </label>
       <button className="btn primary" type="submit" disabled={f.pending} style={{ minHeight: 52, fontSize: 16 }}>
-        {f.pending ? "Đang đăng nhập…" : "Đăng nhập"}
+        {f.pending ? t("Đang đăng nhập…", "Signing in…") : t("Đăng nhập", "Sign in")}
       </button>
       <Msg s={f.state} />
     </form>
@@ -32,23 +34,24 @@ export function LoginForm({ next }: { next?: string }) {
 
 export function RegisterForm({ next }: { next?: string }) {
   const f = useFormAction(register, INIT);
+  const t = useT();
   return (
     <form ref={f.ref} onSubmit={f.onSubmit} style={COL}>
       {next && <input type="hidden" name="next" value={next} />}
-      <label className="field" htmlFor="name">Tên của bạn (hiện với gia đình)
-        <input id="name" name="name" type="text" autoComplete="name" required placeholder="Nguyên" style={BIG} />
+      <label className="field" htmlFor="name">{t("Tên của bạn (hiện với gia đình)", "Your name (shown to your family)")}
+        <input id="name" name="name" type="text" autoComplete="name" required placeholder={t("Nguyên", "Alex")} style={BIG} />
       </label>
       <label className="field" htmlFor="email">Email
         <input id="email" name="email" type="email" autoComplete="email" autoCapitalize="none" required style={BIG} />
       </label>
-      <label className="field" htmlFor="password">Mật khẩu (ít nhất 8 ký tự)
+      <label className="field" htmlFor="password">{t("Mật khẩu (ít nhất 8 ký tự)", "Password (at least 8 characters)")}
         <input id="password" name="password" type="password" autoComplete="new-password" required style={BIG} />
       </label>
-      <label className="field" htmlFor="password2">Nhập lại mật khẩu
+      <label className="field" htmlFor="password2">{t("Nhập lại mật khẩu", "Repeat password")}
         <input id="password2" name="password2" type="password" autoComplete="new-password" required style={BIG} />
       </label>
       <button className="btn primary" type="submit" disabled={f.pending} style={{ minHeight: 52, fontSize: 16 }}>
-        {f.pending ? "Đang tạo…" : "Tạo tài khoản"}
+        {f.pending ? t("Đang tạo…", "Creating…") : t("Tạo tài khoản", "Create account")}
       </button>
       <Msg s={f.state} />
     </form>
@@ -57,14 +60,19 @@ export function RegisterForm({ next }: { next?: string }) {
 
 export function SampleButton({ next }: { next?: string }) {
   const f = useFormAction(startSample, INIT);
+  const lang = useLang();
   return (
     <form ref={f.ref} onSubmit={f.onSubmit} style={COL}>
       {next && <input type="hidden" name="next" value={next} />}
       <button className="btn" type="submit" disabled={f.pending} style={{ minHeight: 48, fontSize: 16 }}>
-        <span style={{ display: "flex", flexDirection: "column", lineHeight: 1.25 }}>
-          <span>{f.pending ? "Đang mở…" : "Xem tài khoản mẫu"}</span>
-          <span className="muted" style={{ fontSize: 12, fontWeight: 500 }}>View demo account</span>
-        </span>
+        {lang === "en" ? (
+          <span>{f.pending ? "Opening…" : "View demo account"}</span>
+        ) : (
+          <span style={{ display: "flex", flexDirection: "column", lineHeight: 1.25 }}>
+            <span>{f.pending ? "Đang mở…" : "Xem tài khoản mẫu"}</span>
+            <span className="muted" style={{ fontSize: 12, fontWeight: 500 }}>View demo account</span>
+          </span>
+        )}
       </button>
       <Msg s={f.state} />
     </form>

@@ -14,7 +14,8 @@ type Row = Record<string, any>; // eslint-disable-line @typescript-eslint/no-exp
 function toAlert(r: Row): AlertRow {
   return {
     id: r.id, elderId: r.elder_id, elderName: r.elder_name, metric: r.metric, severity: r.severity,
-    message: r.message, openedAt: iso(r.opened_at)!, ackedBy: r.acked_name ?? null,
+    message: r.message, value: num(r.value), comparator: r.comparator ?? null, threshold: num(r.threshold),
+    openedAt: iso(r.opened_at)!, ackedBy: r.acked_name ?? null,
     ackedAt: iso(r.acked_at), resolvedAt: iso(r.resolved_at),
   };
 }
@@ -73,8 +74,9 @@ async function hrSeries(elderIds: string[]): Promise<Map<string, { ts: string; b
 
 async function openAlerts(familyId: string): Promise<AlertRow[]> {
   const rows = await sql()`
-    select a.*, e.display_name as elder_name, c.display_name as acked_name
+    select a.*, e.display_name as elder_name, c.display_name as acked_name, r.comparator, r.threshold
     from alerts a join elders e on e.id = a.elder_id left join caregivers c on c.id = a.acked_by
+    left join alert_rules r on r.id = a.rule_id
     where e.family_id = ${familyId} and a.resolved_at is null order by a.opened_at desc`;
   return rows.map(toAlert);
 }
@@ -117,8 +119,9 @@ export async function getOverview(familyId: string): Promise<Overview> {
   const [rows, open] = await Promise.all([elderRows(familyId), openAlerts(familyId)]);
   const hr = await hrSeries(rows.map((r) => r.id));
   const recent = await db`
-    select a.*, e.display_name as elder_name, c.display_name as acked_name
+    select a.*, e.display_name as elder_name, c.display_name as acked_name, r.comparator, r.threshold
     from alerts a join elders e on e.id = a.elder_id left join caregivers c on c.id = a.acked_by
+    left join alert_rules r on r.id = a.rule_id
     where e.family_id = ${familyId} and a.opened_at > now() - interval '7 days'
     order by a.opened_at desc limit 8`;
   const carers = await db`
@@ -157,8 +160,9 @@ export async function getElderDetail(familyId: string, elderId: string): Promise
     where dm.elder_id = ${elderId} and dm.day = (now() at time zone f.timezone)::date`;
   const dto = sleepRow?.dto;
   const alerts = await db`
-    select a.*, e.display_name as elder_name, c.display_name as acked_name
+    select a.*, e.display_name as elder_name, c.display_name as acked_name, r.comparator, r.threshold
     from alerts a join elders e on e.id = a.elder_id left join caregivers c on c.id = a.acked_by
+    left join alert_rules r on r.id = a.rule_id
     where a.elder_id = ${elderId} and a.opened_at > now() - interval '30 days'
     order by a.opened_at desc limit 20`;
   const readings = await db`
@@ -236,8 +240,9 @@ export async function getSettings(familyId: string): Promise<SettingsData> {
 export async function getAlerts(familyId: string): Promise<AlertRow[]> {
   if (isDemo) return demoOverview().recentAlerts;
   const rows = await sql()`
-    select a.*, e.display_name as elder_name, c.display_name as acked_name
+    select a.*, e.display_name as elder_name, c.display_name as acked_name, r.comparator, r.threshold
     from alerts a join elders e on e.id = a.elder_id left join caregivers c on c.id = a.acked_by
+    left join alert_rules r on r.id = a.rule_id
     where e.family_id = ${familyId} and a.opened_at > now() - interval '30 days'
     order by (a.resolved_at is null) desc, a.opened_at desc limit 100`;
   return rows.map(toAlert);

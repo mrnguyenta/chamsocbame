@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { IconTelegram } from "@/components/icons";
+import { useT } from "@/components/LangProvider";
 import { useFormAction } from "@/components/useFormAction";
 import { type AdminState, claimSystemAdmin, resetPassword, saveBot, saveGeneral } from "./actions";
 
@@ -16,16 +17,17 @@ function Msg({ s }: { s: AdminState }) {
 
 export function ClaimForm() {
   const f = useFormAction(claimSystemAdmin, INIT);
+  const t = useT();
   const router = useRouter();
   // Nhận quyền xong: tải lại trang để hiện bảng quản trị.
   useEffect(() => { if (f.state.ok) router.refresh(); }, [f.state, router]);
   return (
     <form ref={f.ref} onSubmit={f.onSubmit} style={COL}>
-      <label className="field" htmlFor="setup_key">Mã khởi tạo (Claude đã gửi)
+      <label className="field" htmlFor="setup_key">{t("Mã khởi tạo (Claude đã gửi)", "Setup key (sent by Claude)")}
         <input id="setup_key" name="setup_key" type="password" autoComplete="off" required style={MONO} />
       </label>
       <button className="btn primary" type="submit" disabled={f.pending} style={{ alignSelf: "flex-start" }}>
-        {f.pending ? "Đang kiểm tra…" : "Nhận quyền quản trị hệ thống"}
+        {f.pending ? t("Đang kiểm tra…", "Checking…") : t("Nhận quyền quản trị hệ thống", "Become system administrator")}
       </button>
       <Msg s={f.state} />
     </form>
@@ -34,13 +36,15 @@ export function ClaimForm() {
 
 export function BotForm({ hasBot }: { hasBot: boolean }) {
   const f = useFormAction(saveBot, INIT);
+  const t = useT();
   return (
     <form ref={f.ref} onSubmit={f.onSubmit} style={COL}>
-      <label className="field" htmlFor="token">{hasBot ? "Token mới (chỉ nhập khi muốn đổi bot)" : "Token bot (BotFather gửi, dạng 123456789:AAH…)"}
+      <label className="field" htmlFor="token">{hasBot ? t("Token mới (chỉ nhập khi muốn đổi bot)", "New token (only if you want to change the bot)")
+        : t("Token bot (BotFather gửi, dạng 123456789:AAH…)", "Bot token (from BotFather, like 123456789:AAH…)")}
         <input id="token" name="token" type="password" autoComplete="off" spellCheck={false} required style={MONO} />
       </label>
       <button className="btn primary" type="submit" disabled={f.pending} style={{ alignSelf: "flex-start" }}>
-        <IconTelegram size={18} /> {f.pending ? "Đang kiểm tra với Telegram…" : "Lưu và kết nối bot"}
+        <IconTelegram size={18} /> {f.pending ? t("Đang kiểm tra với Telegram…", "Checking with Telegram…") : t("Lưu và kết nối bot", "Save and connect bot")}
       </button>
       <Msg s={f.state} />
     </form>
@@ -49,17 +53,18 @@ export function BotForm({ hasBot }: { hasBot: boolean }) {
 
 export function GeneralForm({ watchAppUrl, contactEmail }: { watchAppUrl: string; contactEmail: string }) {
   const f = useFormAction(saveGeneral, INIT);
+  const t = useT();
   return (
     <form ref={f.ref} onSubmit={f.onSubmit} style={COL}>
-      <label className="field" htmlFor="watch_app_url">Link ứng dụng trên Connect IQ Store (để trống khi chưa được duyệt)
+      <label className="field" htmlFor="watch_app_url">{t("Link ứng dụng trên Connect IQ Store (để trống khi chưa được duyệt)", "App link on the Connect IQ Store (leave empty until approved)")}
         <input id="watch_app_url" name="watch_app_url" type="url" defaultValue={watchAppUrl} autoCapitalize="none"
           placeholder="https://apps.garmin.com/apps/…" />
       </label>
-      <label className="field" htmlFor="contact_email">Email liên hệ (hiện ở trang quyền riêng tư)
+      <label className="field" htmlFor="contact_email">{t("Email liên hệ (hiện ở trang quyền riêng tư)", "Contact email (shown on the privacy page)")}
         <input id="contact_email" name="contact_email" type="email" defaultValue={contactEmail} autoCapitalize="none" />
       </label>
       <button className="btn primary small" type="submit" disabled={f.pending} style={{ alignSelf: "flex-start" }}>
-        {f.pending ? "Đang lưu…" : "Lưu"}
+        {f.pending ? t("Đang lưu…", "Saving…") : t("Lưu", "Save")}
       </button>
       <Msg s={f.state} />
     </form>
@@ -68,12 +73,13 @@ export function GeneralForm({ watchAppUrl, contactEmail }: { watchAppUrl: string
 
 export function ResetPasswordForm({ accountId }: { accountId: string }) {
   const f = useFormAction(resetPassword, INIT);
+  const t = useT();
   return (
     <form ref={f.ref} onSubmit={f.onSubmit} className="row" style={{ gap: 6, width: "100%" }}>
       <input type="hidden" name="account_id" value={accountId} />
-      <input type="password" name="password" placeholder="Mật khẩu mới" autoComplete="new-password" aria-label="Mật khẩu mới"
+      <input type="password" name="password" placeholder={t("Mật khẩu mới", "New password")} autoComplete="new-password" aria-label={t("Mật khẩu mới", "New password")}
         style={{ flex: "1 1 160px" }} />
-      <button className="btn small" type="submit" disabled={f.pending}>Đặt lại</button>
+      <button className="btn small" type="submit" disabled={f.pending}>{t("Đặt lại", "Reset")}</button>
       {f.state.message && <div style={{ width: "100%" }}><Msg s={f.state} /></div>}
     </form>
   );

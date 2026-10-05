@@ -7,28 +7,33 @@ import { requireSession } from "@/lib/auth";
 import { getOverview } from "@/lib/data";
 import { isDemo } from "@/lib/db";
 import { fmtDateTime } from "@/lib/format";
+import type { T } from "@/lib/i18n";
+import { getLang, getT } from "@/lib/i18n-server";
+import { alertText } from "@/lib/metrics";
 
 export const dynamic = "force-dynamic";
 
-function greeting(): string {
+function greeting(t: T): string {
   const h = Number(new Date().toLocaleString("en-US", { hour: "numeric", hour12: false, timeZone: "Asia/Ho_Chi_Minh" }));
-  if (h < 11) return "Chào buổi sáng";
-  if (h < 14) return "Chào buổi trưa";
-  if (h < 18) return "Chào buổi chiều";
-  return "Chào buổi tối";
+  if (h < 11) return t("Chào buổi sáng", "Good morning");
+  if (h < 14) return t("Chào buổi trưa", "Good afternoon");
+  if (h < 18) return t("Chào buổi chiều", "Good afternoon");
+  return t("Chào buổi tối", "Good evening");
 }
 
 export default async function OverviewPage() {
   const session = await requireSession();
+  const lang = await getLang();
+  const t = await getT();
   const o = await getOverview(session.familyId);
   const urgent = o.openAlerts.filter((a) => a.severity === "high" || a.severity === "urgent");
   const firstName = isDemo ? "" : `, ${session.name.split(" ").pop()}`;
 
   const actions = [
-    { href: "/ket-noi-dong-ho", label: "Kết nối đồng hồ", tile: "tile-teal", icon: <IconWatch size={22} /> },
-    { href: "/nguoi-than#them", label: "Thêm người thân", tile: "tile-violet", icon: <IconPlus size={22} /> },
-    { href: "/canh-bao", label: "Cảnh báo", tile: "tile-coral", icon: <IconAlert size={22} /> },
-    { href: "/gia-dinh", label: "Anh chị em", tile: "tile-blue", icon: <IconUsers size={22} /> },
+    { href: "/ket-noi-dong-ho", label: t("Kết nối đồng hồ", "Connect watch"), tile: "tile-teal", icon: <IconWatch size={22} /> },
+    { href: "/nguoi-than#them", label: t("Thêm người thân", "Add a parent"), tile: "tile-violet", icon: <IconPlus size={22} /> },
+    { href: "/canh-bao", label: t("Cảnh báo", "Alerts"), tile: "tile-coral", icon: <IconAlert size={22} /> },
+    { href: "/gia-dinh", label: t("Anh chị em", "Siblings"), tile: "tile-blue", icon: <IconUsers size={22} /> },
   ];
   const openBy = (id: string) => o.openAlerts.filter((a) => a.elderId === id).length;
 
@@ -37,10 +42,10 @@ export default async function OverviewPage() {
       <AutoRefresh seconds={60} />
       <div className="row" style={{ justifyContent: "space-between", flexWrap: "nowrap" }}>
         <div>
-          <h1 style={{ fontSize: 26 }}>{greeting()}{firstName}</h1>
-          <div className="muted" style={{ fontSize: 14 }}>{o.familyName} · {o.elders.length} người thân đang được theo dõi</div>
+          <h1 style={{ fontSize: 26 }}>{greeting(t)}{firstName}</h1>
+          <div className="muted" style={{ fontSize: 14 }}>{o.familyName} · {t(`${o.elders.length} người thân đang được theo dõi`, `${o.elders.length} ${o.elders.length === 1 ? "person" : "people"} monitored`)}</div>
         </div>
-        <Link href="/canh-bao" aria-label={`Cảnh báo (${o.openAlerts.length} đang mở)`} className="icon-tile lg"
+        <Link href="/canh-bao" aria-label={t(`Cảnh báo (${o.openAlerts.length} đang mở)`, `Alerts (${o.openAlerts.length} open)`)} className="icon-tile lg"
           style={{ background: "var(--surface-solid)", boxShadow: "var(--shadow-sm)", color: "var(--text)", position: "relative" }}>
           <IconBell size={22} />
           {o.openAlerts.length > 0 && (
@@ -51,31 +56,32 @@ export default async function OverviewPage() {
       </div>
 
       {urgent.map((a) => (
-        <section key={a.id} className="banner danger" aria-label="Cảnh báo đang mở">
+        <section key={a.id} className="banner danger" aria-label={t("Cảnh báo đang mở", "Open alert")}>
           <span className="icon-tile" style={{ background: "var(--coral)", color: "#fff" }}><IconAlert size={20} /></span>
           <div style={{ flex: "1 1 300px", minWidth: 0 }}>
-            <strong>{a.elderName} · {a.message}</strong>
+            <strong>{a.elderName} · {alertText(a, lang)}</strong>
             <div style={{ fontSize: 13 }}>
-              {fmtDateTime(a.openedAt)} · {a.ackedBy ? `${a.ackedBy} đang xử lý` : "Chưa ai nhận xử lý trên Telegram"}
+              {fmtDateTime(a.openedAt, lang)} · {a.ackedBy ? t(`${a.ackedBy} đang xử lý`, `${a.ackedBy} is handling it`)
+                : t("Chưa ai nhận xử lý trên Telegram", "Nobody has taken it on Telegram yet")}
             </div>
           </div>
-          <Link className="btn small" href={`/nguoi-than/${a.elderId}`}>Xem</Link>
+          <Link className="btn small" href={`/nguoi-than/${a.elderId}`}>{t("Xem", "View")}</Link>
         </section>
       ))}
 
       <div className="split">
-        <section className="main-col" aria-label="Người thân">
+        <section className="main-col" aria-label={t("Người thân", "Parents")}>
           <div className="grid-cards">
             {o.elders.map((e) => <ElderCard key={e.id} e={e} openAlerts={openBy(e.id)} />)}
           </div>
           {o.elders.length === 0 && (
-            <div className="card">Chưa có người thân nào. <Link href="/nguoi-than#them">Thêm ba mẹ</Link> hoặc <Link href="/ket-noi-dong-ho">kết nối đồng hồ</Link>.</div>
+            <div className="card">{t("Chưa có người thân nào.", "No parents added yet.")} <Link href="/nguoi-than#them">{t("Thêm ba mẹ", "Add a parent")}</Link> {t("hoặc", "or")} <Link href="/ket-noi-dong-ho">{t("kết nối đồng hồ", "connect a watch")}</Link>.</div>
           )}
         </section>
 
         <aside className="side-col">
           <section className="card">
-            <h2>Thao tác nhanh</h2>
+            <h2>{t("Thao tác nhanh", "Quick actions")}</h2>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(0, 1fr))", gap: 10 }}>
               {actions.map((a) => (
                 <Link key={a.href} href={a.href} style={{ display: "flex", flexDirection: "column", alignItems: "center",
@@ -87,8 +93,8 @@ export default async function OverviewPage() {
           </section>
 
           <section className="card">
-            <div className="card-head"><h2>Cảnh báo gần đây</h2><Link className="link-sm" href="/canh-bao">Xem tất cả</Link></div>
-            {o.recentAlerts.length === 0 && <div className="muted">Không có cảnh báo trong 7 ngày.</div>}
+            <div className="card-head"><h2>{t("Cảnh báo gần đây", "Recent alerts")}</h2><Link className="link-sm" href="/canh-bao">{t("Xem tất cả", "View all")}</Link></div>
+            {o.recentAlerts.length === 0 && <div className="muted">{t("Không có cảnh báo trong 7 ngày.", "No alerts in the last 7 days.")}</div>}
             <ul className="list">
               {o.recentAlerts.slice(0, 4).map((a) => (
                 <li key={a.id}>
@@ -96,7 +102,7 @@ export default async function OverviewPage() {
                     <span className={`icon-tile ${a.resolvedAt ? "tile-teal" : "tile-coral"}`}><IconHeartSmall /></span>
                     <span className="grow">
                       <span className="title" style={{ display: "block" }}>{a.elderName}</span>
-                      <span className="muted" style={{ display: "block" }}>{a.message}</span>
+                      <span className="muted" style={{ display: "block" }}>{alertText(a, lang)}</span>
                     </span>
                     <SeverityChip severity={a.severity} />
                   </Link>
@@ -107,7 +113,7 @@ export default async function OverviewPage() {
 
         </aside>
       </div>
-      <p className="muted">Thông tin chỉ để tham khảo, không thay thế chẩn đoán của bác sĩ.</p>
+      <p className="muted">{t("Thông tin chỉ để tham khảo, không thay thế chẩn đoán của bác sĩ.", "For reference only; not a substitute for a doctor's diagnosis.")}</p>
     </main>
   );
 }
