@@ -303,12 +303,13 @@ export async function getSystemStats(): Promise<{
 }> {
   if (isDemo) return { families: 1, elders: 2, caregivers: 3, watches: 1, lastWatchAt: null, openAlerts: 0 };
   const [r] = await sql()`
-    select (select count(*) from families)::int as families,
-           (select count(*) from elders)::int as elders,
-           (select count(*) from caregivers)::int as caregivers,
-           (select count(*) from watch_devices)::int as watches,
-           (select max(last_seen_at) from watch_devices) as last_watch_at,
-           (select count(*) from alerts where resolved_at is null)::int as open_alerts`;
+    with real_elders as (select e.id from elders e join families f on f.id = e.family_id where f.expires_at is null)
+    select (select count(*) from families where expires_at is null)::int as families,
+           (select count(*) from real_elders)::int as elders,
+           (select count(*) from caregivers c join families f on f.id = c.family_id where f.expires_at is null)::int as caregivers,
+           (select count(*) from watch_devices where elder_id in (select id from real_elders))::int as watches,
+           (select max(last_seen_at) from watch_devices where elder_id in (select id from real_elders)) as last_watch_at,
+           (select count(*) from alerts where resolved_at is null and elder_id in (select id from real_elders))::int as open_alerts`;
   return {
     families: r.families, elders: r.elders, caregivers: r.caregivers, watches: r.watches,
     lastWatchAt: iso(r.last_watch_at), openAlerts: r.open_alerts,
@@ -326,6 +327,7 @@ export async function getSystemAdmins(): Promise<{
     from accounts a
     left join caregivers c on c.account_id = a.id
     left join families f on f.id = c.family_id
+    where not a.is_sample
     group by a.id order by a.is_system_admin desc, a.created_at`;
   return rows.map((r) => ({
     id: r.id, name: r.name, email: r.email, isSystemAdmin: r.is_system_admin, lastLoginAt: iso(r.last_login_at),

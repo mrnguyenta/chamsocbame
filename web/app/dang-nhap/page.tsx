@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { HeartArt, IconBell, IconUsers, IconWatch } from "@/components/icons";
 import { getIdentity, getSession, safeNext as cleanNext } from "@/lib/auth";
-import { LoginForm } from "./forms";
+import { LoginForm, SampleButton } from "./forms";
 
 export const dynamic = "force-dynamic";
 
@@ -28,6 +28,13 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
         <div style={{ fontSize: 14 }}>
           Chưa có tài khoản? <Link href={safeNext ? `/dang-ky?next=${encodeURIComponent(safeNext)}` : "/dang-ky"}><b>Đăng ký</b></Link>
           <div className="muted" style={{ fontSize: 13, marginTop: 4 }}>Quên mật khẩu: nhờ người quản trị đặt lại.</div>
+        </div>
+        <div style={{ width: "100%", display: "flex", flexDirection: "column", gap: 6, borderTop: "1px solid var(--border-strong)", paddingTop: 16 }}>
+          <SampleButton next={safeNext} />
+          <div className="muted" style={{ fontSize: 13 }}>
+            Không cần đăng ký: mở một gia đình mẫu có sẵn dữ liệu, chỉ mình bạn thấy, tự xoá sau 24 giờ.
+            Có thể nhập mã trên đồng hồ vào đó để thử.
+          </div>
         </div>
         <ul className="list" style={{ width: "100%", textAlign: "left" }}>
           {points.map((p) => (

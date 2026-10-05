@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { getIdentity, SAMPLE_BLOCKED } from "@/lib/auth";
 import { sql } from "@/lib/db";
 import { API_URL, adminOfElder } from "@/lib/garmin";
 
@@ -16,6 +17,7 @@ export async function POST(req: NextRequest) {
   const requestId = String(body.request_id ?? "");
   const email = String(body.email ?? "").trim();
   const password = String(body.password ?? "");
+  if ((await getIdentity())?.isSample) return NextResponse.json({ status: "failed", message: SAMPLE_BLOCKED });
   if (!email || !password) return NextResponse.json({ status: "failed", message: "Nhập email và mật khẩu Garmin." });
   if (!(await adminOfElder(elderId))) return NextResponse.json({ status: "failed", message: "Bạn không có quyền." }, { status: 403 });
   const secret = process.env.INTERNAL_API_SECRET;

@@ -654,3 +654,10 @@ def record_missed_med(conn, log_id: str, message: str) -> None:
 def get_setting(conn, key: str) -> str | None:
     row = conn.execute("select value from app_settings where key = %s", (key,)).fetchone()
     return row["value"] if row else None
+
+
+def cleanup_samples(conn) -> int:
+    """Xoá gia đình và tài khoản mẫu ("Xem tài khoản mẫu" trên website) đã quá 24 giờ."""
+    n = conn.execute("delete from families where expires_at < now()").rowcount
+    conn.execute("delete from accounts where is_sample and expires_at < now()")
+    return n

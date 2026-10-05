@@ -437,3 +437,31 @@ def test_garmin_link_waits_for_mfa_code_from_website(conn, family):
     status = garmin_link.link(conn, key, str(req2), elder, "ba@example.com", "pw", wait_s=10, make_client=FakeGarmin,
                               sleep=lambda s: t2.__setitem__(0, t2[0] + s), clock=lambda: t2[0])
     assert status == "expired"
+
+
+def test_sample_account_has_data_ticks_quietly_and_expires(conn, family):
+    acc = conn.execute("select chamsoc_create_sample('Khách') as id").fetchone()["id"]
+    fam = conn.execute("""select f.id from families f join caregivers c on c.family_id = f.id
+                          where c.account_id = %s""", (acc,)).fetchone()["id"]
+    elders = conn.execute("select id, display_name from elders where family_id = %s", (fam,)).fetchall()
+    assert len(elders) == 3
+    open_before = conn.execute("""select count(*) as n from alerts a join elders e on e.id = a.elder_id
+                                  where e.family_id = %s and a.resolved_at is null""", (fam,)).fetchone()["n"]
+    assert open_before == 2
+
+    # Lần kiểm tra tự động không nhân đôi cảnh báo mẫu và không gửi gì vào nhóm thật.
+    tg = FakeTg()
+    jobs.tick(conn, tg, NoopCallProvider(), datetime.now(timezone.utc))
+    lan = next(e["id"] for e in elders if e["display_name"] == "Mẹ Lan")
+    assert conn.execute("""select count(*) as n from alerts where elder_id = %s and metric = 'resting_hr'
+                           and resolved_at is null""", (lan,)).fetchone()["n"] == 1
+    assert not any("Bà ngoại Tư" in t for _, t, _ in tg.sent)
+
+    # Chưa hết hạn: giữ nguyên. Hết hạn: xoá cả gia đình và tài khoản, gia đình thật không bị đụng.
+    assert db.cleanup_samples(conn) == 0
+    conn.execute("update families set expires_at = now() - interval '1 minute' where id = %s", (fam,))
+    conn.execute("update accounts set expires_at = now() - interval '1 minute' where id = %s", (acc,))
+    assert db.cleanup_samples(conn) == 1
+    assert conn.execute("select count(*) as n from elders where family_id = %s", (fam,)).fetchone()["n"] == 0
+    assert conn.execute("select count(*) as n from accounts where id = %s", (acc,)).fetchone()["n"] == 0
+    assert conn.execute("select count(*) as n from families where id = %s", (family["family"]["id"],)).fetchone()["n"] == 1

@@ -3,7 +3,7 @@
 import { randomBytes, randomInt } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { getIdentity, requireSession, selectFamily } from "@/lib/auth";
+import { getIdentity, requireSession, SAMPLE_BLOCKED, selectFamily } from "@/lib/auth";
 import { isDemo, sql } from "@/lib/db";
 import { CONDITIONS } from "@/lib/metrics";
 import { EMAIL, hashPassword, normEmail, passwordProblem } from "@/lib/password";
@@ -30,6 +30,7 @@ export async function createFamily(_: FormState, form: FormData): Promise<FormSt
   if (isDemo) return DEMO;
   const id = await getIdentity();
   if (!id) return { ok: false, message: "Hãy đăng nhập lại." };
+  if (id.isSample) return { ok: false, message: SAMPLE_BLOCKED };
   const familyName = txt(form, "family_name") || `Gia đình ${id.name}`;
   const myName = txt(form, "my_name") || id.name;
   const phone = txt(form, "phone", 20) || null;
@@ -48,6 +49,7 @@ export async function acceptInvite(_: FormState, form: FormData): Promise<FormSt
   if (isDemo) return DEMO;
   const id = await getIdentity();
   if (!id) return { ok: false, message: "Hãy đăng nhập lại." };
+  if (id.isSample) return { ok: false, message: SAMPLE_BLOCKED };
   const code = txt(form, "code", 40).toLowerCase().replace(/[^a-z0-9]/g, "");
   const myName = txt(form, "my_name") || id.name;
   const phone = txt(form, "phone", 20) || null;
@@ -73,6 +75,7 @@ export async function createInvite(_: FormState, form: FormData): Promise<FormSt
   if (isDemo) return { ok: true, message: "Link mẫu (demo)", value: "demo123abc" };
   try {
     const s = await admin();
+    if (s.isSample) throw new Error(SAMPLE_BLOCKED);
     const role = String(form.get("role"));
     if (!ROLES.includes(role)) throw new Error("Quyền không hợp lệ");
     const code = inviteCode();
@@ -168,6 +171,8 @@ export async function addMember(_: FormState, form: FormData): Promise<FormState
   if (isDemo) return DEMO;
   try {
     const s = await admin();
+    // Tài khoản mẫu không được kéo tài khoản thật (hay tạo tài khoản mới) vào gia đình mẫu.
+    if (s.isSample) throw new Error(SAMPLE_BLOCKED);
     const name = txt(form, "name");
     const email = normEmail(form.get("email"));
     const role = String(form.get("role"));

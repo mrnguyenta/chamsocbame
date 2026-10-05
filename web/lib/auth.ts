@@ -15,7 +15,12 @@ export interface Identity {
   name: string;
   email: string;
   isSystemAdmin: boolean;
+  /** Tài khoản mẫu (nút "Xem tài khoản mẫu"): tự xoá sau 24 giờ, không đụng tới người thật. */
+  isSample: boolean;
 }
+
+/** Lời báo khi tài khoản mẫu bấm vào việc chỉ tài khoản thật làm được. */
+export const SAMPLE_BLOCKED = "Tài khoản mẫu không làm được việc này. Hãy đăng ký tài khoản thật (miễn phí).";
 
 export interface Session extends Identity {
   caregiverId: string;
@@ -35,9 +40,9 @@ const sign = (payload: string) => createHmac("sha256", secret()).update(payload)
 
 const cookieOpts = { httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "lax" as const, maxAge: MAX_AGE_S, path: "/" };
 
-export async function startSession(accountId: string): Promise<void> {
-  const payload = Buffer.from(JSON.stringify({ a: accountId, exp: Math.floor(Date.now() / 1000) + MAX_AGE_S })).toString("base64url");
-  (await cookies()).set(COOKIE, `${payload}.${sign(payload)}`, cookieOpts);
+export async function startSession(accountId: string, maxAgeS = MAX_AGE_S): Promise<void> {
+  const payload = Buffer.from(JSON.stringify({ a: accountId, exp: Math.floor(Date.now() / 1000) + maxAgeS })).toString("base64url");
+  (await cookies()).set(COOKIE, `${payload}.${sign(payload)}`, { ...cookieOpts, maxAge: maxAgeS });
 }
 
 export async function endSession(): Promise<void> {
@@ -53,7 +58,7 @@ export async function selectFamily(familyId: string): Promise<void> {
 
 /** Tài khoản đang đăng nhập; đọc lại từ cơ sở dữ liệu mỗi lần để tài khoản bị xoá mất quyền ngay. */
 export async function getIdentity(): Promise<Identity | null> {
-  if (isDemo) return { accountId: "demo", name: "Khách (demo)", email: "demo@example.com", isSystemAdmin: true };
+  if (isDemo) return { accountId: "demo", name: "Khách (demo)", email: "demo@example.com", isSystemAdmin: true, isSample: false };
   const raw = (await cookies()).get(COOKIE)?.value;
   if (!raw) return null;
   const [payload, sig] = raw.split(".");
@@ -61,8 +66,8 @@ export async function getIdentity(): Promise<Identity | null> {
   try {
     const { a, exp } = JSON.parse(Buffer.from(payload, "base64url").toString()) as { a?: string; exp: number };
     if (!a || exp < Date.now() / 1000) return null;
-    const [r] = await sql()`select id, name, email, is_system_admin from accounts where id = ${a}`;
-    return r ? { accountId: r.id, name: r.name, email: r.email, isSystemAdmin: r.is_system_admin } : null;
+    const [r] = await sql()`select id, name, email, is_system_admin, is_sample from accounts where id = ${a}`;
+    return r ? { accountId: r.id, name: r.name, email: r.email, isSystemAdmin: r.is_system_admin, isSample: r.is_sample } : null;
   } catch {
     return null;
   }

@@ -102,6 +102,11 @@ How it works:
    Pressing START sends immediately.
 
 Without a family account the app stays on the pairing screen; this is expected.
+To try the full flow without registering: open https://chamsocnguoithan.vercel.app, tap
+"Xem tài khoản mẫu (View demo account)". It opens a private demo family with sample data
+(deleted after 24 hours). Then tap the round + button at the bottom (Connect watch)
+and enter the 6-digit code shown on the watch. The watch shows "Connected" within seconds.
+The website is in Vietnamese.
 The pairing code refreshes every 15 minutes. All sensor APIs are guarded with `has`,
 so devices without a sensor send null.
 

@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { getIdentity } from "@/lib/auth";
+import { getIdentity, SAMPLE_BLOCKED } from "@/lib/auth";
 import { isDemo, sql } from "@/lib/db";
 import { hashPassword, passwordProblem, slow, verifyPassword } from "@/lib/password";
 
@@ -11,6 +11,7 @@ export async function changeOwnPassword(_: AccountState, form: FormData): Promis
   if (isDemo) return { ok: false, message: "Chế độ demo." };
   const id = await getIdentity();
   if (!id) return { ok: false, message: "Hãy đăng nhập lại." };
+  if (id.isSample) return { ok: false, message: SAMPLE_BLOCKED };
   const [a] = await sql()`select password_hash from accounts where id = ${id.accountId}`;
   if (!a || !(await verifyPassword(String(form.get("current") ?? ""), a.password_hash))) {
     await slow();

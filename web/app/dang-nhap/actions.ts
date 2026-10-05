@@ -1,7 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { getSession, safeNext, startSession } from "@/lib/auth";
+import { endSession, getSession, safeNext, startSession } from "@/lib/auth";
 import { isDemo, sql } from "@/lib/db";
 import { EMAIL, hashPassword, normEmail, passwordProblem, slow, verifyPassword } from "@/lib/password";
 
@@ -42,4 +42,21 @@ export async function register(_: AuthState, form: FormData): Promise<AuthState>
   if (!a) return { ok: false, message: "Email này đã có tài khoản. Hãy đăng nhập." };
   await startSession(a.id);
   return afterLogin(safeNext(form.get("next")));
+}
+
+/** "Xem tài khoản mẫu": tạo một gia đình mẫu riêng cho người này (tự xoá sau 24 giờ) rồi đăng nhập vào. */
+export async function startSample(_: AuthState, form: FormData): Promise<AuthState> {
+  if (isDemo) redirect("/");
+  try {
+    // Dọn mẫu quá 24 giờ (backend cũng dọn mỗi 5 phút) rồi tạo mẫu mới.
+    await sql()`delete from families where expires_at < now()`;
+    await sql()`delete from accounts where is_sample and expires_at < now()`;
+    const [r] = await sql()`select chamsoc_create_sample('Khách') as id`;
+    await endSession();
+    await startSession(r.id, 24 * 3600);
+  } catch (e) {
+    const busy = String((e as Error).message).includes("too_many_samples");
+    return { ok: false, message: busy ? "Đang có nhiều người xem thử, vui lòng thử lại sau ít phút." : "Chưa tạo được tài khoản mẫu, thử lại sau." };
+  }
+  redirect(safeNext(form.get("next")) ?? "/");
 }

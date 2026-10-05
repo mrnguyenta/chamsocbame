@@ -68,6 +68,7 @@ def cron_tick(authorization: str | None = Header(default=None)) -> dict:
     s = _settings()
     _check(authorization, f"Bearer {s.cron_secret}")
     with db.connect(s.database_url) as conn:
+        db.cleanup_samples(conn)
         jobs.tick(conn, _tg(conn, s), get_provider(s.call_provider),
                   datetime.now(timezone.utc))
     return {"ok": True}

@@ -54,6 +54,16 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             Chế độ demo: đang hiển thị dữ liệu mẫu.
           </div>
         )}
+        {identity?.isSample && (
+          <form action="/api/auth/logout" method="post" className="row"
+            style={{ justifyContent: "center", gap: "4px 12px", fontSize: 13, padding: "8px 16px", color: "var(--info-fg)", background: "var(--blue-soft)" }}>
+            <span>Bạn đang xem <b>tài khoản mẫu</b> (dữ liệu mẫu, tự xoá sau 24 giờ).</span>
+            <span className="row" style={{ gap: 8 }}>
+              <button className="btn small" type="submit" name="to" value="/dang-ky">Đăng ký thật</button>
+              <button className="btn small ghost" type="submit">Thoát</button>
+            </span>
+          </form>
+        )}
         {children}
         {session && <BottomNav />}
       </body>

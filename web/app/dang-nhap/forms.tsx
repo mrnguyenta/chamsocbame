@@ -1,7 +1,7 @@
 "use client";
 
 import { useFormAction } from "@/components/useFormAction";
-import { type AuthState, login, register } from "./actions";
+import { type AuthState, login, register, startSample } from "./actions";
 
 const INIT: AuthState = { ok: false, message: "" };
 const COL: React.CSSProperties = { display: "flex", flexDirection: "column", gap: 12, width: "100%", textAlign: "left" };
@@ -49,6 +49,22 @@ export function RegisterForm({ next }: { next?: string }) {
       </label>
       <button className="btn primary" type="submit" disabled={f.pending} style={{ minHeight: 52, fontSize: 16 }}>
         {f.pending ? "Đang tạo…" : "Tạo tài khoản"}
+      </button>
+      <Msg s={f.state} />
+    </form>
+  );
+}
+
+export function SampleButton({ next }: { next?: string }) {
+  const f = useFormAction(startSample, INIT);
+  return (
+    <form ref={f.ref} onSubmit={f.onSubmit} style={COL}>
+      {next && <input type="hidden" name="next" value={next} />}
+      <button className="btn" type="submit" disabled={f.pending} style={{ minHeight: 48, fontSize: 16 }}>
+        <span style={{ display: "flex", flexDirection: "column", lineHeight: 1.25 }}>
+          <span>{f.pending ? "Đang mở…" : "Xem tài khoản mẫu"}</span>
+          <span className="muted" style={{ fontSize: 12, fontWeight: 500 }}>View demo account</span>
+        </span>
       </button>
       <Msg s={f.state} />
     </form>

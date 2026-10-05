@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { getIdentity } from "@/lib/auth";
+import { getIdentity, SAMPLE_BLOCKED } from "@/lib/auth";
 import { isDemo, sql } from "@/lib/db";
 import { hashPassword, passwordProblem, safeEqual, slow } from "@/lib/password";
 import { writeSettings } from "@/lib/settings";
@@ -23,6 +23,7 @@ export async function claimSystemAdmin(_: AdminState, form: FormData): Promise<A
   if (isDemo) return NO_DB;
   const id = await getIdentity();
   if (!id) return { ok: false, message: "Hãy đăng nhập trước." };
+  if (id.isSample) return { ok: false, message: SAMPLE_BLOCKED };
   if (id.isSystemAdmin) return { ok: true, message: "Bạn đã là quản trị hệ thống." };
   const expected = process.env.ADMIN_SETUP_KEY;
   if (!expected) return { ok: false, message: "Chưa đặt mã ADMIN_SETUP_KEY trên Vercel." };
