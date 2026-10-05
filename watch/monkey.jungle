@@ -5,3 +5,6 @@ project.manifest = manifest.xml
 
 base.sourcePath = source
 base.resourcePath = resources
+
+# Giao diện tiếng Việt khi đồng hồ để ngôn ngữ Tiếng Việt; ngôn ngữ khác dùng tiếng Anh (resources/).
+base.lang.vie = resources-vie

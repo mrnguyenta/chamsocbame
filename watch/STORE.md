@@ -60,6 +60,7 @@ cảnh báo qua Telegram khi có chỉ số bất thường.
 > - Cảnh báo vào nhóm Telegram gia đình khi nhịp tim quá cao/thấp, lâu không cử động, đồng hồ mất kết nối…
 > - Kết nối một chạm: mở ứng dụng, bấm thông báo trên điện thoại. Không cần gõ cài đặt.
 > - Miễn phí cho gia đình. Cần điện thoại có Garmin Connect ở gần, bật Bluetooth và có mạng.
+> - Không phải thiết bị y tế, không thay thế bác sĩ hay dịch vụ cấp cứu.
 
 **Description (EN):**
 > Chăm Sóc Ba Mẹ ("Care for Mom & Dad") lets family members check on their elderly parents remotely.
@@ -67,10 +68,44 @@ cảnh báo qua Telegram khi có chỉ số bất thường.
 > family dashboard, and alerts are delivered to the family's Telegram group when something looks wrong.
 > One-tap pairing: open the app and tap the notification on the phone. Requires the Garmin Connect app
 > on a nearby phone with Bluetooth and internet.
+> Not a medical device; it does not diagnose anything and does not replace a doctor or emergency services.
 
 **Quyền ứng dụng (giải thích cho người duyệt):**
 - Background, Communications: gửi dữ liệu định kỳ lên máy chủ của gia đình qua điện thoại.
 - SensorHistory, UserProfile: đọc nhịp tim, SpO2, stress, Body Battery gần nhất.
 
-**Chính sách riêng tư:** dữ liệu chỉ gửi tới máy chủ Chăm Sóc Ba Mẹ của gia đình
-(`chamsocbame-api.vercel.app`), chỉ những người được gia đình mời mới xem được.
+**Chính sách riêng tư (Privacy policy URL):** https://chamsocbame.vercel.app/quyen-rieng-tu
+
+**Ngôn ngữ:** đồng hồ để Tiếng Việt thì giao diện tiếng Việt, ngôn ngữ khác thì tiếng Anh.
+
+## 4. Ghi chú cho người duyệt (dán vào ô "Notes to reviewer", tiếng Anh)
+
+```
+This is a companion app for a family health dashboard (https://chamsocbame.vercel.app).
+
+How it works:
+1. On first launch the watch requests a 6-digit pairing code from our server
+   (chamsocbame-api.vercel.app) through the phone and shows it on screen. The phone also
+   receives a notification (Communications.openWebPage) that opens the pairing page.
+2. A family member signs in on the website (Telegram login) and enters the code.
+   The watch then shows "Connected" with the current heart rate.
+3. A background temporal event (every 5 minutes, the minimum) sends heart rate, steps,
+   SpO2, stress, Body Battery, respiration and battery level to the family's server.
+   Pressing START sends immediately.
+
+Without a family account the app stays on the pairing screen; this is expected.
+The pairing code refreshes every 15 minutes. All sensor APIs are guarded with `has`,
+so devices without a sensor send null.
+
+Permissions: Background + Communications (periodic upload via the phone),
+SensorHistory + UserProfile (read recent heart rate, SpO2, stress, Body Battery).
+
+Not a medical device. Privacy policy: https://chamsocbame.vercel.app/quyen-rieng-tu
+```
+
+## 5. Trước khi nộp, kiểm tra
+
+- [ ] Đã có secret `CIQ_DEVELOPER_KEY` và build lại (file trên Release là bản ký bằng khoá cố định).
+- [ ] Website công khai (không bị Vercel bắt đăng nhập) và đã có bot Telegram để đăng nhập.
+- [ ] Đã thử bản Beta trên Fenix 7: ghép mã, thấy "Đã kết nối", dữ liệu lên website.
+- [ ] 3–5 ảnh chụp màn hình đồng hồ (màn hình mã kết nối, màn hình nhịp tim) và 1–2 ảnh website.

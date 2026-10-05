@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<strings>
+  <string id="AppName">Chăm Sóc Ba Mẹ</string>
+  <string id="Title">Chăm Sóc Ba Mẹ</string>
+
+  <string id="StatusOk">Đã kết nối</string>
+  <string id="StatusNotSet">Chưa cài đặt</string>
+  <string id="StatusError">Lỗi gửi:</string>
+  <string id="StatusBadKey">Sai mã thiết bị</string>
+  <string id="StatusNoPhone">Không thấy điện thoại</string>
+  <string id="StatusSending">Đang gửi...</string>
+  <string id="StatusNever">Chưa gửi</string>
+  <string id="StatusNoServer">Chưa có địa chỉ máy chủ</string>
+
+  <string id="PairTitle">Mã kết nối</string>
+  <string id="PairHint">Mở thông báo trên điện thoại</string>
+  <string id="PairHint2">hoặc nhập mã trên web</string>
+  <string id="PairWaiting">Đang lấy mã...</string>
+
+  <string id="SentAt">Gửi lúc</string>
+  <string id="NeverSent">Chưa gửi lần nào</string>
+  <string id="HrUnit">nhịp tim / phút</string>
+  <string id="TapHint">Bấm để gửi ngay</string>
+
+  <string id="SettingServerUrl">Địa chỉ máy chủ (server_url)</string>
+  <string id="SettingDeviceKey">Mã thiết bị (device_key)</string>
+  <string id="SettingDeviceKeyPrompt">Để trống: đồng hồ sẽ hiện mã 6 số để nhập trên website</string>
+  <string id="SettingInterval">Chu kỳ gửi (phút, tối thiểu 5)</string>
+</strings>

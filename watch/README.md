@@ -86,7 +86,8 @@ Giữ file khoá cẩn thận, **không** commit vào git. Mất khoá thì khô
 
 Build trên máy riêng (nếu muốn): cài Connect IQ SDK + VS Code extension Monkey C, rồi
 `monkeyc -d venu441mm -f monkey.jungle -o bin/chamsoc.prg -y developer_key.der`.
-Font đồng hồ cần hiển thị được tiếng Việt có dấu; nếu thiếu dấu, đặt ngôn ngữ đồng hồ sang Tiếng Việt.
+Giao diện: tiếng Việt (`resources-vie/`) khi đồng hồ để ngôn ngữ Tiếng Việt, ngôn ngữ khác dùng tiếng Anh
+(`resources/`), để không bị lỗi font chữ có dấu trên đồng hồ không có tiếng Việt.
 
 ## Cài lên đồng hồ
 

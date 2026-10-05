@@ -40,6 +40,9 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
             </li>
           ))}
         </ul>
+        <div className="muted" style={{ fontSize: 13 }}>
+          Không phải thiết bị y tế. <a href="/quyen-rieng-tu">Quyền riêng tư</a>
+        </div>
       </section>
     </main>
   );
