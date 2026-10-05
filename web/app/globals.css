@@ -377,9 +377,10 @@ details.block > .block-body { padding: 0 18px 18px; display: flex; flex-directio
 @media (max-width: 520px) { .kpis.six { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 .side-card .card-head { margin-bottom: 10px; }
 @media (min-width: 1100px) { .detail-split > .side-col { flex: 0 0 370px; } }
-/* Khối lịch sử & cài đặt: thu gọn thì 2 khối một hàng, mở khối nào thì khối đó trải hết chiều ngang */
-.blocks-grid { display: grid; gap: 12px; grid-template-columns: minmax(0, 1fr); align-items: start; }
-@media (min-width: 1000px) {
-  .blocks-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .blocks-grid > details.block[open] { grid-column: 1 / -1; }
-}
+/* Khối lịch sử & cài đặt: nằm ở cột phải, thẻ gọn, mô tả một dòng */
+.blocks-grid { display: flex; flex-direction: column; gap: 10px; }
+.blocks-grid > details.block > summary { padding: 12px 14px; gap: 10px; }
+.blocks-grid > details.block > summary .icon-tile { width: 38px; height: 38px; }
+.blocks-grid > details.block > summary h2 { font-size: 16px; }
+.blocks-grid > details.block > summary .muted { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.blocks-grid > details.block > .block-body { padding: 0 14px 14px; }

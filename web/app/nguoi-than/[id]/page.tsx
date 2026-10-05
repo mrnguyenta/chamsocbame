@@ -254,170 +254,170 @@ export default async function ElderPage({ params }: { params: Promise<{ id: stri
             )}
           </section>
 
-        </aside>
-      </div>
+          <h2 className="section-title" style={{ margin: "4px 0 -10px" }}>{t("Lịch sử & cài đặt", "History & settings")}</h2>
+          <div className="blocks-grid">
+            <Block id="canh-bao" icon={<IconBell size={20} />} tile="tile-coral" title={t("Cảnh báo", "Alerts")}
+              sub={openAlerts.length ? t(`${openAlerts.length} đang mở · 30 ngày qua`, `${openAlerts.length} open · last 30 days`)
+                : t("Không có cảnh báo đang mở · 30 ngày qua", "No open alerts · last 30 days")}
+              >
+                {d.alerts.length === 0 ? <div className="muted">{t("Không có cảnh báo.", "No alerts.")}</div> : (
+                <ul className="list">
+                  {d.alerts.map((a) => (
+                    <li key={a.id} className="list-row">
+                      <span className={`icon-tile ${a.resolvedAt ? "tile-teal" : "tile-coral"}`}><IconFile size={20} /></span>
+                      <span className="grow">
+                        <span className="title" style={{ display: "block" }}>{alertText(a, lang)}</span>
+                        <span className="muted">
+                          {fmtDateTime(a.openedAt, lang)}
+                          {a.ackedBy ? t(` · ${a.ackedBy} nhận lúc ${fmtTime(a.ackedAt!, lang)}`,
+                            ` · acknowledged by ${a.ackedBy} at ${fmtTime(a.ackedAt!, lang)}`) : ""}
+                          {a.resolvedAt ? t(" · đã bình thường", " · back to normal") : t(" · đang mở", " · open")}
+                        </span>
+                      </span>
+                      <SeverityChip severity={a.severity} />
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </Block>
 
-      <h2 className="section-title" style={{ margin: "6px 0 -8px" }}>{t("Lịch sử & cài đặt", "History & settings")}</h2>
-      <div className="blocks-grid">
-        <Block id="canh-bao" icon={<IconBell size={20} />} tile="tile-coral" title={t("Cảnh báo", "Alerts")}
-          sub={openAlerts.length ? t(`${openAlerts.length} đang mở · 30 ngày qua`, `${openAlerts.length} open · last 30 days`)
-            : t("Không có cảnh báo đang mở · 30 ngày qua", "No open alerts · last 30 days")}
-          >
-            {d.alerts.length === 0 ? <div className="muted">{t("Không có cảnh báo.", "No alerts.")}</div> : (
-            <ul className="list">
-              {d.alerts.map((a) => (
-                <li key={a.id} className="list-row">
-                  <span className={`icon-tile ${a.resolvedAt ? "tile-teal" : "tile-coral"}`}><IconFile size={20} /></span>
-                  <span className="grow">
-                    <span className="title" style={{ display: "block" }}>{alertText(a, lang)}</span>
-                    <span className="muted">
-                      {fmtDateTime(a.openedAt, lang)}
-                      {a.ackedBy ? t(` · ${a.ackedBy} nhận lúc ${fmtTime(a.ackedAt!, lang)}`,
-                        ` · acknowledged by ${a.ackedBy} at ${fmtTime(a.ackedAt!, lang)}`) : ""}
-                      {a.resolvedAt ? t(" · đã bình thường", " · back to normal") : t(" · đang mở", " · open")}
+            <Block id="nguong" icon={<IconAlert size={20} />} tile="tile-amber" title={t("Ngưỡng cảnh báo", "Alert thresholds")}
+              sub={t(`${rules.filter((r) => r.enabled).length}/${rules.length} ngưỡng đang bật`,
+                `${rules.filter((r) => r.enabled).length}/${rules.length} thresholds on`)}>
+              {!canEdit && <div className="banner info">{t("Bạn đang xem. Chỉ quản trị gia đình mới sửa được.", "View only. Only family admins can make changes.")}</div>}
+              {RULE_GROUPS.map((g, i) => {
+                const rs = rules.filter((r) => g.metrics.includes(r.metric));
+                if (!rs.length) return null;
+                return (
+                  <details key={g.key} className="group-block" open={i === 0}>
+                    <summary>
+                      <span className={`icon-tile ${g.tile}`}>{GROUP_ICON[g.key] ?? <IconBell size={20} />}</span>
+                      <span className="grow">
+                        <span className="title" style={{ display: "block" }}>{g.title}</span>
+                        <span className="muted" style={{ fontSize: 13 }}>{t(`${rs.length} ngưỡng · ${rs.filter((r) => r.enabled).length} đang bật`,
+                          `${rs.length} thresholds · ${rs.filter((r) => r.enabled).length} on`)}</span>
+                      </span>
+                      <IconChevron size={18} className="chev" />
+                    </summary>
+                    <div className="group-body">
+                      {rs.map((r) => <RuleForm key={r.id} rule={r} tile={g.tile} canEdit={canEdit} />)}
+                    </div>
+                  </details>
+                );
+              })}
+              {canEdit && <AddRuleForm elderId={e.id} />}
+            </Block>
+
+            <Block id="thuoc" icon={<IconPill size={20} />} tile="tile-violet" title={t("Thuốc", "Medications")}
+              sub={t(`${es?.meds.length ?? 0} loại thuốc · bot nhắc đúng giờ`, `${es?.meds.length ?? 0} medicines · reminders on time`)}>
+              <div className="muted" style={{ fontSize: 13 }}>{t("Quá 60 phút chưa bấm “Đã uống” thì bot báo cả nhà.",
+                "If “Taken” isn't tapped within 60 minutes, the bot tells the whole family.")}</div>
+              {(es?.meds.length ?? 0) === 0 && <div className="muted">{t("Chưa có lịch thuốc.", "No medications scheduled.")}</div>}
+              <ul className="list">
+                {es?.meds.map((m) => (
+                  <li key={m.id} className="list-row">
+                    <span className="icon-tile tile-violet"><IconPill size={20} /></span>
+                    <span className="grow">
+                      <span className="title" style={{ display: "block" }}>{m.name}</span>
+                      <span className="row" style={{ gap: 6, marginTop: 4 }}>
+                        {m.times.map((tm) => <span key={tm} className="chip tone-ok">{tm}</span>)}
+                        {m.note && <span className="muted">{m.note}</span>}
+                      </span>
                     </span>
-                  </span>
-                  <SeverityChip severity={a.severity} />
-                </li>
-              ))}
-            </ul>
-          )}
-        </Block>
+                    {canEdit && (
+                      <form action={deleteMed}>
+                        <input type="hidden" name="med_id" value={m.id} />
+                        <button className="btn ghost small" type="submit" style={{ color: "var(--coral-ink)" }}>{t("Xoá", "Delete")}</button>
+                      </form>
+                    )}
+                  </li>
+                ))}
+              </ul>
+              {canEdit && <AddMedForm elderId={e.id} />}
+            </Block>
 
-        <Block id="nguong" icon={<IconAlert size={20} />} tile="tile-amber" title={t("Ngưỡng cảnh báo", "Alert thresholds")}
-          sub={t(`${rules.filter((r) => r.enabled).length}/${rules.length} ngưỡng đang bật`,
-            `${rules.filter((r) => r.enabled).length}/${rules.length} thresholds on`)}>
-          {!canEdit && <div className="banner info">{t("Bạn đang xem. Chỉ quản trị gia đình mới sửa được.", "View only. Only family admins can make changes.")}</div>}
-          {RULE_GROUPS.map((g, i) => {
-            const rs = rules.filter((r) => g.metrics.includes(r.metric));
-            if (!rs.length) return null;
-            return (
-              <details key={g.key} className="group-block" open={i === 0}>
-                <summary>
-                  <span className={`icon-tile ${g.tile}`}>{GROUP_ICON[g.key] ?? <IconBell size={20} />}</span>
+            <Block id="dong-ho" icon={<IconWatch size={20} />} tile="tile-blue" title={t("Đồng hồ & thiết bị", "Watch & devices")}
+              sub={e.watchLabel
+                ? `${e.watchLabel}${e.watchBattery != null ? ` · ${t("pin", "battery")} ${e.watchBattery}%` : ""} · ${t("gửi", "sent")} ${fmtAgo(e.lastDataAt, undefined, lang)}`
+                : t("Chưa gắn đồng hồ", "No watch set up")}>
+              <ul className="list">
+                {es?.devices.map((dv) => (
+                  <li key={dv.id} className="list-row">
+                    <span className="icon-tile tile-blue"><IconWatch size={20} /></span>
+                    <span className="grow">
+                      <span className="title" style={{ display: "block" }}>{dv.label ?? t("Đồng hồ Garmin", "Garmin watch")}</span>
+                      <span className="muted">
+                        {t("Gửi trực tiếp", "Sends directly")} · {fmtAgo(dv.lastSeenAt, undefined, lang)}
+                        {dv.battery != null ? ` · ${t("pin", "battery")} ${dv.battery}%` : ""}
+                      </span>
+                    </span>
+                    {canEdit && (
+                      <form action={deleteDevice}>
+                        <input type="hidden" name="device_id" value={dv.id} />
+                        <button className="btn ghost small" type="submit" style={{ color: "var(--coral-ink)" }}>{t("Ngắt kết nối", "Disconnect")}</button>
+                      </form>
+                    )}
+                  </li>
+                ))}
+                <li className="list-row">
+                  <span className="icon-tile tile-teal"><IconHeart size={20} /></span>
                   <span className="grow">
-                    <span className="title" style={{ display: "block" }}>{g.title}</span>
-                    <span className="muted" style={{ fontSize: 13 }}>{t(`${rs.length} ngưỡng · ${rs.filter((r) => r.enabled).length} đang bật`,
-                      `${rs.length} thresholds · ${rs.filter((r) => r.enabled).length} on`)}</span>
+                    <span className="title" style={{ display: "block" }}>Garmin Connect</span>
+                    <span className="muted">{es?.garmin ? t(`Đồng bộ ${fmtAgo(es.garmin.lastSyncAt, undefined, lang)}`, `Synced ${fmtAgo(es.garmin.lastSyncAt, undefined, lang)}`)
+                      : t("Chưa kết nối (không bắt buộc: thêm giấc ngủ, SpO2 ban đêm)", "Not connected (optional: adds sleep and overnight SpO2)")}</span>
                   </span>
-                  <IconChevron size={18} className="chev" />
-                </summary>
-                <div className="group-body">
-                  {rs.map((r) => <RuleForm key={r.id} rule={r} tile={g.tile} canEdit={canEdit} />)}
-                </div>
-              </details>
-            );
-          })}
-          {canEdit && <AddRuleForm elderId={e.id} />}
-        </Block>
+                  {es?.garmin && <span className={`chip ${GARMIN_STATUS[es.garmin.status]?.tone ?? "tone-neutral"}`}>
+                    {GARMIN_STATUS[es.garmin.status]?.label ?? es.garmin.status}</span>}
+                </li>
+              </ul>
+              {canEdit && (
+                <details className="more" open={!es?.garmin || es.garmin.status === "needs_relogin"}>
+                  <summary className="btn small">{es?.garmin ? t("Liên kết lại Garmin Connect", "Relink Garmin Connect") : t("Liên kết Garmin Connect", "Link Garmin Connect")}</summary>
+                  <div style={{ marginTop: 10 }}><GarminLinkForm elderId={e.id} relink={!!es?.garmin} /></div>
+                </details>
+              )}
+              {canEdit && es?.garmin && (
+                <form action={deleteGarmin}>
+                  <input type="hidden" name="elder_id" value={e.id} />
+                  <button className="btn ghost small" type="submit" style={{ color: "var(--coral-ink)" }}>{t("Gỡ liên kết Garmin Connect", "Unlink Garmin Connect")}</button>
+                </form>
+              )}
+              <Link className="btn primary small" href={`/ket-noi-dong-ho?nguoi=${e.id}`} style={{ alignSelf: "flex-start" }}>
+                {t("Kết nối đồng hồ bằng mã 6 số", "Connect watch with a 6-digit code")} <span className="arrow"><IconChevron size={16} /></span>
+              </Link>
+              {canEdit && (
+                <details className="more">
+                  <summary className="muted">{t("Cách thủ công: tạo mã dài để dán vào Garmin Connect", "Manual option: create a long key to paste into Garmin Connect")}</summary>
+                  <WatchKeyForm elderId={e.id} />
+                </details>
+              )}
+            </Block>
 
-        <Block id="thuoc" icon={<IconPill size={20} />} tile="tile-violet" title={t("Thuốc", "Medications")}
-          sub={t("Bot nhắc đúng giờ; quá 60 phút chưa bấm “Đã uống” thì báo cả nhà",
-            "The bot reminds on time; if “Taken” isn't tapped within 60 minutes, the whole family is notified")}>
-          {(es?.meds.length ?? 0) === 0 && <div className="muted">{t("Chưa có lịch thuốc.", "No medications scheduled.")}</div>}
-          <ul className="list">
-            {es?.meds.map((m) => (
-              <li key={m.id} className="list-row">
-                <span className="icon-tile tile-violet"><IconPill size={20} /></span>
+            <Block id="thong-tin" icon={<IconUser size={20} />} tile="tile-teal" title={t("Thông tin & Telegram", "Info & Telegram")}
+              sub={[age(e.birthYear, lang), e.conditions.map((c) => CONDITIONS[c] ?? c).join(", ") || t("chưa có bệnh nền", "no health conditions"),
+                info?.hasTelegram ? t("đã nối Telegram", "Telegram linked") : t("chưa nối Telegram", "Telegram not linked")].filter(Boolean).join(" · ")}>
+              {info && canEdit && <EditElderForm elder={info} />}
+              {info && canEdit && <DeleteElder elder={info} />}
+              <div className="list-row" style={{ minHeight: 0 }}>
+                <span className="icon-tile tile-blue"><IconTelegram size={20} /></span>
                 <span className="grow">
-                  <span className="title" style={{ display: "block" }}>{m.name}</span>
-                  <span className="row" style={{ gap: 6, marginTop: 4 }}>
-                    {m.times.map((tm) => <span key={tm} className="chip tone-ok">{tm}</span>)}
-                    {m.note && <span className="muted">{m.note}</span>}
-                  </span>
+                  <span className="title" style={{ display: "block" }}>{t(`Telegram của ${e.name}`, `${e.name}'s Telegram`)}</span>
+                  <span className="muted">{info?.hasTelegram
+                    ? t("Bot nhắc thuốc riêng, nhận chỉ số huyết áp/đường huyết qua tin nhắn",
+                      "The bot sends personal medication reminders and takes blood pressure/glucose readings by message")
+                    : t("Chưa nối: nhắc thuốc sẽ gửi vào nhóm gia đình", "Not linked: medication reminders go to the family group")}</span>
                 </span>
-                {canEdit && (
-                  <form action={deleteMed}>
-                    <input type="hidden" name="med_id" value={m.id} />
-                    <button className="btn ghost small" type="submit" style={{ color: "var(--coral-ink)" }}>{t("Xoá", "Delete")}</button>
-                  </form>
-                )}
-              </li>
-            ))}
-          </ul>
-          {canEdit && <AddMedForm elderId={e.id} />}
-        </Block>
-
-        <Block id="dong-ho" icon={<IconWatch size={20} />} tile="tile-blue" title={t("Đồng hồ & thiết bị", "Watch & devices")}
-          sub={e.watchLabel
-            ? `${e.watchLabel}${e.watchBattery != null ? ` · ${t("pin", "battery")} ${e.watchBattery}%` : ""} · ${t("gửi", "sent")} ${fmtAgo(e.lastDataAt, undefined, lang)}`
-            : t("Chưa gắn đồng hồ", "No watch set up")}>
-          <ul className="list">
-            {es?.devices.map((dv) => (
-              <li key={dv.id} className="list-row">
-                <span className="icon-tile tile-blue"><IconWatch size={20} /></span>
-                <span className="grow">
-                  <span className="title" style={{ display: "block" }}>{dv.label ?? t("Đồng hồ Garmin", "Garmin watch")}</span>
-                  <span className="muted">
-                    {t("Gửi trực tiếp", "Sends directly")} · {fmtAgo(dv.lastSeenAt, undefined, lang)}
-                    {dv.battery != null ? ` · ${t("pin", "battery")} ${dv.battery}%` : ""}
-                  </span>
-                </span>
-                {canEdit && (
-                  <form action={deleteDevice}>
-                    <input type="hidden" name="device_id" value={dv.id} />
-                    <button className="btn ghost small" type="submit" style={{ color: "var(--coral-ink)" }}>{t("Ngắt kết nối", "Disconnect")}</button>
-                  </form>
-                )}
-              </li>
-            ))}
-            <li className="list-row">
-              <span className="icon-tile tile-teal"><IconHeart size={20} /></span>
-              <span className="grow">
-                <span className="title" style={{ display: "block" }}>Garmin Connect</span>
-                <span className="muted">{es?.garmin ? t(`Đồng bộ ${fmtAgo(es.garmin.lastSyncAt, undefined, lang)}`, `Synced ${fmtAgo(es.garmin.lastSyncAt, undefined, lang)}`)
-                  : t("Chưa kết nối (không bắt buộc: thêm giấc ngủ, SpO2 ban đêm)", "Not connected (optional: adds sleep and overnight SpO2)")}</span>
-              </span>
-              {es?.garmin && <span className={`chip ${GARMIN_STATUS[es.garmin.status]?.tone ?? "tone-neutral"}`}>
-                {GARMIN_STATUS[es.garmin.status]?.label ?? es.garmin.status}</span>}
-            </li>
-          </ul>
-          {canEdit && (
-            <details className="more" open={!es?.garmin || es.garmin.status === "needs_relogin"}>
-              <summary className="btn small">{es?.garmin ? t("Liên kết lại Garmin Connect", "Relink Garmin Connect") : t("Liên kết Garmin Connect", "Link Garmin Connect")}</summary>
-              <div style={{ marginTop: 10 }}><GarminLinkForm elderId={e.id} relink={!!es?.garmin} /></div>
-            </details>
-          )}
-          {canEdit && es?.garmin && (
-            <form action={deleteGarmin}>
-              <input type="hidden" name="elder_id" value={e.id} />
-              <button className="btn ghost small" type="submit" style={{ color: "var(--coral-ink)" }}>{t("Gỡ liên kết Garmin Connect", "Unlink Garmin Connect")}</button>
-            </form>
-          )}
-          <Link className="btn primary small" href={`/ket-noi-dong-ho?nguoi=${e.id}`} style={{ alignSelf: "flex-start" }}>
-            {t("Kết nối đồng hồ bằng mã 6 số", "Connect watch with a 6-digit code")} <span className="arrow"><IconChevron size={16} /></span>
-          </Link>
-          {canEdit && (
-            <details className="more">
-              <summary className="muted">{t("Cách thủ công: tạo mã dài để dán vào Garmin Connect", "Manual option: create a long key to paste into Garmin Connect")}</summary>
-              <WatchKeyForm elderId={e.id} />
-            </details>
-          )}
-        </Block>
-
-        <Block id="thong-tin" icon={<IconUser size={20} />} tile="tile-teal" title={t("Thông tin & Telegram", "Info & Telegram")}
-          sub={[age(e.birthYear, lang), e.conditions.map((c) => CONDITIONS[c] ?? c).join(", ") || t("chưa có bệnh nền", "no health conditions"),
-            info?.hasTelegram ? t("đã nối Telegram", "Telegram linked") : t("chưa nối Telegram", "Telegram not linked")].filter(Boolean).join(" · ")}>
-          {info && canEdit && <EditElderForm elder={info} />}
-          {info && canEdit && <DeleteElder elder={info} />}
-          <div className="list-row" style={{ minHeight: 0 }}>
-            <span className="icon-tile tile-blue"><IconTelegram size={20} /></span>
-            <span className="grow">
-              <span className="title" style={{ display: "block" }}>{t(`Telegram của ${e.name}`, `${e.name}'s Telegram`)}</span>
-              <span className="muted">{info?.hasTelegram
-                ? t("Bot nhắc thuốc riêng, nhận chỉ số huyết áp/đường huyết qua tin nhắn",
-                  "The bot sends personal medication reminders and takes blood pressure/glucose readings by message")
-                : t("Chưa nối: nhắc thuốc sẽ gửi vào nhóm gia đình", "Not linked: medication reminders go to the family group")}</span>
-            </span>
-            <span className={`chip ${info?.hasTelegram ? "tone-ok" : "tone-neutral"}`}>{info?.hasTelegram ? t("Đã nối", "Linked") : t("Chưa nối", "Not linked")}</span>
+                <span className={`chip ${info?.hasTelegram ? "tone-ok" : "tone-neutral"}`}>{info?.hasTelegram ? t("Đã nối", "Linked") : t("Chưa nối", "Not linked")}</span>
+              </div>
+              {canEdit && <LinkCodeForm bot={bot.username} kind="elder" elderId={e.id}
+                label={info?.hasTelegram ? t(`Nối lại Telegram của ${e.name}`, `Relink ${e.name}'s Telegram`)
+                  : t(`Nối Telegram của ${e.name}`, `Link ${e.name}'s Telegram`)} />}
+              {info?.command && <div className="muted" style={{ fontSize: 14 }}>{lang === "en"
+                ? <>In the Telegram group, send <code>/{info.command}</code> for a quick status.</>
+                : <>Trong nhóm Telegram, nhắn <code>/{info.command}</code> để xem nhanh tình hình.</>}</div>}
+            </Block>
           </div>
-          {canEdit && <LinkCodeForm bot={bot.username} kind="elder" elderId={e.id}
-            label={info?.hasTelegram ? t(`Nối lại Telegram của ${e.name}`, `Relink ${e.name}'s Telegram`)
-              : t(`Nối Telegram của ${e.name}`, `Link ${e.name}'s Telegram`)} />}
-          {info?.command && <div className="muted" style={{ fontSize: 14 }}>{lang === "en"
-            ? <>In the Telegram group, send <code>/{info.command}</code> for a quick status.</>
-            : <>Trong nhóm Telegram, nhắn <code>/{info.command}</code> để xem nhanh tình hình.</>}</div>}
-        </Block>
+        </aside>
       </div>
 
       <p className="muted">{t("Thông tin chỉ để tham khảo, không thay thế chẩn đoán của bác sĩ.", "For reference only; not a substitute for a doctor's diagnosis.")}</p>
