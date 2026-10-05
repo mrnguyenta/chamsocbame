@@ -202,3 +202,49 @@ export async function addMember(_: FormState, form: FormData): Promise<FormState
     return { ok: false, message: (e as Error).message };
   }
 }
+
+/** Sửa thông tin ba mẹ / người thân; bệnh nền mới thì thêm ngưỡng còn thiếu. */
+export async function updateElder(_: FormState, form: FormData): Promise<FormState> {
+  if (isDemo) return DEMO;
+  try {
+    const s = await admin();
+    const elderId = String(form.get("elder_id"));
+    const name = txt(form, "name");
+    if (!name) throw new Error("Nhập cách gọi, ví dụ “Ba Hùng”");
+    const year = Number(txt(form, "birth_year", 4)) || null;
+    if (year && (year < 1900 || year > new Date().getFullYear())) throw new Error("Năm sinh không hợp lệ");
+    const command = txt(form, "command", 20).toLowerCase().replace(/[^a-z0-9_]/g, "") || null;
+    const conditions = Object.keys(CONDITIONS).filter((c) => form.get(`c_${c}`) === "on");
+    const rows = await sql()`
+      update elders set display_name = ${name}, birth_year = ${year}, command = ${command}, conditions = ${conditions}
+      where id = ${elderId} and family_id = ${s.familyId} returning id`;
+    if (!rows.length) throw new Error("Không tìm thấy người thân");
+    await sql()`select chamsoc_ensure_default_rules(${elderId}, ${conditions})`;
+    revalidatePath("/", "layout");
+    return { ok: true, message: `Đã lưu thông tin ${name}.` };
+  } catch (e) {
+    const msg = (e as Error).message;
+    return { ok: false, message: msg.includes("elders_family_id_command_key") ? "Lệnh Telegram này đã dùng cho người khác." : msg };
+  }
+}
+
+/** Sửa tên hiển thị và số điện thoại của người chăm sóc (quản trị sửa được mọi người, ai cũng sửa được mình). */
+export async function updateMemberInfo(_: FormState, form: FormData): Promise<FormState> {
+  if (isDemo) return DEMO;
+  try {
+    const s = await requireSession();
+    const id = String(form.get("caregiver_id"));
+    if (id !== s.caregiverId && !s.isAdmin) throw new Error("Chỉ quản trị gia đình mới sửa được thông tin người khác.");
+    const name = txt(form, "name");
+    if (!name) throw new Error("Nhập tên.");
+    const phone = txt(form, "phone", 20) || null;
+    const rows = await sql()`
+      update caregivers set display_name = ${name}, phone = ${phone}
+      where id = ${id} and family_id = ${s.familyId} returning id`;
+    if (!rows.length) throw new Error("Không tìm thấy người này.");
+    revalidatePath("/", "layout");
+    return { ok: true, message: "Đã lưu." };
+  } catch (e) {
+    return { ok: false, message: (e as Error).message };
+  }
+}

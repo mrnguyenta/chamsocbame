@@ -7,7 +7,7 @@ import { getFamilyAdmin } from "@/lib/data";
 import { age } from "@/lib/format";
 import { CONDITIONS } from "@/lib/metrics";
 import { revokeInvite, switchFamily, updateMember } from "./actions";
-import { AddElderForm, AddMemberForm, InviteForm, LinkCodeForm } from "./forms";
+import { AddElderForm, AddMemberForm, EditElderForm, EditMemberForm, InviteForm, LinkCodeForm } from "./forms";
 
 export const dynamic = "force-dynamic";
 
@@ -78,6 +78,7 @@ export default async function FamilyPage({ searchParams }: { searchParams: Promi
                   {admin && !e.hasTelegram && (
                     <div style={{ width: "100%" }}><LinkCodeForm bot={bot} kind="elder" elderId={e.id} label={`Nối Telegram của ${e.name} (nhắc thuốc, nhập huyết áp)`} /></div>
                   )}
+                  {admin && <EditElderForm elder={e} />}
                 </li>
               ))}
             </ul>
@@ -99,6 +100,7 @@ export default async function FamilyPage({ searchParams }: { searchParams: Promi
                   {m.isMe && !m.hasTelegram && (
                     <div style={{ width: "100%" }}><LinkCodeForm bot={bot} kind="caregiver" label="Nối Telegram của tôi (nhận cảnh báo riêng)" /></div>
                   )}
+                  {(admin || m.isMe) && <EditMemberForm member={m} />}
                   {admin && !m.isMe && (
                     <form action={updateMember} className="row" style={{ gap: 6 }}>
                       <input type="hidden" name="caregiver_id" value={m.id} />

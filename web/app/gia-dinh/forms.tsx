@@ -4,7 +4,7 @@ import { useActionState, useState } from "react";
 import { IconPlus, IconTelegram } from "@/components/icons";
 import { CONDITIONS } from "@/lib/metrics";
 import {
-  type FormState, acceptInvite, addElder, addMember, createFamily, createInvite, createLinkCode,
+  type FormState, acceptInvite, addElder, addMember, createFamily, createInvite, createLinkCode, updateElder, updateMemberInfo,
 } from "./actions";
 import { useFormAction } from "@/components/useFormAction";
 
@@ -189,6 +189,66 @@ export function AddMemberForm() {
         </div>
         <div className="row"><button className="btn primary small" type="submit" disabled={f.pending}>Thêm</button></div>
         <Msg s={f.state} />
+      </form>
+    </details>
+  );
+}
+
+function ConditionChips({ selected }: { selected: string[] }) {
+  return (
+    <div className="row" style={{ gap: 8 }}>
+      {Object.entries(CONDITIONS).map(([k, label]) => (
+        <label key={k} className="check-chip">
+          <input type="checkbox" name={`c_${k}`} defaultChecked={selected.includes(k)} />
+          <span className="tick" aria-hidden>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5"><path d="M5 12l5 5 9-10" /></svg>
+          </span>
+          {label}
+        </label>
+      ))}
+    </div>
+  );
+}
+
+/** Sửa thông tin ba mẹ / người thân sau khi đã tạo. */
+export function EditElderForm({ elder }: {
+  elder: { id: string; name: string; birthYear: number | null; conditions: string[]; command: string | null };
+}) {
+  const f = useFormAction(updateElder, INIT);
+  return (
+    <details className="more" style={{ width: "100%" }}>
+      <summary className="btn ghost small">Sửa thông tin</summary>
+      <form ref={f.ref} onSubmit={f.onSubmit} className="rule" style={{ marginTop: 10 }}>
+        <input type="hidden" name="elder_id" value={elder.id} />
+        <div className="row" style={{ gap: 10 }}>
+          <label className="field" style={{ flex: "2 1 200px" }}>Cách gọi<input type="text" name="name" defaultValue={elder.name} required /></label>
+          <label className="field" style={{ flex: "1 1 110px" }}>Năm sinh
+            <input type="text" name="birth_year" inputMode="numeric" defaultValue={elder.birthYear ?? ""} placeholder="1955" /></label>
+          <label className="field" style={{ flex: "1 1 120px" }}>Lệnh Telegram
+            <input type="text" name="command" defaultValue={elder.command ?? ""} placeholder="ba" /></label>
+        </div>
+        <div className="muted">Bệnh nền (thêm bệnh mới sẽ tự thêm ngưỡng cảnh báo phù hợp)</div>
+        <ConditionChips selected={elder.conditions} />
+        <div className="row"><button className="btn primary small" type="submit" disabled={f.pending}>Lưu</button><Msg s={f.state} /></div>
+      </form>
+    </details>
+  );
+}
+
+/** Sửa tên và số điện thoại của người chăm sóc. */
+export function EditMemberForm({ member }: { member: { id: string; name: string; phone: string | null } }) {
+  const f = useFormAction(updateMemberInfo, INIT);
+  return (
+    <details className="more" style={{ width: "100%" }}>
+      <summary className="btn ghost small">Sửa thông tin</summary>
+      <form ref={f.ref} onSubmit={f.onSubmit} className="rule" style={{ marginTop: 10 }}>
+        <input type="hidden" name="caregiver_id" value={member.id} />
+        <div className="row" style={{ gap: 10 }}>
+          <label className="field" style={{ flex: "1 1 160px" }}>Tên<input type="text" name="name" defaultValue={member.name} required /></label>
+          <label className="field" style={{ flex: "1 1 160px" }}>Số điện thoại (gọi khẩn)
+            <input type="text" name="phone" inputMode="tel" defaultValue={member.phone ?? ""} placeholder="+84…" /></label>
+        </div>
+        <div className="row"><button className="btn primary small" type="submit" disabled={f.pending}>Lưu</button><Msg s={f.state} /></div>
       </form>
     </details>
   );
