@@ -23,7 +23,7 @@ export default async function SettingsPage() {
 
       <div className="split">
         <div className="main-col">
-          {data.elders.map((e) => (
+          {data.elders.map((e, i) => (
             <section key={e.id} className="card" aria-labelledby={`h-${e.id}`}>
               <h2 id={`h-${e.id}`} style={{ fontSize: 20 }}>{e.name}</h2>
 
@@ -43,7 +43,7 @@ export default async function SettingsPage() {
               ))}
               <AddRuleForm elderId={e.id} />
 
-              <h3 style={{ fontSize: 15, margin: "18px 0 4px" }}>Lịch uống thuốc</h3>
+              <h3 id={i === 0 ? "thuoc" : undefined} style={{ fontSize: 15, margin: "18px 0 4px" }}>Lịch uống thuốc</h3>
               {e.meds.length === 0 && <div className="muted">Chưa có.</div>}
               <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
                 {e.meds.map((m) => (

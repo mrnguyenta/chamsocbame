@@ -11,18 +11,20 @@ export function SeverityChip({ severity }: { severity: Severity }) {
   return <span className={`chip tone-${s.tone}`}>{s.label}</span>;
 }
 
-export function Avatar({ name }: { name: string }) {
+export function Avatar({ name, small = false }: { name: string; small?: boolean }) {
   const initial = name.split(" ").pop()?.[0] ?? "?";
-  return <div className="avatar" aria-hidden>{initial}</div>;
+  const size = small ? 38 : 52;
+  return <div className="avatar" aria-hidden style={{ width: size, height: size, fontSize: small ? 15 : 20 }}>{initial}</div>;
 }
 
-export function Kpi({ label, value, unit, note, tone }: {
+export function Kpi({ label, value, unit, note, tone, icon, tile = "tile-teal" }: {
   label: string; value: React.ReactNode; unit?: string; note?: string; tone?: "danger" | "warn";
+  icon?: React.ReactNode; tile?: string;
 }) {
-  const color = tone === "danger" ? "var(--danger-mark)" : tone === "warn" ? "var(--warn-fg)" : undefined;
+  const color = tone === "danger" ? "var(--coral-ink)" : tone === "warn" ? "var(--warn-fg)" : undefined;
   return (
     <div className="kpi">
-      <div className="label">{label}</div>
+      <div className="label">{icon && <span className={`icon-tile sm ${tile}`}>{icon}</span>}{label}</div>
       <div className="value" style={{ color }}>{value}{unit && value !== "—" && <span className="unit"> {unit}</span>}</div>
       {note && <div className="muted" style={{ fontSize: 12 }}>{note}</div>}
     </div>

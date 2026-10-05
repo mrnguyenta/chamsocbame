@@ -211,3 +211,14 @@ export async function getSettings(familyId: string): Promise<SettingsData> {
     }),
   };
 }
+
+/** Cảnh báo 30 ngày của cả gia đình, mới nhất trước. */
+export async function getAlerts(familyId: string): Promise<AlertRow[]> {
+  if (isDemo) return demoOverview().recentAlerts;
+  const rows = await sql()`
+    select a.*, e.display_name as elder_name, c.display_name as acked_name
+    from alerts a join elders e on e.id = a.elder_id left join caregivers c on c.id = a.acked_by
+    where e.family_id = ${familyId} and a.opened_at > now() - interval '30 days'
+    order by (a.resolved_at is null) desc, a.opened_at desc limit 100`;
+  return rows.map(toAlert);
+}
