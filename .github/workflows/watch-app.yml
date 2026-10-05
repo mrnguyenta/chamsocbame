@@ -1,0 +1,63 @@
+# Build ứng dụng đồng hồ Connect IQ (thư mục watch/).
+# Dùng image Docker cộng đồng ghcr.io/matco/connectiq-tester (có sẵn Connect IQ SDK và file thiết bị).
+# Kết quả: file .prg cho từng đồng hồ (chép qua USB vào GARMIN/APPS) và file .iq để đưa lên Connect IQ Store.
+#
+# Khoá ký: nếu có secret CIQ_DEVELOPER_KEY (file key.der mã hoá base64) thì dùng nó, nếu không thì tạo khoá
+# tạm. Khoá tạm đủ để cài thử qua USB; muốn đưa lên Store và cập nhật về sau thì phải dùng một khoá cố định.
+name: watch-app
+
+on:
+  push:
+    paths: ["watch/**", ".github/workflows/watch-app.yml"]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/matco/connectiq-tester:latest
+    env:
+      # Trình biên dịch tìm thiết bị ở ~/.Garmin/ConnectIQ/Devices, image để ở /root.
+      HOME: /root
+    defaults:
+      run:
+        shell: bash
+        working-directory: watch
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Khoá ký
+        env:
+          CIQ_DEVELOPER_KEY: ${{ secrets.CIQ_DEVELOPER_KEY }}
+        run: |
+          if [ -n "$CIQ_DEVELOPER_KEY" ]; then
+            echo "$CIQ_DEVELOPER_KEY" | base64 -d > /tmp/key.der
+            echo "Dùng khoá từ secret CIQ_DEVELOPER_KEY"
+          else
+            openssl genrsa -out /tmp/key.pem 4096
+            openssl pkcs8 -topk8 -inform PEM -outform DER -in /tmp/key.pem -out /tmp/key.der -nocrypt
+            echo "::warning::Đang dùng khoá tạm. Thêm secret CIQ_DEVELOPER_KEY để đưa lên Store."
+          fi
+
+      - name: Thông tin SDK và thiết bị
+        run: |
+          monkeyc --version || true
+          ls /root/.Garmin/ConnectIQ/Devices | grep -E '^(venu|vivoactive)' || true
+
+      - name: Build .prg cho từng đồng hồ
+        run: |
+          mkdir -p bin
+          status=0
+          for d in $(grep -o 'iq:product id="[^"]*"' manifest.xml | cut -d'"' -f2); do
+            echo "=== $d"
+            monkeyc -f monkey.jungle -d "$d" -o "bin/chamsoc-$d.prg" -y /tmp/key.der -w -l 2 || status=1
+          done
+          exit $status
+
+      - name: Build gói .iq (Connect IQ Store)
+        run: monkeyc -f monkey.jungle -e -r -o bin/chamsoc.iq -y /tmp/key.der -w
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: chamsoc-watch-app
+          path: watch/bin/
