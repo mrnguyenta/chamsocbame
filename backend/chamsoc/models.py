@@ -33,6 +33,11 @@ class Snapshot:
     systolic: int | None = None
     diastolic: int | None = None
     glucose: float | None = None
+    # Dữ liệu gửi thẳng từ đồng hồ (ứng dụng Connect IQ), gần thời gian thực.
+    hr_now: int | None = None           # trung vị nhịp tim 10 phút gần nhất
+    active_recently: bool = False       # vừa đi lại nhiều trong 10 phút gần nhất
+    last_live_at: datetime | None = None
+    watch_battery: int | None = None
 
 
 @dataclass

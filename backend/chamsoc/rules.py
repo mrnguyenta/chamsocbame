@@ -18,7 +18,13 @@ METRICS: dict[str, tuple[str, str]] = {
     "systolic": ("Huyết áp tâm thu", "mmHg"),
     "diastolic": ("Huyết áp tâm trương", "mmHg"),
     "glucose": ("Đường huyết", "mmol/L"),
+    "hr_now": ("Nhịp tim hiện tại (10 phút)", "bpm"),
+    "no_live_minutes": ("Đồng hồ chưa gửi dữ liệu", "phút"),
+    "watch_battery": ("Pin đồng hồ", "%"),
 }
+
+# Trạng thái kéo dài, không gắn với ngày.
+DAYLESS_METRICS = {"no_sync_hours", "no_live_minutes", "watch_battery"}
 
 
 def metric_value(snapshot: Snapshot, metric: str, now: datetime) -> float | None:
@@ -30,6 +36,10 @@ def metric_value(snapshot: Snapshot, metric: str, now: datetime) -> float | None
         if snapshot.last_device_upload_at is None:
             return None
         return round((now - snapshot.last_device_upload_at).total_seconds() / 3600, 1)
+    if metric == "no_live_minutes":
+        if snapshot.last_live_at is None:
+            return None
+        return float(int((now - snapshot.last_live_at).total_seconds() // 60))
     return getattr(snapshot, metric)
 
 
@@ -47,21 +57,29 @@ def describe(rule: Rule, value: float) -> str:
 
 
 def dedupe_key(rule: Rule, snapshot: Snapshot) -> str:
-    # Mất kết nối là trạng thái kéo dài qua nhiều ngày, không gắn với ngày.
-    if rule.metric == "no_sync_hours":
+    if rule.metric in DAYLESS_METRICS:
         return f"{rule.id}"
     return f"{rule.id}:{snapshot.day.isoformat()}"
+
+
+def checkable_value(rule: Rule, snapshot: Snapshot, now: datetime) -> float | None:
+    """Giá trị để so với ngưỡng, hoặc None nếu lúc này chưa kiểm được quy tắc này."""
+    if not rule.enabled or rule.elder_id != snapshot.elder_id:
+        return None
+    if rule.active_after is not None and now.timetz().replace(tzinfo=None) < rule.active_after:
+        return None
+    # Nhịp tim cao khi đang đi lại là bình thường, không báo.
+    if rule.metric == "hr_now" and rule.comparator == "gt" and snapshot.active_recently:
+        return None
+    value = metric_value(snapshot, rule.metric, now)
+    return None if value is None else float(value)
 
 
 def evaluate(snapshot: Snapshot, rules: list[Rule], now: datetime) -> list[AlertCandidate]:
     """Trả về các cảnh báo đang vi phạm. `now` là giờ địa phương có múi giờ."""
     out: list[AlertCandidate] = []
     for rule in rules:
-        if not rule.enabled or rule.elder_id != snapshot.elder_id:
-            continue
-        if rule.active_after is not None and now.timetz().replace(tzinfo=None) < rule.active_after:
-            continue
-        value = metric_value(snapshot, rule.metric, now)
+        value = checkable_value(rule, snapshot, now)
         if value is None:
             continue
         breached = value > rule.threshold if rule.comparator == "gt" else value < rule.threshold
@@ -69,9 +87,9 @@ def evaluate(snapshot: Snapshot, rules: list[Rule], now: datetime) -> list[Alert
             out.append(
                 AlertCandidate(
                     rule=rule,
-                    value=float(value),
+                    value=value,
                     dedupe_key=dedupe_key(rule, snapshot),
-                    message=describe(rule, float(value)),
+                    message=describe(rule, value),
                 )
             )
     return out
@@ -84,6 +102,12 @@ def default_rules(elder_id: str, conditions: list[str]) -> list[dict]:
         dict(metric="resting_hr", comparator="lt", threshold=45, severity="high"),
         dict(metric="spo2_min", comparator="lt", threshold=90, severity="high"),
         dict(metric="no_sync_hours", comparator="gt", threshold=12, severity="warn"),
+        # Ba quy tắc dưới chỉ chạy khi đồng hồ có cài ứng dụng gửi dữ liệu trực tiếp.
+        dict(metric="hr_now", comparator="gt", threshold=120, severity="high"),
+        dict(metric="hr_now", comparator="lt", threshold=40, severity="urgent"),
+        dict(metric="no_live_minutes", comparator="gt", threshold=30, severity="warn"),
+        dict(metric="watch_battery", comparator="lt", threshold=15, severity="info",
+             notify="elder"),
         dict(metric="sleep_hours", comparator="lt", threshold=5, severity="warn",
              active_after="10:00"),
         dict(metric="steps", comparator="lt", threshold=1000, severity="info",

@@ -128,7 +128,12 @@ def merge_recent_readings(conn, s: Snapshot, since: datetime) -> Snapshot:
     return s
 
 
-def snapshot_from_db(conn, elder: dict, day: date, since: datetime) -> Snapshot:
+READINGS_LOOKBACK = timedelta(hours=24)
+LIVE_WINDOW = timedelta(minutes=10)
+ACTIVE_STEPS = 300  # số bước trong 10 phút để coi là đang đi lại
+
+
+def snapshot_from_db(conn, elder: dict, day: date, now_utc: datetime) -> Snapshot:
     m = conn.execute(
         "select * from daily_metrics where elder_id = %s and day = %s", (elder["id"], day)
     ).fetchone() or {}
@@ -140,7 +145,107 @@ def snapshot_from_db(conn, elder: dict, day: date, since: datetime) -> Snapshot:
     s = Snapshot(elder_id=str(elder["id"]), elder_name=elder["display_name"], day=day,
                  last_device_upload_at=g.get("last_device_upload_at"),
                  **{k: m.get(k) for k in fields})
-    return merge_recent_readings(conn, s, since)
+    merge_live(conn, s, now_utc)
+    return merge_recent_readings(conn, s, now_utc - READINGS_LOOKBACK)
+
+
+# ---------- Dữ liệu trực tiếp từ đồng hồ ----------
+
+def watch_device_by_key(conn, key_hash: str) -> dict | None:
+    return conn.execute(
+        """
+        select w.id, w.elder_id, e.display_name, e.family_id, f.timezone
+        from watch_devices w join elders e on e.id = w.elder_id join families f on f.id = e.family_id
+        where w.key_hash = %s
+        """,
+        (key_hash,),
+    ).fetchone()
+
+
+def create_watch_device(conn, elder_id: str, key_hash: str, label: str | None) -> str:
+    row = conn.execute(
+        "insert into watch_devices (elder_id, key_hash, label) values (%s, %s, %s) returning id",
+        (elder_id, key_hash, label),
+    ).fetchone()
+    return str(row["id"])
+
+
+def save_live_push(conn, device_id: str, elder_id: str, p: dict, measured_at: datetime) -> None:
+    conn.execute(
+        """
+        insert into live_status (elder_id, measured_at, received_at, hr, resting_hr, steps, stress,
+                                 body_battery, spo2, respiration, battery, charging)
+        values (%s, %s, now(), %s, %s, %s, %s, %s, %s, %s, %s, %s)
+        on conflict (elder_id) do update set
+          measured_at = excluded.measured_at, received_at = now(), hr = excluded.hr,
+          resting_hr = excluded.resting_hr, steps = excluded.steps, stress = excluded.stress,
+          body_battery = excluded.body_battery, spo2 = excluded.spo2,
+          respiration = excluded.respiration, battery = excluded.battery,
+          charging = excluded.charging
+        where live_status.measured_at <= excluded.measured_at
+        """,
+        (elder_id, measured_at, p.get("hr"), p.get("resting_hr"), p.get("steps"),
+         p.get("stress"), p.get("body_battery"), p.get("spo2"), p.get("respiration"),
+         p.get("battery"), p.get("charging")),
+    )
+    samples = [(elder_id, datetime.fromtimestamp(ts, tz=measured_at.tzinfo), bpm)
+               for ts, bpm in p.get("hr_samples") or [] if 20 <= bpm <= 250]
+    if p.get("hr") and 20 <= p["hr"] <= 250:
+        samples.append((elder_id, measured_at, p["hr"]))
+    with conn.cursor() as cur:
+        cur.executemany(
+            "insert into hr_samples (elder_id, ts, bpm) values (%s, %s, %s) on conflict do nothing",
+            samples,
+        )
+    if p.get("steps") is not None:
+        conn.execute(
+            "insert into step_samples (elder_id, ts, steps) values (%s, %s, %s) on conflict do nothing",
+            (elder_id, measured_at, p["steps"]),
+        )
+    conn.execute(
+        "update watch_devices set last_seen_at = now(), battery = %s, charging = %s where id = %s",
+        (p.get("battery"), p.get("charging"), device_id),
+    )
+
+
+def merge_live(conn, s: Snapshot, now_utc: datetime) -> Snapshot:
+    live = conn.execute("select * from live_status where elder_id = %s", (s.elder_id,)).fetchone()
+    if live is None:
+        return s
+    s.last_live_at = live["measured_at"]
+    s.watch_battery = None if live["charging"] else live["battery"]
+    bpm = conn.execute(
+        """
+        select percentile_disc(0.5) within group (order by bpm) as median, count(*) as n
+        from hr_samples where elder_id = %s and ts > %s
+        """,
+        (s.elder_id, now_utc - LIVE_WINDOW),
+    ).fetchone()
+    if bpm["n"] >= 3:
+        s.hr_now = bpm["median"]
+    steps = conn.execute(
+        """
+        select max(steps) - min(steps) as delta from step_samples
+        where elder_id = %s and ts > %s
+        """,
+        (s.elder_id, now_utc - LIVE_WINDOW - timedelta(minutes=5)),
+    ).fetchone()
+    s.active_recently = (steps["delta"] or 0) >= ACTIVE_STEPS
+    # Số liệu trong ngày: lấy cái mới hơn giữa đồng hồ (trực tiếp) và Garmin Connect.
+    if live["steps"] is not None:
+        s.steps = max(s.steps or 0, live["steps"])
+    if live["body_battery"] is not None:
+        s.body_battery = live["body_battery"]
+    if s.resting_hr is None:
+        s.resting_hr = live["resting_hr"]
+    return s
+
+
+def hr_series(conn, elder_id: str, since: datetime) -> list[dict]:
+    return conn.execute(
+        "select ts, bpm from hr_samples where elder_id = %s and ts >= %s order by ts",
+        (elder_id, since),
+    ).fetchall()
 
 
 # ---------- Người ----------

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import logging
 from html import escape
-from datetime import datetime, timedelta, time
+from datetime import datetime, time, timedelta, timezone
 from zoneinfo import ZoneInfo
 
 from garminconnect import GarminConnectAuthenticationError
@@ -20,7 +20,6 @@ log = logging.getLogger(__name__)
 MED_WINDOW = timedelta(minutes=30)
 MED_MISSED_AFTER = timedelta(minutes=60)
 REPORT_GRACE = timedelta(hours=2)
-READINGS_LOOKBACK = timedelta(hours=24)
 
 
 def _local(now_utc: datetime, tz: str) -> datetime:
@@ -36,11 +35,8 @@ def evaluate_elder(conn, tg: telegram.TelegramClient, snap: Snapshot, local_now:
         if db.open_alert(conn, c) is None:
             db.update_open_alert_value(conn, c)
 
-    evaluable = {
-        r.id for r in elder_rules
-        if rules.metric_value(snap, r.metric, local_now) is not None
-        and (r.active_after is None or local_now.time() >= r.active_after)
-    }
+    evaluable = {r.id for r in elder_rules
+                 if rules.checkable_value(r, snap, local_now) is not None}
     resolved = db.resolve_missing(conn, snap.elder_id, {c.dedupe_key for c in found}, evaluable)
     for r in resolved:
         # Chỉ báo "đã bình thường" cho cảnh báo nghiêm trọng đã gửi trong hôm nay,
@@ -85,10 +81,34 @@ def sync_all(conn, settings: Settings, tg: telegram.TelegramClient, now_utc: dat
             db.insert_reading(conn, elder_id, "blood_pressure", systolic=m["systolic"],
                               diastolic=m["diastolic"], pulse=m["pulse"], source="garmin",
                               external_id=m["external_id"], measured_at=m["measured_at"])
-        snap = db.merge_recent_readings(conn, snap, now_utc - READINGS_LOOKBACK)
+        db.merge_live(conn, snap, now_utc)
+        snap = db.merge_recent_readings(conn, snap, now_utc - db.READINGS_LOOKBACK)
         evaluate_elder(conn, tg, snap, local_now)
         count += 1
     return count
+
+
+# ---------- Dữ liệu trực tiếp từ đồng hồ (mỗi 5 phút, ứng dụng Connect IQ) ----------
+
+def handle_watch_push(conn, tg: telegram.TelegramClient, calls: CallProvider, device: dict,
+                      payload: dict, now_utc: datetime) -> None:
+    ts = payload.get("ts")
+    measured_at = datetime.fromtimestamp(ts, tz=timezone.utc) if ts else now_utc
+    # Đồng hồ lệch giờ hoặc gửi bù dữ liệu cũ: không cho "đo" ở tương lai.
+    measured_at = min(measured_at, now_utc)
+    db.save_live_push(conn, str(device["id"]), str(device["elder_id"]), payload, measured_at)
+    elder = {"id": device["elder_id"], "display_name": device["display_name"]}
+    local = _local(now_utc, device["timezone"])
+    evaluate_elder(conn, tg, db.snapshot_from_db(conn, elder, local.date(), now_utc), local)
+    process_alerts(conn, tg, calls, now_utc)
+
+
+def evaluate_all(conn, tg: telegram.TelegramClient, now_utc: datetime) -> None:
+    """Kiểm lại mọi người thân, để phát hiện cả khi đồng hồ ngừng gửi dữ liệu."""
+    for f in db.families(conn):
+        local = _local(now_utc, f["timezone"])
+        for e in db.elders_of_family(conn, f["id"]):
+            evaluate_elder(conn, tg, db.snapshot_from_db(conn, e, local.date(), now_utc), local)
 
 
 # ---------- Gửi và leo thang cảnh báo (mỗi 5 phút) ----------
@@ -178,7 +198,7 @@ def family_report(conn, family: dict, now_utc: datetime, title: str) -> str:
     local_now = _local(now_utc, family["timezone"])
     items = []
     for e in db.elders_of_family(conn, family["id"]):
-        snap = db.snapshot_from_db(conn, e, local_now.date(), now_utc - READINGS_LOOKBACK)
+        snap = db.snapshot_from_db(conn, e, local_now.date(), now_utc)
         items.append((snap, _status(conn, str(e["id"]))))
     return telegram.report_text(f"{title} {local_now:%d/%m}", items)
 
@@ -202,8 +222,9 @@ def _within(local_now: datetime, at: time, grace: timedelta) -> bool:
 
 
 def tick(conn, tg: telegram.TelegramClient, calls: CallProvider, now_utc: datetime) -> None:
-    """Chạy mỗi 5 phút: gửi/leo thang cảnh báo, nhắc thuốc, báo cáo định kỳ."""
-    for step in (lambda: process_alerts(conn, tg, calls, now_utc),
+    """Chạy mỗi 5 phút: kiểm ngưỡng, gửi/leo thang cảnh báo, nhắc thuốc, báo cáo định kỳ."""
+    for step in (lambda: evaluate_all(conn, tg, now_utc),
+                 lambda: process_alerts(conn, tg, calls, now_utc),
                  lambda: medication_reminders(conn, tg, now_utc),
                  lambda: scheduled_reports(conn, tg, now_utc)):
         try:
@@ -240,7 +261,7 @@ def handle_update(conn, tg: telegram.TelegramClient, calls: CallProvider, update
         for e in db.elders_of_family(conn, family["id"]):
             if e["command"] and e["command"].lower() == cmd:
                 local = _local(now_utc, family["timezone"])
-                snap = db.snapshot_from_db(conn, e, local.date(), now_utc - READINGS_LOOKBACK)
+                snap = db.snapshot_from_db(conn, e, local.date(), now_utc)
                 tg.send(chat_id, telegram.snapshot_lines(snap, _status(conn, str(e["id"]))))
                 return
         return
@@ -258,7 +279,7 @@ def handle_update(conn, tg: telegram.TelegramClient, calls: CallProvider, update
                       diastolic=reading.diastolic, pulse=reading.pulse, value=reading.value)
     tg.send(chat_id, "Đã ghi nhận. Cảm ơn ba/mẹ!")
     local = _local(now_utc, elder["timezone"])
-    snap = db.snapshot_from_db(conn, elder, local.date(), now_utc - READINGS_LOOKBACK)
+    snap = db.snapshot_from_db(conn, elder, local.date(), now_utc)
     if reading.kind == "blood_pressure":  # lần đo vừa nhập là mới nhất
         snap.systolic, snap.diastolic = reading.systolic, reading.diastolic
     evaluate_elder(conn, tg, snap, local)

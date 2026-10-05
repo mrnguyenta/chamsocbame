@@ -16,7 +16,7 @@ from chamsoc.calls import NoopCallProvider
 
 URL = os.environ.get("TEST_DATABASE_URL")
 pytestmark = pytest.mark.skipif(not URL, reason="cần TEST_DATABASE_URL")
-MIGRATION = Path(__file__).resolve().parents[2] / "supabase/migrations/20261005000000_init.sql"
+MIGRATIONS = sorted((Path(__file__).resolve().parents[2] / "supabase/migrations").glob("*.sql"))
 VN = ZoneInfo("Asia/Ho_Chi_Minh")
 GROUP, NGUYEN, HANH, BA_TG = -100, 11, 22, 44
 
@@ -43,7 +43,8 @@ class FakeTg:
 def conn():
     with db.connect(URL) as c:
         c.execute("drop schema public cascade; create schema public;")
-        c.execute(MIGRATION.read_text())
+        for m in MIGRATIONS:
+            c.execute(m.read_text())
         yield c
 
 
@@ -77,7 +78,7 @@ def _metrics(conn, elder, day, **kw):
 
 def _evaluate(conn, tg, elder, now):
     local = now.astimezone(VN)
-    snap = db.snapshot_from_db(conn, elder, local.date(), now - timedelta(hours=24))
+    snap = db.snapshot_from_db(conn, elder, local.date(), now)
     jobs.evaluate_elder(conn, tg, snap, local)
 
 
@@ -195,3 +196,56 @@ def test_medication_reminder_and_missed_dose(conn, family):
     jobs.handle_update(conn, tg, NoopCallProvider(), cb, now)
     assert tg.answers == ["Đã ghi nhận"]
     assert conn.execute("select taken_at from med_logs").fetchone()["taken_at"] is not None
+
+
+def _device(conn, elder):
+    from chamsoc.watch_key import new_key
+    key, key_hash = new_key()
+    db.create_watch_device(conn, str(elder["id"]), key_hash, "Venu 4")
+    return key
+
+
+def test_watch_push_endpoint_raises_live_alert(conn, family, monkeypatch):
+    import importlib
+    from fastapi.testclient import TestClient
+
+    for k, v in {"DATABASE_URL": URL, "TELEGRAM_BOT_TOKEN": "t", "TELEGRAM_WEBHOOK_SECRET": "h",
+                 "CRON_SECRET": "c", "TOKEN_ENCRYPTION_KEY": "k"}.items():
+        monkeypatch.setenv(k, v)
+    tg = FakeTg()
+    api = importlib.import_module("api.index")
+    monkeypatch.setattr(api, "TelegramClient", lambda token: tg)
+    client = TestClient(api.app)
+    key = _device(conn, family["me"])
+    now = int(datetime.now(timezone.utc).timestamp())
+
+    assert client.post("/api/watch/push", json={"ts": now},
+                       headers={"Authorization": "Bearer sai"}).status_code == 401
+
+    body = {"ts": now, "hr": 128, "hr_samples": [[now - 240, 126], [now - 120, 131], [now - 60, 129]],
+            "steps": 1200, "body_battery": 30, "battery": 80, "charging": False, "stress": -1}
+    r = client.post("/api/watch/push", json=body, headers={"Authorization": f"Bearer {key}"})
+    assert r.status_code == 200
+    live = conn.execute("select * from live_status").fetchone()
+    assert (live["hr"], live["stress"], live["steps"]) == (128, None, 1200)
+    group = tg.texts_to(GROUP)
+    assert len(group) == 1 and "Nhịp tim hiện tại (10 phút) 128 bpm" in group[0]
+
+
+def test_walking_does_not_trigger_high_hr_and_silence_is_detected(conn, family):
+    tg, calls = FakeTg(), NoopCallProvider()
+    _device(conn, family["ba"])
+    dev = conn.execute("""select w.id, w.elder_id, e.display_name, f.timezone from watch_devices w
+                          join elders e on e.id = w.elder_id join families f on f.id = e.family_id""").fetchone()
+    now = datetime.now(timezone.utc)
+    t = int(now.timestamp())
+    jobs.handle_watch_push(conn, tg, calls, dev, {"ts": t - 300, "steps": 2000, "hr_samples": []},
+                           now - timedelta(minutes=5))
+    jobs.handle_watch_push(conn, tg, calls, dev,
+                           {"ts": t, "hr": 125, "steps": 2700,
+                            "hr_samples": [[t - 200, 122], [t - 100, 126]], "battery": 60}, now)
+    assert tg.texts_to(GROUP) == []  # đang đi bộ: 700 bước trong 5 phút
+
+    jobs.evaluate_all(conn, tg, now + timedelta(minutes=45))
+    jobs.process_alerts(conn, tg, calls, now + timedelta(minutes=45))
+    assert any("Đồng hồ chưa gửi dữ liệu 45 phút" in t for t in tg.texts_to(GROUP))

@@ -187,3 +187,19 @@ def test_build_snapshot_tolerates_missing_data():
 def test_crypto_roundtrip():
     key = crypto.generate_key()
     assert crypto.decrypt(key, crypto.encrypt(key, '{"t": 1}')) == '{"t": 1}'
+
+
+# ---------- dữ liệu trực tiếp từ đồng hồ ----------
+
+def test_hr_now_skipped_while_walking_and_live_keys_are_dayless():
+    now = datetime(2026, 10, 5, 9, 0, tzinfo=VN)
+    hi = rule("hr_now", "gt", 120, severity="high")
+    assert len(rules.evaluate(snap(hr_now=130), [hi], now)) == 1
+    assert rules.evaluate(snap(hr_now=130, active_recently=True), [hi], now) == []
+    lo = rule("hr_now", "lt", 40, severity="urgent")
+    assert len(rules.evaluate(snap(hr_now=35, active_recently=True), [lo], now)) == 1
+
+    stale = rule("no_live_minutes", "gt", 30)
+    [c] = rules.evaluate(snap(last_live_at=now - timedelta(minutes=47)), [stale], now)
+    assert c.value == 47 and c.dedupe_key == stale.id
+    assert rules.evaluate(snap(), [stale], now) == []  # chưa cài ứng dụng đồng hồ

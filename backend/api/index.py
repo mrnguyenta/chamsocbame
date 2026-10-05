@@ -3,11 +3,13 @@
 - POST /api/cron/sync        mỗi 15 phút: đọc Garmin, đánh giá cảnh báo
 - POST /api/cron/tick        mỗi 5 phút: gửi/leo thang cảnh báo, nhắc thuốc, báo cáo
 - POST /api/telegram/webhook tin nhắn và nút bấm từ Telegram
+- POST /api/watch/push       ứng dụng Connect IQ trên đồng hồ gửi dữ liệu mỗi 5 phút
 Supabase pg_cron gọi hai địa chỉ cron (xem supabase/cron.sql).
 """
 
 from __future__ import annotations
 
+import hashlib
 import hmac
 import logging
 import sys
@@ -15,6 +17,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from fastapi import FastAPI, Header, HTTPException, Request
+from pydantic import BaseModel, Field
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
@@ -75,4 +78,40 @@ async def telegram_webhook(
     except Exception:
         # Luôn trả 200 để Telegram không gửi lại mãi một tin lỗi.
         logging.exception("Xử lý tin Telegram lỗi")
+    return {"ok": True}
+
+
+class WatchPush(BaseModel):
+    v: int = 1
+    ts: int | None = None
+    hr: int | None = Field(default=None, ge=0, le=250)
+    hr_samples: list[tuple[int, int]] = Field(default_factory=list, max_length=200)
+    resting_hr: int | None = Field(default=None, ge=0, le=250)
+    steps: int | None = Field(default=None, ge=0)
+    stress: int | None = Field(default=None, ge=-2, le=100)
+    body_battery: int | None = Field(default=None, ge=0, le=100)
+    spo2: int | None = Field(default=None, ge=0, le=100)
+    respiration: int | None = Field(default=None, ge=0, le=80)
+    battery: int | None = Field(default=None, ge=0, le=100)
+    charging: bool | None = None
+    device: str | None = None
+
+
+@app.post("/api/watch/push")
+def watch_push(body: WatchPush, authorization: str | None = Header(default=None)) -> dict:
+    s = _settings()
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401)
+    key_hash = hashlib.sha256(authorization[7:].strip().encode()).hexdigest()
+    with db.connect(s.database_url) as conn:
+        device = db.watch_device_by_key(conn, key_hash)
+        if device is None:
+            raise HTTPException(status_code=401)
+        payload = body.model_dump()
+        # Garmin dùng số âm cho "chưa có dữ liệu" (stress -1, -2).
+        if payload["stress"] is not None and payload["stress"] < 0:
+            payload["stress"] = None
+        jobs.handle_watch_push(conn, TelegramClient(s.telegram_bot_token),
+                               get_provider(s.call_provider), device, payload,
+                               datetime.now(timezone.utc))
     return {"ok": True}
