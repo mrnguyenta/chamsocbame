@@ -35,3 +35,11 @@ export const STATUS: Record<string, { label: string; tone: string }> = {
   offline: { label: "Mất kết nối", tone: "warn" },
   nodata: { label: "Chưa có dữ liệu", tone: "neutral" },
 };
+
+/** Nhóm ngưỡng trên trang Cài đặt. */
+export const RULE_GROUPS: { key: string; title: string; tile: string; metrics: string[] }[] = [
+  { key: "tim", title: "Tim mạch & SpO2", tile: "tile-coral", metrics: ["hr_now", "resting_hr", "spo2_min"] },
+  { key: "ha", title: "Huyết áp & đường huyết", tile: "tile-violet", metrics: ["systolic", "diastolic", "glucose"] },
+  { key: "vandong", title: "Vận động & giấc ngủ", tile: "tile-teal", metrics: ["steps", "sleep_hours", "body_battery", "stress_avg"] },
+  { key: "thietbi", title: "Thiết bị", tile: "tile-blue", metrics: ["no_live_minutes", "no_sync_hours", "watch_battery"] },
+];

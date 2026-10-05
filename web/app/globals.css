@@ -185,3 +185,42 @@ label.field { display: flex; flex-direction: column; gap: 6px; font-size: 13px; 
 .kpis.tight .kpi { padding: 10px; gap: 6px; }
 .kpis.tight .label { flex-direction: column; align-items: flex-start; gap: 6px; font-size: 12px; }
 .kpis.tight .value { font-size: 18px; white-space: nowrap; }
+
+/* Công tắc bật/tắt */
+.switch { appearance: none; -webkit-appearance: none; width: 46px; height: 28px; border-radius: 999px; margin: 0;
+  background: #cdd8d6; position: relative; cursor: pointer; transition: background .2s; flex: none; }
+.switch::after { content: ""; position: absolute; top: 3px; left: 3px; width: 22px; height: 22px; border-radius: 50%;
+  background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.25); transition: left .2s; }
+.switch:checked { background: var(--accent-strong); }
+.switch:checked::after { left: 21px; }
+.switch-label { display: inline-flex; align-items: center; min-height: 44px; padding: 0 2px; cursor: pointer; }
+
+/* Ô chọn dạng viên thuốc (bệnh nền) */
+.check-chip { position: relative; display: inline-flex; align-items: center; gap: 8px; min-height: 40px; padding: 0 14px;
+  border-radius: 999px; background: var(--surface-solid); border: 1.5px solid var(--border-strong); cursor: pointer;
+  font-size: 14px; font-weight: 600; color: var(--text-2); }
+.check-chip input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.check-chip:has(input:checked) { background: var(--accent-soft); border-color: var(--accent); color: var(--accent-ink); }
+.check-chip:has(input:focus-visible) { outline: 3px solid color-mix(in srgb, var(--accent) 60%, transparent); outline-offset: 2px; }
+.check-chip .tick { width: 18px; height: 18px; border-radius: 50%; border: 1.5px solid var(--border-strong); display: inline-flex;
+  align-items: center; justify-content: center; background: var(--surface-solid); }
+.check-chip:has(input:checked) .tick { background: var(--accent-strong); border-color: var(--accent-strong); color: #fff; }
+
+/* Thẻ ngưỡng */
+.rule { background: var(--surface-solid); border-radius: var(--radius-sm); box-shadow: var(--shadow-sm); padding: 12px 14px;
+  display: flex; flex-direction: column; gap: 10px; }
+.rule.off { opacity: .62; }
+.rule-top { display: flex; align-items: center; gap: 12px; }
+.rule-fields { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.input-group { display: inline-flex; align-items: center; gap: 6px; min-height: 42px; padding: 0 12px; border-radius: 12px;
+  background: var(--surface-2); border: 1px solid var(--border-strong); }
+.input-group input { border: none !important; background: transparent !important; min-height: 38px !important; padding: 0 !important;
+  width: 72px; font-weight: 700; font-size: 16px; }
+.input-group input[type="time"] { width: 118px; font-weight: 600; font-size: 14px; }
+.input-group .muted { white-space: nowrap; }
+.section-title { display: flex; align-items: center; gap: 10px; margin: 18px 0 10px; font-size: 14px; font-weight: 700; color: var(--text-2); }
+.section-title:first-of-type { margin-top: 4px; }
+.card-title { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+.card-title h2 { margin: 0; }
+details.more > summary { list-style: none; cursor: pointer; }
+details.more > summary::-webkit-details-marker { display: none; }
