@@ -1,6 +1,6 @@
 import Link from "next/link";
 import {
-  IconBell, IconChevron, IconHeart, IconPill, IconTelegram, IconUsers, IconWatch,
+  IconBell, IconChevron, IconDrop, IconHeart, IconPill, IconSteps, IconTelegram, IconUsers, IconWatch,
 } from "@/components/icons";
 import { Avatar } from "@/components/ui";
 import { requireSession } from "@/lib/auth";
@@ -26,6 +26,11 @@ function CardTitle({ icon, tile, title, sub }: { icon: React.ReactNode; tile: st
     </div>
   );
 }
+
+// Biểu tượng cho từng khối ngưỡng (khớp RULE_GROUPS trong lib/metrics).
+const GROUP_ICON: Record<string, React.ReactNode> = {
+  tim: <IconHeart size={20} />, ha: <IconDrop size={20} />, vandong: <IconSteps size={20} />, thietbi: <IconWatch size={20} />,
+};
 
 export default async function SettingsPage({ searchParams }: { searchParams: Promise<{ nguoi?: string }> }) {
   const session = await requireSession();
@@ -67,18 +72,28 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
             <section className="card">
               <CardTitle icon={<IconBell size={20} />} tile="tile-coral" title="Ngưỡng cảnh báo"
                 sub="Gạt công tắc để bật/tắt. Mức Cao/Khẩn cấp sẽ gọi thêm người nếu không ai nhận xử lý." />
-              {RULE_GROUPS.map((g) => {
-                const rules = e.rules.filter((r) => g.metrics.includes(r.metric));
-                if (!rules.length) return null;
-                return (
-                  <div key={g.key}>
-                    <div className="section-title">{g.title}</div>
-                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(min(100%, 380px), 1fr))", gap: 10 }}>
-                      {rules.map((r) => <RuleForm key={r.id} rule={r} tile={g.tile} canEdit={canEdit} />)}
-                    </div>
-                  </div>
-                );
-              })}
+              <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 12 }}>
+                {RULE_GROUPS.map((g, i) => {
+                  const rules = e.rules.filter((r) => g.metrics.includes(r.metric));
+                  if (!rules.length) return null;
+                  const on = rules.filter((r) => r.enabled).length;
+                  return (
+                    <details key={g.key} className="group-block" open={i === 0}>
+                      <summary>
+                        <span className={`icon-tile ${g.tile}`}>{GROUP_ICON[g.key] ?? <IconBell size={20} />}</span>
+                        <span className="grow">
+                          <span className="title" style={{ display: "block" }}>{g.title}</span>
+                          <span className="muted" style={{ fontSize: 13 }}>{rules.length} ngưỡng · {on} đang bật</span>
+                        </span>
+                        <IconChevron size={18} className="chev" />
+                      </summary>
+                      <div className="group-body">
+                        {rules.map((r) => <RuleForm key={r.id} rule={r} tile={g.tile} canEdit={canEdit} />)}
+                      </div>
+                    </details>
+                  );
+                })}
+              </div>
               {canEdit && <AddRuleForm elderId={e.id} />}
             </section>
 
